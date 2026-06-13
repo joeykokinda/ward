@@ -1,28 +1,40 @@
 const INTEGRATIONS: { name: string; body: string }[] = [
   {
     name: "Chainlink CRE",
-    body: "Fetches device telemetry from a public endpoint, attests the fix on-chain, and triggers settlement.",
+    body: "Reads the device telemetry and settles the verdict on-chain.",
   },
   {
     name: "Arc",
-    body: "Gas-free USDC with sub-cent fees. Holds the conditional escrow and releases it automatically on attestation.",
+    body: "Holds the USDC escrow and pays out automatically, gas-free and sub-cent.",
   },
   {
     name: "ENS",
-    body: "Agents have names, workers have portable on-chain reputation. The agent discovers workers by resolving ENS.",
+    body: "Gives agents and workers real names with reputation, so the agent finds the right human by lookup.",
   },
 ];
 
 export function Integrations() {
   return (
-    <section className="border-b border-border">
-      <div className="mx-auto max-w-5xl px-6 py-16">
-        <h2 className="text-2xl font-semibold tracking-tight text-fg">Integrations</h2>
-        <div className="mt-8 grid gap-px overflow-hidden rounded-sm border border-border bg-border sm:grid-cols-3">
+    <section
+      id="integrations"
+      className="flex min-h-svh scroll-mt-16 items-center border-b border-border bg-bg"
+    >
+      <div className="reveal mx-auto w-full max-w-5xl px-6 py-24 md:py-28">
+        <div className="label">The stack</div>
+        <h2 className="mt-3 max-w-2xl text-4xl font-bold tracking-tight text-fg md:text-5xl">
+          Three sponsors, one job each.
+        </h2>
+        <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted">
+          No glue code for show. Each one carries real weight in the flow.
+        </p>
+        <div className="reveal-stagger mt-10 grid gap-px overflow-hidden rounded-sm border border-border bg-border sm:grid-cols-3">
           {INTEGRATIONS.map((integration) => (
-            <div key={integration.name} className="bg-surface p-6">
-              <h3 className="text-[15px] font-semibold text-fg">{integration.name}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted">
+            <div
+              key={integration.name}
+              className="bg-surface p-7 transition-colors hover:bg-subtle"
+            >
+              <h3 className="text-base font-semibold text-fg">{integration.name}</h3>
+              <p className="mt-3 text-[15px] leading-relaxed text-muted">
                 {integration.body}
               </p>
             </div>

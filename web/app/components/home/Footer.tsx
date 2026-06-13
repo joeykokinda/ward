@@ -19,13 +19,19 @@ const LINKS: { label: string; href: string }[] = [
 
 export function Footer() {
   return (
-    <footer>
-      <div className="mx-auto max-w-5xl px-6 py-16">
+    <footer className="border-t border-border bg-bg">
+      <div className="reveal mx-auto w-full max-w-5xl px-6 py-16">
+        <h2 className="max-w-3xl text-4xl font-bold tracking-tight text-fg md:text-5xl">
+          Watch a 2am leak settle itself.
+        </h2>
         <Link
           href="/demo"
-          className="inline-flex items-center gap-2 rounded-sm bg-accent px-5 py-3 text-sm font-semibold text-[#0a0a0f] transition-colors hover:bg-accent-hover"
+          className="cta-dispatch mt-7 inline-flex items-center gap-2 rounded-sm bg-accent px-5 py-3 text-sm font-semibold text-[#0a0a0f] transition-colors hover:bg-accent-hover"
         >
-          Watch the demo &rarr;
+          Demo{" "}
+          <span className="cta-arrow" aria-hidden>
+            &rarr;
+          </span>
         </Link>
 
         <div className="mt-12 flex flex-wrap items-center gap-x-6 gap-y-3">
@@ -53,10 +59,6 @@ export function Footer() {
             <WardMark className="h-[15px] w-[15px]" />
           </span>
           <span className="text-[13px] font-semibold tracking-tight text-fg">WARD</span>
-          <span className="text-[12px] text-faint">
-            Reference implementation of ERC-8183 (Agentic Commerce), live on Arc
-            testnet.
-          </span>
         </div>
       </div>
     </footer>

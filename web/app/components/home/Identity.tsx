@@ -5,7 +5,7 @@
 
 function Cell({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-surface p-6">
+    <div className="bg-surface p-6 transition-colors hover:bg-subtle">
       <div className="text-[13px] font-semibold text-fg">{title}</div>
       <p className="mt-2.5 text-[14px] leading-relaxed text-muted">{children}</p>
     </div>
@@ -14,40 +14,37 @@ function Cell({ title, children }: { title: string; children: React.ReactNode })
 
 export function Identity() {
   return (
-    <section className="border-b border-border">
-      <div className="mx-auto max-w-5xl px-6 py-16">
+    <section
+      id="identity"
+      className="section-light flex min-h-svh scroll-mt-16 items-center border-b border-border"
+    >
+      <div className="reveal mx-auto w-full max-w-5xl px-6 py-24 md:py-28">
         <div className="label">Identity · ENS</div>
-        <h2 className="mt-3 max-w-3xl text-2xl font-semibold tracking-tight text-fg">
-          Every party is sovereign. WARD is the protocol, not the platform.
+        <h2 className="mt-3 max-w-3xl text-4xl font-bold tracking-tight text-fg md:text-5xl">
+          Everyone owns their identity. WARD is the protocol, not the platform.
         </h2>
 
-        <div className="mt-7 grid gap-px overflow-hidden rounded-sm border border-border bg-border md:grid-cols-3">
+        <div className="reveal-stagger mt-7 grid gap-px overflow-hidden rounded-sm border border-border bg-border md:grid-cols-3">
           <Cell title="Workers own their reputation">
-            A pro registers once. Their skills, region, and job history live as
-            ENSIP-26 records on a name they own, not in our database. The design
-            lets them carry that reputation to any agent network.
+            A pro&apos;s reputation lives on an ENS name they own, not in our
+            database &mdash; portable to any network, earned not bought.
           </Cell>
           <Cell title="Agents own their identity">
-            Each home or fleet runs its own agent with its own name, wallet, and
-            on-chain history. We registered{" "}
-            <span className="mono text-fg-soft">agent.demo-home.eth</span> &mdash; a
-            sovereign agent under its owner&apos;s domain, live and ENSIP-25
-            verified on Sepolia &mdash; right next to the protocol agent{" "}
-            <span className="mono text-fg-soft">ward-agent.eth</span>. No shared
-            backend wallet.
+            Every home runs its own agent. We registered a real one,{" "}
+            <span className="mono text-fg-soft">agent.demo-home.eth</span>, beside
+            the protocol&apos;s own{" "}
+            <span className="mono text-fg-soft">ward-agent.eth</span>.
           </Cell>
           <Cell title="No lock-in">
-            If WARD shut down tomorrow, the worker still owns their name and their
-            job history is still on-chain. Another network can read it and hire
-            them directly &mdash; no re-signup, no reputation to rebuild.
+            If WARD vanished tomorrow, the worker keeps their name and history. Any
+            network can read it and hire them.
           </Cell>
         </div>
 
         <p className="mt-7 max-w-3xl text-[15px] leading-relaxed text-fg-soft">
-          ENS is the federated identity layer that lets independent agents
-          discover and rank independent workers with no platform in the middle.
-          You&apos;d never invest in a profile a marketplace owns. You will invest
-          in a name you own forever.
+          ENS is the shared address book for this whole economy: any agent can look
+          up and rank any worker, no company in the middle. A name that&apos;s yours
+          forever, never a profile a marketplace owns.
         </p>
       </div>
     </section>
