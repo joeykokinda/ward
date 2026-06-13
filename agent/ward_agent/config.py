@@ -58,9 +58,11 @@ class Config:
 
     # --- LLM (diagnosis.py) ---
     anthropic_api_key: str | None = field(default_factory=lambda: _env("ANTHROPIC_API_KEY"))
-    # Prefer claude-fable-5 if available, else claude-opus-4-8 (per task spec).
-    llm_model_primary: str = field(default_factory=lambda: _env("WARD_LLM_MODEL", "claude-fable-5"))
-    llm_model_fallback: str = "claude-opus-4-8"
+    # Diagnosis is a small classification task -> default to Haiku (cheapest;
+    # ~10-20x cheaper than Opus/Fable) and only call on a NEW fault, not per poll.
+    # Override with WARD_LLM_MODEL. Any LLM failure degrades to the rules engine.
+    llm_model_primary: str = field(default_factory=lambda: _env("WARD_LLM_MODEL", "claude-haiku-4-5"))
+    llm_model_fallback: str = "claude-haiku-4-5"
 
     # --- Device sim (sim_client.py) ---
     sim_base_url: str = field(
