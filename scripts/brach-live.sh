@@ -7,14 +7,15 @@
 #   2) from brach, pull the key files off your dev machine over Tailscale:
 #        scp 100.85.79.108:~/Projects/web3/EthGlobal2026/spike/arc/.env             spike/arc/.env
 #        scp 100.85.79.108:~/Projects/web3/EthGlobal2026/spike/arc/.env.worker.json spike/arc/.env.worker.json
-#   3) export ANTHROPIC_API_KEY=sk-ant-...    # the key (rotate after event)
-#   4) bash scripts/brach-live.sh
+#   3) bash scripts/brach-live.sh
+#      (ANTHROPIC_API_KEY is read from the scp'd spike/arc/.env; no export needed.
+#       If you prefer, in fish set it first: set -x ANTHROPIC_API_KEY sk-ant-...)
 set -euo pipefail
 REPO="$(cd "$(dirname "$0")/.." && pwd)"; cd "$REPO"
 [ -f spike/arc/.env ] || { echo "ERR: missing spike/arc/.env — scp it from your dev machine (step 2)"; exit 1; }
 [ -f spike/arc/.env.worker.json ] || { echo "ERR: missing spike/arc/.env.worker.json — scp it (step 2)"; exit 1; }
-: "${ANTHROPIC_API_KEY:?ERR: export ANTHROPIC_API_KEY first (step 3)}"
-set -a; . spike/arc/.env; set +a   # -> DEPLOYER_PRIVATE_KEY
+set -a; . spike/arc/.env; set +a   # -> DEPLOYER_PRIVATE_KEY (+ ANTHROPIC_API_KEY if present in the file)
+: "${ANTHROPIC_API_KEY:?ERR: ANTHROPIC_API_KEY not set. Either it is in spike/arc/.env (recommended), or in fish run: set -x ANTHROPIC_API_KEY sk-ant-... before this script}"
 WADDR=$(python3 -c "import json;print(json.load(open('spike/arc/.env.worker.json'))[0]['address'])")
 WKEY=$(python3 -c "import json;print(json.load(open('spike/arc/.env.worker.json'))[0]['private_key'])")
 if grep -q 'WARD: LIVE block' agent/.env 2>/dev/null; then
