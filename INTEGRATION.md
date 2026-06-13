@@ -12,7 +12,7 @@ Running list of cross-component seams to reconcile once all agents land. Update 
 | Agent runtime | `agent/` | done, DRY-run verified | f818995 |
 | Frontend | `web/` | building | — |
 | CRE + Arc spike | `cre/`, `spike/arc/` | building | — |
-| ENS + Supabase | `packages/ens/`, `db/` | building | — |
+| ENS + Supabase | `packages/ens/`, `db/` | done, live-resolve + Postgres verified | 0f61d0a |
 
 ## Reconciliation TODO (integration phase)
 
@@ -27,6 +27,12 @@ Running list of cross-component seams to reconcile once all agents land. Update 
 5. **Frontend data adapter → live.** Frontend mock incident player and the agent SSE feed implement the same event shape (INTERFACES.md). **Action:** confirm the `supabase`/live adapter consumes `GET /events` (agent SSE) and `agent_events` rows identically to the mock player, so flipping `NEXT_PUBLIC_DATA_ADAPTER` is the only change.
 
 6. **Demo fixtures alignment.** Frontend mock fixtures, `db/` Supabase seed, and contracts `Seed.s.sol` all encode the canonical 5 workers / 3 properties / 3 historical jobs from INTERFACES.md. **Action:** spot-check the three agree (handles, ENS names, reputations) so a judge sees the same data in mock and live modes.
+
+7. **`workers.skills` column type.** db schema stores `skills` as Postgres `text[]`; frontend `web/lib/data/supabase.ts` `rowToWorker` does `String(r.skills).split(",")`. supabase-js returns the array and `String([...])` coerces to a comma string, so it works — but confirm during integration, or switch the column to plain `text`. Low risk.
+
+8. **Stray `pnpm-workspace.yaml` files.** Auto-created in `packages/ens/` and `db/` by pnpm install (install isolation, harmless). If a root pnpm workspace is set up later, reconcile so nested ones don't shadow it.
+
+9. **ENS live config.** Going live needs `WARD_AGENT_REGISTRY` / `WARD_AGENT_ID` / `_CHAIN_ID` set once the agent has a real onchain registry entry, then the `agent-registration[...]="1"` record on `ward-agent.eth`, then `pnpm mint-subname <handle> --execute` per worker. ENS subnames decided to live on **L1 Sepolia via NameWrapper** (PublicResolver for text records).
 
 ## Credentials still needed to go live (mirror of the user ask)
 
