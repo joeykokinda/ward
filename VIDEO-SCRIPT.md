@@ -18,31 +18,40 @@ Measured from the Trigger-leak click: ENS badge ~11s, Arc badge + escrow tx ~15s
 
 ### 0:30 to 2:15 · Cinematic demo
 
-`[00:30 DO]` On `/demo`, click **Trigger leak** in the trigger bar. Blue ripples bloom in the laundry room, the legend flips to "Fault detected", the reasoning panel starts streaming.
-`[00:30 SAY]` "Watch. The leak sensor tripped and WARD is awake. It diagnoses the fault, tries the free remote fix, and finds that water needs hands on a valve. So it hires a human, on-chain."
+WARD climbs a ladder: it self-fixes for free at L1, and only hires a human at L3 when software cannot. Show both, the everyday case first, so the agent reads as judicious, not "always hires a human." Badge cues are relative to each click; watch the screen, the badge is your real cue.
 
-`[00:40 SAY]` (ENS badge lands ~00:41) "It's looking up workers via ENS. Mike's identity is live at mike.ward-agent.eth, with verified skills and reputation in his text records."
-`[~00:41 ON SCREEN]` ENS badge appears on the registry line: `ENS · ward-agent.eth subnames · ENSIP-26 records`.
+**0:30 to 0:48 · the everyday case (L1 self-fix).**
+`[0:30 DO]` On `/demo`, click **Kill WiFi** in the trigger bar.
+`[0:30 SAY]` "Most of what goes wrong, WARD just fixes. The router drops, WARD sees it and reboots it remotely, and it is back. No human, no payment. This is Level 1, and it is the everyday case."
+`[~click + 8s ON SCREEN]` Reasoning shows the reboot SUCCEEDED, the device returns green, the actor strip reads "no human required" and "no escrow needed", the treasury never moves (stays 500.00).
+`[0:45 DO]` Click **Reset**. All four devices green again.
 
-`[00:44 SAY]` (Arc badge + escrow tx land ~00:45) "150 USDC just locked in a conditional escrow contract on Arc. The contract is verified, and that hash is clickable on arcscan."
-`[~00:45 ON SCREEN]` Treasury ticks 500 to 350. Escrow-created proof row appears with the Arc badge and the real tx.
+**0:50 to 2:15 · the hero case (L3 hire).**
+`[0:50 DO]` Click **Trigger leak**. Blue ripples bloom in the laundry room, the legend flips to "Fault detected", the reasoning panel streams.
+`[0:50 SAY]` "Now the case software cannot fix. A 2am leak. WARD tries the free fix, closing the valve, but the burst is upstream. So it does what you cannot do at 2am: it hires a human, on-chain."
 
-`[00:46 DO]` During the pause before the worker arrives, click the Escrow-created tx hash. Arcscan opens on the verified WardEscrow contract. Hold ~3 seconds, then return to the demo.
+`[click + ~11s SAY]` (ENS badge lands) "It is looking up workers via ENS. Mike's identity is live at mike.ward-agent.eth, with verified skills and reputation in his records."
+`[ON SCREEN]` ENS badge on the registry line: `ENS · ward-agent.eth subnames · ENSIP-26 records`.
 
-`[~00:50 ON SCREEN]` The worker avatar walks in along the dashed path, wrench beat, the leak room returns to green.
-`[00:50 SAY]` "Mike is on site and fixes it. The sensor reads dry again."
+`[click + ~15s SAY]` (Arc badge + escrow tx land) "150 USDC just locked in a conditional escrow on Arc. The contract is verified, that hash is clickable on arcscan."
+`[ON SCREEN]` Treasury ticks 500 to 350. Escrow-created proof row with the Arc badge and the real tx.
 
-`[00:54 SAY]` (Chainlink badge lands ~00:55) "Chainlink CRE just attested that the sensor reads dry and triggered release on the escrow. No human approved this payment, the workflow did."
-`[~00:55 ON SCREEN]` Chainlink CRE badge appears on the attestation line: `Chainlink · CRE attested fix · WriteReport to Arc`.
+`[click + ~16s DO]` During the pause before the worker arrives, click the Escrow-created tx hash: arcscan opens on the verified WardEscrow contract. Hold ~3 seconds, return.
 
-`[00:56 SAY]` (settled tx lands ~00:57) "Payment released to Mike, on-chain forever. The whole loop just settled itself."
-`[~00:57 ON SCREEN]` Treasury recovers to 500, Settled proof row + release tx, actor strip shows Mike "paid".
+`[click + ~21s ON SCREEN]` The worker avatar walks in, wrench beat, the leak room returns to green.
+`[SAY]` "Mike is on site and fixes it. The sensor reads dry again."
 
-`[00:58 DO]` Click Mike's avatar. The ENS profile modal opens with live ENSIP-26 records and ENSIP-25 verification.
-`[00:58 SAY]` "This is Mike's ENS profile, resolved live from Sepolia. Skills, region, a reputation pointer, all in records he owns. It's portable: any other agent network can read it and hire him tomorrow, no re-signup."
+`[click + ~25s SAY]` (Chainlink badge lands) "Chainlink CRE just attested the sensor reads dry and triggered release. No human approved this payment, the workflow did."
+`[ON SCREEN]` Chainlink CRE badge on the attestation line: `Chainlink · CRE attested fix · WriteReport to Arc`.
 
-`[01:30 DO]` Close the modal. Gesture to the on-chain proof panel and the persistent legend + proof links at the bottom.
-`[01:30 SAY]` "Every step maps to one system. ERC-8183 is the standard: WARD is the Client, Mike is the Provider, and the Chainlink workflow is the Evaluator. Arc is the settlement rail, gas-free USDC built for this. ENS is the identity layer for the agent and the workers. The proof for every step is one click away, right here."
+`[click + ~27s SAY]` (settled tx lands) "Payment released to Mike, on-chain forever. The whole loop just settled itself."
+`[ON SCREEN]` Treasury recovers to 500, Settled proof row + release tx, actor strip shows Mike "paid".
+
+`[~1:20 DO]` Click Mike's avatar (the ENS profile opens with live ENSIP-26 records + ENSIP-25 verification). Optionally open `/workers` from the footer to show the full roster ranked by skill, ETA, and reputation.
+`[SAY]` "This is Mike's ENS profile, resolved live from Sepolia. Skills, region, a reputation pointer, all in records he owns. Portable: another agent network could read the same record tomorrow and hire him, no re-signup."
+
+`[~1:45 DO]` Gesture to the on-chain proof panel and the persistent legend + proof links at the bottom.
+`[SAY]` "Every step maps to one system. ERC-8183 is the standard: WARD is the Client, Mike the Provider, the Chainlink workflow the Evaluator. Arc is the settlement rail. ENS is the identity. The proof for every step is one click away, right here."
 
 ### 2:15 to 2:45 · Why crypto (honest)
 `[SAY]` "The homeowner is the demo because every judge has felt 2am home panic. But the real customer is software with no bank account. For one homeowner paying a local plumber, traditional payment rails work fine, credit cards, ACH, Venmo. The crypto matters when the buyer is a smart contract: a DePIN network paying the humans who service its hardware, an autonomous DAO, an AI agent treasury. Those literally can't open a bank account. WARD is the rails for them."
