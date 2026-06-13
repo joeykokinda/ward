@@ -140,16 +140,31 @@ export type WardSnapshot = {
   activeJob: Job | null;
 };
 
-// A simulation/incident scenario the adapter can run.
-export type ScenarioId = "wifi-outage";
+// A simulation/incident scenario the adapter can run. The HERO is the leak
+// ("home-leak"); the other three devices are independently kill-able. The
+// legacy "wifi-outage" alias is kept so older call sites keep working.
+export type ScenarioId =
+  | "home-leak"
+  | "home-wifi"
+  | "home-thermostat"
+  | "home-lock"
+  | "wifi-outage";
+
+// Where the dispatched worker is in their walk-to-the-device sequence. Derived
+// from the job state + telemetry so the floor-plan animation and the reasoning
+// stream read from one source of truth.
+export type WorkerPhase = "none" | "enroute" | "fixing" | "done";
 
 export type WardAdapter = {
   // Snapshot of all demo state. Cheap to call; safe to poll.
   getSnapshot: () => WardSnapshot;
   // Subscribe to state changes. Returns an unsubscribe fn.
   subscribe: (listener: () => void) => () => void;
-  // Drive the scripted incident (Home: "Simulate: WiFi outage").
+  // Drive the scripted incident. The primary trigger is the leak ("home-leak").
   runScenario: (id: ScenarioId) => void;
+  // Kill a single device (the floor-plan "Kill device" button). Routes through
+  // the same incident state machine as runScenario, keyed by deviceId.
+  killDevice: (deviceId: string) => void;
   // Worker-side actions (judge's phone).
   acceptJob: (jobId: number, workerAddress: string) => void;
   markJobComplete: (jobId: number) => void;

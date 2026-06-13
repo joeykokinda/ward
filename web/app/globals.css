@@ -132,6 +132,216 @@ body {
   flex: none;
 }
 
+/* ───────────────────────── Floor-plan hero animations ─────────────────────
+   All tuned to read on a LIGHT surface — color, motion, and soft tints, no
+   dark-glow reliance. */
+
+/* Leak (HERO): blue concentric ripples expanding from the sensor. */
+@keyframes ward-ripple {
+  0% {
+    r: 6px;
+    opacity: 0.55;
+    stroke-width: 2.5;
+  }
+  100% {
+    r: 64px;
+    opacity: 0;
+    stroke-width: 0.5;
+  }
+}
+.ward-ripple {
+  transform-box: fill-box;
+  animation: ward-ripple 2.4s ease-out infinite;
+}
+.ward-ripple-2 {
+  animation-delay: 0.8s;
+}
+.ward-ripple-3 {
+  animation-delay: 1.6s;
+}
+
+/* A faint blue water-tint that breathes in the leaking room. */
+@keyframes ward-water-tint {
+  0%,
+  100% {
+    opacity: 0.22;
+  }
+  50% {
+    opacity: 0.42;
+  }
+}
+.ward-water-tint {
+  animation: ward-water-tint 2.6s ease-in-out infinite;
+}
+
+/* WiFi: signal arcs fade out when the router is down. */
+@keyframes ward-arc-out {
+  0%,
+  100% {
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+.ward-arc-out {
+  animation: ward-arc-out 1.6s ease-in-out infinite;
+}
+
+/* Red alert pulse on a device (lock / generic fault). On light: a soft red
+   ring that breathes, paired with text — never color-only. */
+@keyframes ward-alert-ring {
+  0%,
+  100% {
+    opacity: 0.9;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.35;
+    transform: scale(1.18);
+  }
+}
+.ward-alert-ring {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ward-alert-ring 1.4s ease-in-out infinite;
+}
+
+/* Thermostat: the off-target temperature number flashes. */
+@keyframes ward-temp-flash {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+.ward-temp-flash {
+  animation: ward-temp-flash 1s steps(1, end) infinite;
+}
+
+/* Healthy device: a calm, slow breathing on the green status dot. */
+@keyframes ward-healthy-breath {
+  0%,
+  100% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+.ward-healthy-breath {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ward-healthy-breath 3.4s ease-in-out infinite;
+}
+
+/* Dashed worker path: the dash offset crawls to suggest direction of travel. */
+@keyframes ward-path-march {
+  to {
+    stroke-dashoffset: -24;
+  }
+}
+.ward-path-march {
+  stroke-dasharray: 6 6;
+  animation: ward-path-march 1.1s linear infinite;
+}
+
+/* Soft drop-in for the worker avatar appearing at the entry edge. */
+@keyframes ward-avatar-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.ward-avatar-in {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ward-avatar-in 0.4s ease-out;
+}
+
+/* Wrench/tool blip while the worker is fixing. */
+@keyframes ward-wrench {
+  0% {
+    opacity: 0;
+    transform: scale(0.5) rotate(-25deg);
+  }
+  25% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+.ward-wrench {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: ward-wrench 0.5s ease-out;
+}
+
+/* A gentle "fixed!" green flash on the room when the device recovers. */
+@keyframes ward-heal-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.ward-heal-flash {
+  animation: ward-heal-flash 1.4s ease-out;
+}
+
+/* Modal backdrop + card entrance. */
+@keyframes ward-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes ward-pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.ward-backdrop {
+  animation: ward-fade-in 0.16s ease-out;
+}
+.ward-modal {
+  animation: ward-pop-in 0.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ward-ripple,
+  .ward-water-tint,
+  .ward-arc-out,
+  .ward-alert-ring,
+  .ward-temp-flash,
+  .ward-healthy-breath,
+  .ward-path-march,
+  .ward-wrench,
+  .ward-heal-flash {
+    animation: none;
+  }
+}
+
 /* Soft scrollbars. */
 .ward-scroll {
   scrollbar-width: thin;

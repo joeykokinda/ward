@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Cpu, House, ShieldCheck, Wrench } from "lucide-react";
 import { formatUsdc } from "@/lib/format";
 import type { AgentIdentity } from "@/lib/data/types";
@@ -24,15 +24,29 @@ export function Header({
   agent,
   adapterName,
   live,
+  onAgentClick,
 }: {
   persona: Persona;
   onPersona: (p: Persona) => void;
   agent: AgentIdentity;
   adapterName: string;
   live: boolean;
+  onAgentClick?: () => void;
 }) {
   const [open, setOpen] = useState(false);
   const current = PERSONAS.find((p) => p.id === persona)!;
+
+  // Flash the treasury when it changes (down on escrow fund, up on release).
+  const prevTreasury = useRef(agent.treasuryUsdc);
+  const [treasuryDir, setTreasuryDir] = useState<"up" | "down" | null>(null);
+  useEffect(() => {
+    if (prevTreasury.current === agent.treasuryUsdc) return;
+    const dir = BigInt(agent.treasuryUsdc) < BigInt(prevTreasury.current) ? "down" : "up";
+    prevTreasury.current = agent.treasuryUsdc;
+    setTreasuryDir(dir);
+    const t = setTimeout(() => setTreasuryDir(null), 900);
+    return () => clearTimeout(t);
+  }, [agent.treasuryUsdc]);
 
   return (
     <header className="flex items-center justify-between gap-3 border-b border-border bg-surface px-5 py-3">
@@ -46,9 +60,14 @@ export function Header({
         </div>
         <div className="hidden items-center gap-2 border-l border-border pl-4 md:flex">
           <span className="text-[12px] text-muted">Agent</span>
-          <span className="mono text-[13px] font-medium text-fg-soft">
+          <button
+            onClick={onAgentClick}
+            disabled={!onAgentClick}
+            title="View agent profile + action history"
+            className="mono rounded-md px-1.5 py-0.5 text-[13px] font-medium text-fg-soft transition-colors enabled:hover:bg-subtle enabled:hover:text-fg disabled:cursor-default"
+          >
             {agent.ensName}
-          </span>
+          </button>
         </div>
       </div>
 
@@ -68,7 +87,15 @@ export function Header({
 
         <div className="hidden flex-col items-end border-l border-border pl-4 sm:flex">
           <span className="text-[11px] text-muted leading-none">Treasury</span>
-          <span className="mono text-[14px] font-semibold leading-tight text-fg">
+          <span
+            className={`mono rounded text-[14px] font-semibold leading-tight transition-colors duration-300 ${
+              treasuryDir === "down"
+                ? "text-warn"
+                : treasuryDir === "up"
+                  ? "text-accent-ink"
+                  : "text-fg"
+            }`}
+          >
             {formatUsdc(agent.treasuryUsdc)}
             <span className="ml-1 font-sans text-[10px] font-medium text-muted">
               USDC

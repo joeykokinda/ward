@@ -32,6 +32,7 @@ export function useWard() {
   return {
     snapshot,
     runScenario: useCallback((id: ScenarioId) => adapter.runScenario(id), [adapter]),
+    killDevice: useCallback((deviceId: string) => adapter.killDevice(deviceId), [adapter]),
     acceptJob: useCallback(
       (jobId: number, workerAddress: string) => adapter.acceptJob(jobId, workerAddress),
       [adapter],

@@ -216,6 +216,9 @@ class SupabaseAdapter implements WardAdapter {
   runScenario(_id: ScenarioId): void {
     console.info("[ward] runScenario is a no-op on the supabase adapter (live agent drives it).");
   }
+  killDevice(_deviceId: string): void {
+    console.info("[ward] killDevice is a no-op on the supabase adapter (live agent drives it).");
+  }
   acceptJob(_jobId: number, _workerAddress: string): void {
     console.info("[ward] acceptJob would POST to the agent API in production.");
   }

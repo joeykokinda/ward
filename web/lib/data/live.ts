@@ -194,12 +194,23 @@ class LiveAdapter implements WardAdapter {
 
   // Triggers a genuine on-chain incident on the live agent; the agent's own
   // loop drives the reasoning + settlement, which we pick up on the next poll.
-  runScenario(_id: ScenarioId): void {
+  // The hero scenario is the leak ("home-leak").
+  runScenario(id: ScenarioId): void {
+    const propertyId = id === "wifi-outage" ? "home-wifi" : id;
+    this.simulate(propertyId);
+  }
+
+  // Floor-plan "Kill device" — fire the same live incident, keyed by deviceId.
+  killDevice(deviceId: string): void {
+    this.simulate(deviceId);
+  }
+
+  private simulate(propertyId: string): void {
     void fetch(`${AGENT_URL}/incident/simulate`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ propertyId: "home-wifi", mode: "hard", autoComplete: true }),
-    }).catch((err) => console.warn("[ward] live runScenario POST failed:", err));
+      body: JSON.stringify({ propertyId, mode: "hard", autoComplete: true }),
+    }).catch((err) => console.warn("[ward] live simulate POST failed:", err));
   }
 
   // The live field-tech actions happen on the worker's own wallet / the agent

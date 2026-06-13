@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
-import { Play, RotateCcw } from "lucide-react";
-import type { WardSnapshot } from "@/lib/data/types";
+import { useMemo, useState } from "react";
+import { Droplet, Play, RotateCcw } from "lucide-react";
+import type { Worker, WardSnapshot } from "@/lib/data/types";
+import { Modal } from "../Modal";
 import { ActiveJobBar } from "./ActiveJobBar";
 import { ActivityFeed } from "./ActivityFeed";
-import { FleetGrid } from "./FleetGrid";
+import { DeviceModal } from "./DeviceModal";
+import { FloorPlan } from "./FloorPlan";
 import { ReasoningStream } from "./ReasoningStream";
+import { WorkerModal } from "./WorkerModal";
 
 export function HostView({
   snapshot,
@@ -14,6 +17,7 @@ export function HostView({
   mounted,
   isRunning,
   onSimulate,
+  onKillDevice,
   onReset,
 }: {
   snapshot: WardSnapshot;
@@ -21,6 +25,7 @@ export function HostView({
   mounted: boolean;
   isRunning: boolean;
   onSimulate: () => void;
+  onKillDevice: (deviceId: string) => void;
   onReset: () => void;
 }) {
   // live uptime: advance per second from the last device snapshot. `now` is a
@@ -45,19 +50,33 @@ export function HostView({
     ? snapshot.properties.find((p) => p.id === snapshot.activeJob!.propertyId)
     : undefined;
 
+  // modal state
+  const [openDeviceId, setOpenDeviceId] = useState<string | null>(null);
+  const [workerOpen, setWorkerOpen] = useState(false);
+
+  const openDevice = openDeviceId
+    ? snapshot.properties.find((p) => p.id === openDeviceId)
+    : undefined;
+
+  // the worker on the plan: the active job's provider (fall back to the
+  // top-reputation tech so the worker modal always has something to show).
+  const dispatchedWorker: Worker | undefined = useMemo(() => {
+    const ens = snapshot.activeJob?.worker;
+    if (ens) return snapshot.workers.find((w) => w.ensName === ens);
+    return [...snapshot.workers].sort((a, b) => b.reputation - a.reputation)[0];
+  }, [snapshot.activeJob, snapshot.workers]);
+
   return (
     <div className="min-h-0 flex-1 overflow-auto ward-scroll">
       <div className="mx-auto w-full max-w-6xl px-5 py-6">
         {/* page heading + controls */}
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-fg">
-              My home
-            </h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-fg">My home</h1>
             <p className="mt-1 max-w-2xl text-[14px] text-muted">
               WARD watches every device, fixes what it can, hires someone when it
-              can&apos;t, and tells you what happened. You stop being on-call for your
-              own house.
+              can&apos;t, and tells you what happened. Click any device to see its
+              status — or trip a fault and watch the agent work.
             </p>
           </div>
           <div className="flex items-center gap-2.5">
@@ -73,13 +92,17 @@ export function HostView({
               disabled={isRunning}
               className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Play className="h-4 w-4 fill-current" strokeWidth={0} />
-              {isRunning ? "Simulating…" : "Simulate: WiFi outage"}
+              {isRunning ? (
+                <Play className="h-4 w-4 fill-current" strokeWidth={0} />
+              ) : (
+                <Droplet className="h-4 w-4 fill-current" strokeWidth={0} />
+              )}
+              {isRunning ? "Simulating…" : "Simulate: water leak"}
             </button>
           </div>
         </div>
 
-        {/* active job — the focal area when a job is live */}
+        {/* active job — the focal status strip when a job is live */}
         {snapshot.activeJob && (
           <div className="mt-6">
             <ActiveJobBar
@@ -91,15 +114,50 @@ export function HostView({
           </div>
         )}
 
-        {/* primary: reasoning timeline. secondary: fleet + activity. */}
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
+        {/* HERO: the animated floor plan + the agent reasoning stream */}
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.55fr_1fr]">
+          <FloorPlan
+            snapshot={snapshot}
+            onKillDevice={onKillDevice}
+            onDeviceClick={(id) => setOpenDeviceId(id)}
+            onWorkerClick={() => setWorkerOpen(true)}
+          />
           <ReasoningStream events={snapshot.events} mounted={mounted} />
-          <div className="flex flex-col gap-6">
-            <FleetGrid properties={snapshot.properties} liveUptime={liveUptime} />
-            <ActivityFeed activity={snapshot.activity} now={now} mounted={mounted} />
-          </div>
+        </div>
+
+        {/* on-chain activity feed (bottom) */}
+        <div className="mt-6">
+          <ActivityFeed activity={snapshot.activity} now={now} mounted={mounted} />
         </div>
       </div>
+
+      {/* device modal: status + kill */}
+      <Modal
+        open={!!openDevice}
+        onClose={() => setOpenDeviceId(null)}
+        labelledBy="device-modal-title"
+      >
+        {openDevice && (
+          <DeviceModal
+            property={openDevice}
+            liveUptimeSec={liveUptime[openDevice.id] ?? openDevice.device.uptimeSec}
+            busy={isRunning}
+            onKill={() => {
+              onKillDevice(openDevice.id);
+              setOpenDeviceId(null);
+            }}
+          />
+        )}
+      </Modal>
+
+      {/* worker modal: ENS profile + reputation */}
+      <Modal
+        open={workerOpen}
+        onClose={() => setWorkerOpen(false)}
+        labelledBy="worker-modal-title"
+      >
+        {dispatchedWorker && <WorkerModal worker={dispatchedWorker} />}
+      </Modal>
     </div>
   );
 }

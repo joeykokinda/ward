@@ -2,18 +2,22 @@
 
 import { useState } from "react";
 import { useTick, useMounted, useWard } from "@/lib/useWard";
+import { AgentModal } from "./AgentModal";
 import { Header, type Persona } from "./Header";
+import { Modal } from "./Modal";
 import { HostView } from "./host/HostView";
 import { WorkerView } from "./worker/WorkerView";
 import { AgentView } from "./agent/AgentView";
 
 export function App() {
   const [persona, setPersona] = useState<Persona>("host");
+  const [agentOpen, setAgentOpen] = useState(false);
   const now = useTick(1000);
   const mounted = useMounted();
   const {
     snapshot,
     runScenario,
+    killDevice,
     acceptJob,
     markJobComplete,
     reset,
@@ -32,6 +36,7 @@ export function App() {
         agent={snapshot.agent}
         adapterName={adapterName}
         live={live}
+        onAgentClick={() => setAgentOpen(true)}
       />
 
       {persona === "host" && (
@@ -40,7 +45,8 @@ export function App() {
           now={now}
           mounted={mounted}
           isRunning={isRunning}
-          onSimulate={() => runScenario("wifi-outage")}
+          onSimulate={() => runScenario("home-leak")}
+          onKillDevice={killDevice}
           onReset={reset}
         />
       )}
@@ -62,6 +68,15 @@ export function App() {
           Today homeowners · tomorrow property managers &amp; DePIN — same protocol
         </span>
       </footer>
+
+      {/* agent profile (header ENS click) */}
+      <Modal
+        open={agentOpen}
+        onClose={() => setAgentOpen(false)}
+        labelledBy="agent-modal-title"
+      >
+        <AgentModal snapshot={snapshot} mounted={mounted} />
+      </Modal>
     </div>
   );
 }

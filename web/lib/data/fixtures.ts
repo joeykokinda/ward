@@ -102,9 +102,9 @@ export function buildProperties(): PropertyStatus[] {
 }
 
 // The five local techs registered with WARD. Skills cover the home's device
-// kinds (network / hvac / locksmith / plumber) so dispatch-by-skill reads
-// sensibly. mike is the highest-reputation network tech -> picked for the
-// WiFi-outage hero incident.
+// kinds (plumber / network / hvac / locksmith) so dispatch-by-skill reads
+// sensibly. mike is the highest-reputation PLUMBER -> picked for the HERO leak
+// incident (the avatar shows "M").
 export function buildWorkers(): Worker[] {
   const mk = (
     handle: string,
@@ -123,8 +123,8 @@ export function buildWorkers(): Worker[] {
     completedJobs,
   });
   return [
-    mk("mike", ["network", "router", "isp"], 98, 41),
-    mk("sara", ["network", "smart-lock", "locksmith"], 91, 33),
+    mk("mike", ["plumber", "leak", "pipefitting"], 98, 41),
+    mk("sara", ["network", "router", "isp"], 91, 33),
     mk("deon", ["hvac", "thermostat"], 87, 28),
     mk("lena", ["plumber", "leak", "sensor"], 84, 22),
     mk("raj", ["network", "general", "locksmith"], 79, 17),
@@ -169,8 +169,8 @@ export function buildJobs(): Job[] {
       jobId: 1043,
       propertyId: "home-wifi",
       deviceId: "home-wifi",
-      worker: `mike.${AGENT_ENS}`,
-      workerAddress: fakeAddress("worker-mike"),
+      worker: `sara.${AGENT_ENS}`,
+      workerAddress: fakeAddress("worker-sara"),
       amount: usdc(75),
       state: "Completed",
       txCreate: fakeTxHash("job-1043-create"),
@@ -242,7 +242,7 @@ export function buildEvents(): AgentEvent[] {
       id: "ev-seed-3",
       ts: isoHoursAgo(5),
       type: "RESOLVED",
-      message: "Job #1043 settled · mike.ward-agent.eth paid 75.00 USDC · reputation 97 → 98",
+      message: "Job #1043 settled · sara.ward-agent.eth paid 75.00 USDC · reputation 90 → 91",
       jobId: 1043,
       propertyId: "home-wifi",
     },
