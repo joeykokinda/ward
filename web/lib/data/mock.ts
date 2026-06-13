@@ -17,7 +17,7 @@
 // Arc contracts; this player is just one implementation.
 
 import { usdc } from "../format";
-import { NARRATIVE_TOTAL, phaseIndex, phaseMeta } from "../narrative";
+import { phaseIndex, phaseMeta, phasesForTrack } from "../narrative";
 import {
   ARC_TX,
   buildActivity,
@@ -34,6 +34,7 @@ import type {
   Job,
   LogType,
   NarrativePhaseId,
+  NarrativeTrack,
   ScenarioId,
   WardAdapter,
   WardSnapshot,
@@ -56,14 +57,20 @@ type IncidentSpec = {
   diagnose1: string;
   diagnose2: string;
   remoteAction: string; // ACTION: attempted remote fix
-  remoteFail: string; // RESULT: remote fix failed
+  remoteFail: string; // RESULT: remote fix failed (L3 path)
   escalate: string; // DIAGNOSE: escalate to human
   fixSubmitted: string; // RESULT: tech submitted fix
   recoverMonitor: string; // MONITOR: telemetry recovering
   evaluatorConfirm: string; // DIAGNOSE: evaluator read endpoint
-  // Plain-language "what + why" caption shown big on the phase stepper, one per
-  // narrative act, so a first-time viewer can follow the story.
-  captions: Record<NarrativePhaseId, string>;
+  // L1 self-fix path: when selfFix is true, the remote action SUCCEEDS and the
+  // incident resolves with no human, no escrow, no spend.
+  selfFix?: boolean;
+  remoteSuccess?: string; // RESULT: remote fix worked
+  selfFixResolved?: string; // RESOLVED: self-fixed at L1
+  // Plain-language "what + why" caption shown big on the phase HUD, per act.
+  // Hire track fills detect/diagnose/hire/repair/verify; self-fix track fills
+  // detect/diagnose/selffixed.
+  captions: Partial<Record<NarrativePhaseId, string>>;
 };
 
 const INCIDENTS: Record<string, IncidentSpec> = {
@@ -131,17 +138,18 @@ const INCIDENTS: Record<string, IncidentSpec> = {
     recoverMonitor: "Device telemetry recovering · home-wifi back online · signal -57dBm",
     evaluatorConfirm:
       "Evaluator (Chainlink CRE) read the device endpoint · online === true · faultMode === none · confirming submission",
+    selfFix: true,
+    remoteSuccess:
+      "Remote reboot SUCCEEDED · link up · DHCP lease renewed · WiFi back online · signal -57dBm",
+    selfFixResolved:
+      "Resolved at L1 · home-wifi self-fixed by remote reboot · no human, no escrow, no spend",
     captions: {
       detect:
         "WARD's routine sweep finds the WiFi router dark, three missed heartbeats in a row.",
       diagnose:
-        "The link is down with no DHCP lease. WARD issues a remote reboot, the free fix, but the router stays dark. The fault is hardware.",
-      hire:
-        "WARD ranks network techs by reputation via ENS and locks 75 USDC in an Arc escrow for the top one, no human in the loop.",
-      repair:
-        "The tech accepts the job, arrives, and replaces the router line. The device comes back online.",
-      verify:
-        "A Chainlink oracle confirms the router is back online and the escrow releases the 75 USDC.",
+        "Link down, no DHCP lease. WARD tries the free fix first: a remote reboot of the router.",
+      selffixed:
+        "The reboot worked. The router is back online. Fixed at L1 in software: no human, no escrow, no spend. This is the everyday case.",
     },
   },
   // ── Smart thermostat ────────────────────────────────────────────────────
@@ -265,15 +273,17 @@ function setNarrative(
   id: NarrativePhaseId,
   done = false,
 ) {
-  const meta = phaseMeta(id);
+  const track: NarrativeTrack = spec.selfFix ? "selffix" : "hire";
+  const meta = phaseMeta(track, id);
   s.snapshot = {
     ...s.snapshot,
     narrative: {
       id,
-      index: phaseIndex(id),
-      total: NARRATIVE_TOTAL,
+      track,
+      index: phaseIndex(track, id),
+      total: phasesForTrack(track).length,
       title: meta.title,
-      caption: spec.captions[id],
+      caption: spec.captions[id] ?? "",
       onChain: meta.onChain,
       done,
     },
@@ -573,6 +583,64 @@ class MockAdapter implements WardAdapter {
     // Set ACT 1 up front so the phase stepper appears immediately (no flicker
     // back to the intro frame), then the first beat takes the device down.
     setNarrative(this.state, spec, "detect");
+
+    // L1 self-fix track (e.g. WiFi): the agent reboots remotely and it works.
+    // No job, no escrow, no worker. detect -> diagnose -> selffixed.
+    if (spec.selfFix) {
+      const beat = (at: number, fn: () => void) => {
+        const t = setTimeout(() => {
+          fn();
+          this.emit();
+        }, at);
+        this.timers.push(t);
+      };
+      beat(250, () => {
+        setProperty(this.state, spec.deviceId, {
+          online: false,
+          faultMode: "hard",
+          signalDbm: spec.faultSignalDbm,
+          uptimeSec: 0,
+        });
+        pushEvent(this.state, "MONITOR", spec.alert, { propertyId: spec.deviceId });
+      });
+      beat(2800, () => {
+        setNarrative(this.state, spec, "diagnose");
+        pushEvent(this.state, "DIAGNOSE", spec.diagnose1, { propertyId: spec.deviceId });
+      });
+      beat(4000, () =>
+        pushEvent(this.state, "DIAGNOSE", spec.diagnose2, { propertyId: spec.deviceId }),
+      );
+      beat(5200, () =>
+        pushEvent(this.state, "ACTION", spec.remoteAction, { propertyId: spec.deviceId }),
+      );
+      beat(7000, () => {
+        setProperty(this.state, spec.deviceId, {
+          online: true,
+          faultMode: "none",
+          signalDbm: spec.recoverSignalDbm,
+          uptimeSec: 30,
+        });
+        pushEvent(
+          this.state,
+          "RESULT",
+          spec.remoteSuccess ?? "Remote fix succeeded · device back online",
+          { propertyId: spec.deviceId },
+        );
+      });
+      beat(8500, () => {
+        setNarrative(this.state, spec, "selffixed", true);
+        pushEvent(
+          this.state,
+          "RESOLVED",
+          spec.selfFixResolved ?? "Self-fixed at L1 · no human, no spend",
+          { propertyId: spec.deviceId },
+        );
+        this.running = false;
+      });
+      this.emit();
+      return;
+    }
+
     const beats = incidentBeats(spec);
     for (const beat of beats) {
       const t = setTimeout(() => {

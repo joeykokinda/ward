@@ -1,9 +1,10 @@
-// The five-act story WARD tells during an incident. One source of truth for
-// the phase order, short stepper labels, big titles, and which acts are
-// on-chain — shared by the mock player (which sets the live phase) and the
-// NarrativeBar UI (which renders the stepper).
+// The story WARD tells during an incident. Two tracks: the full L3 "hire" arc
+// (5 acts, ends in an on-chain settlement) and the L1 "self-fix" arc (3 acts,
+// the agent fixes it in software, no human, no escrow). One source of truth for
+// phase order, labels, titles, on-chain flags, shared by the mock player and the
+// phase HUD.
 
-import type { NarrativePhaseId } from "./data/types";
+import type { NarrativePhaseId, NarrativeTrack } from "./data/types";
 
 export type NarrativePhaseMeta = {
   id: NarrativePhaseId;
@@ -12,6 +13,7 @@ export type NarrativePhaseMeta = {
   onChain: boolean; // escrow / settlement act
 };
 
+// L3: detect -> diagnose -> hire (escrow) -> repair -> verify (release).
 export const NARRATIVE_PHASES: NarrativePhaseMeta[] = [
   { id: "detect", label: "Detect", title: "Detect the fault", onChain: false },
   { id: "diagnose", label: "Diagnose", title: "Diagnose, try the free fix", onChain: false },
@@ -20,14 +22,28 @@ export const NARRATIVE_PHASES: NarrativePhaseMeta[] = [
   { id: "verify", label: "Verify", title: "Verify the fix, release payment", onChain: true },
 ];
 
+// L1: detect -> diagnose -> self-fixed. The agent reboots/reconfigures and the
+// device recovers; no human, no escrow, no spend.
+export const SELFFIX_PHASES: NarrativePhaseMeta[] = [
+  { id: "detect", label: "Detect", title: "Detect the fault", onChain: false },
+  { id: "diagnose", label: "Diagnose", title: "Diagnose, try the free fix", onChain: false },
+  { id: "selffixed", label: "Self-fixed", title: "Fixed in software at L1", onChain: false },
+];
+
 export const NARRATIVE_TOTAL = NARRATIVE_PHASES.length;
 
-export function phaseMeta(id: NarrativePhaseId): NarrativePhaseMeta {
-  return NARRATIVE_PHASES.find((p) => p.id === id) ?? NARRATIVE_PHASES[0];
+export function phasesForTrack(track: NarrativeTrack): NarrativePhaseMeta[] {
+  return track === "selffix" ? SELFFIX_PHASES : NARRATIVE_PHASES;
 }
 
-// 1-based position of a phase in the story.
-export function phaseIndex(id: NarrativePhaseId): number {
-  const i = NARRATIVE_PHASES.findIndex((p) => p.id === id);
+export function phaseMeta(track: NarrativeTrack, id: NarrativePhaseId): NarrativePhaseMeta {
+  const list = phasesForTrack(track);
+  return list.find((p) => p.id === id) ?? list[0];
+}
+
+// 1-based position of a phase within its track.
+export function phaseIndex(track: NarrativeTrack, id: NarrativePhaseId): number {
+  const list = phasesForTrack(track);
+  const i = list.findIndex((p) => p.id === id);
   return (i < 0 ? 0 : i) + 1;
 }

@@ -19,17 +19,32 @@ export function ActorStrip({ snapshot }: { snapshot: WardSnapshot }) {
   const amount = job ? `${formatUsdc(job.amount)} USDC` : null;
   const workerEns = job?.worker ?? null;
   const idleish = phase === "idle" || phase === "detect" || phase === "diagnose";
+  const selffix = snapshot.narrative?.track === "selffix";
 
-  const rows: ActorRow[] = [
-    { Icon: Cpu, role: "Agent", name: snapshot.agent.ensName, ...agentState(phase, done) },
-    {
-      Icon: Wrench,
-      role: "Human",
-      name: workerEns ?? (idleish ? "no one hired" : "selecting"),
-      ...humanState(phase, done, workerEns),
-    },
-    { Icon: Link2, role: "Arc chain", name: "Arc testnet", ...chainState(phase, done, amount) },
-  ];
+  // On the L1 self-fix track no human is hired and no escrow opens, so the
+  // human + chain rows stay quiet while the agent does the work.
+  const rows: ActorRow[] = selffix
+    ? [
+        { Icon: Cpu, role: "Agent", name: snapshot.agent.ensName, ...selfFixAgentState(phase, done) },
+        { Icon: Wrench, role: "Human", name: "not needed", state: "no human required", tone: "muted" },
+        {
+          Icon: Link2,
+          role: "Arc chain",
+          name: "Arc testnet",
+          state: done ? "no payment, software fix" : "no escrow needed",
+          tone: "muted",
+        },
+      ]
+    : [
+        { Icon: Cpu, role: "Agent", name: snapshot.agent.ensName, ...agentState(phase, done) },
+        {
+          Icon: Wrench,
+          role: "Human",
+          name: workerEns ?? (idleish ? "no one hired" : "selecting"),
+          ...humanState(phase, done, workerEns),
+        },
+        { Icon: Link2, role: "Arc chain", name: "Arc testnet", ...chainState(phase, done, amount) },
+      ];
 
   return (
     <div className="rounded-sm border border-border bg-surface card-shadow">
@@ -70,6 +85,21 @@ function latestCompleted(jobs: Job[]): Job | undefined {
         new Date(b.settledAtIso ?? b.createdAtIso).getTime() -
         new Date(a.settledAtIso ?? a.createdAtIso).getTime(),
     )[0];
+}
+
+function selfFixAgentState(
+  phase: NarrativePhaseId | "idle",
+  done: boolean,
+): { state: string; tone: Tone } {
+  if (done || phase === "selffixed") return { state: "self-fixed at L1", tone: "success" };
+  switch (phase) {
+    case "detect":
+      return { state: "fault detected", tone: "warn" };
+    case "diagnose":
+      return { state: "self-fixing in software", tone: "accent" };
+    default:
+      return { state: "watching the home", tone: "muted" };
+  }
 }
 
 function agentState(phase: NarrativePhaseId | "idle", done: boolean): { state: string; tone: Tone } {

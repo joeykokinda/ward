@@ -152,10 +152,16 @@ export type NarrativePhaseId =
   | "diagnose"
   | "hire"
   | "repair"
-  | "verify";
+  | "verify"
+  | "selffixed";
+
+// "hire" = the full L3 arc ending in an on-chain settlement; "selffix" = the L1
+// arc where the agent fixes it in software, no human and no escrow.
+export type NarrativeTrack = "hire" | "selffix";
 
 export type NarrativePhase = {
   id: NarrativePhaseId;
+  track: NarrativeTrack;
   index: number; // 1-based position
   total: number;
   title: string; // big phase title

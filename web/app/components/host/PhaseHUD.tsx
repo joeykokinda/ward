@@ -2,14 +2,19 @@
 
 import { Check } from "lucide-react";
 import type { NarrativePhase } from "@/lib/data/types";
-import { NARRATIVE_PHASES } from "@/lib/narrative";
+import { phasesForTrack } from "@/lib/narrative";
 
-// The chunking solution: a bottom-center heads-up display showing which of the
-// five acts WARD is in, one plain-English line, and a five-step rail. When idle
-// it reads as a calm standby. The story is carried here so the floor plan can
-// stay visual.
+// The chunking solution: a bottom-center heads-up display showing which act WARD
+// is in, one plain-English line, and the step rail for the current track (the L3
+// hire arc, or the shorter L1 self-fix arc). When idle it reads as a calm
+// standby. The story is carried here so the floor plan can stay visual.
 export function PhaseHUD({ narrative }: { narrative?: NarrativePhase | null }) {
   const active = narrative ?? null;
+  const rail = phasesForTrack(active?.track ?? "hire");
+  const doneCopy =
+    active?.track === "selffix"
+      ? "WARD fixed it in software at L1. No human, no escrow, no spend."
+      : "WARD fixed it and paid the human, autonomously. The sensor approved the payment, not a person.";
   return (
     <div className="rounded-sm border border-border bg-surface px-5 py-4 card-shadow">
       <div className="mx-auto flex max-w-3xl flex-col items-center text-center">
@@ -33,13 +38,13 @@ export function PhaseHUD({ narrative }: { narrative?: NarrativePhase | null }) {
         <p className="mt-2 min-h-[40px] max-w-2xl text-[14px] leading-relaxed text-fg">
           {active
             ? active.done
-              ? "WARD fixed it and paid the human, autonomously. The sensor approved the payment, not a person."
+              ? doneCopy
               : active.caption
-            : "All systems nominal. Trigger a fault and watch WARD detect, diagnose, hire a human, and settle on-chain."}
+            : "All systems nominal. Trigger a fault and watch WARD try the free fix first, then hire a human only if it can't."}
         </p>
 
         <ol className="mt-3 flex flex-wrap items-center justify-center gap-1.5">
-          {NARRATIVE_PHASES.map((p, i) => {
+          {rail.map((p, i) => {
             const pos = i + 1;
             const isDone = active ? active.done || pos < active.index : false;
             const isActive = active ? !active.done && pos === active.index : false;
