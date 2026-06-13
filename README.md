@@ -42,6 +42,28 @@ ERC-8183 defines a *Job*: an escrowed budget, three roles, one state machine. Th
 
 **ENS (identity and discovery).** The agent holds its own primary name `ward-agent.eth`, verified per ENSIP-25. Every worker is a subname carrying ENSIP-26 text records (skills, region, and a CAIP-10 reputation pointer to the on-chain registry). When a Job needs a Provider, the agent discovers and ranks workers through live ENS resolution: ENS is the registry, not a label on top of one, and the reputation is ENS-owned and portable. The UI resolves all of this live via `/api/ens` with zero hardcoded values.
 
+## Verifiable on-chain
+
+Both contracts are source-verified on Arc, and the demo's transaction links resolve to real `fund` and `complete` calls on the live escrow. These are screenshots from [testnet.arcscan.app](https://testnet.arcscan.app); every link is clickable in the table below.
+
+**WardEscrow, source code verified (ERC-8183 Job escrow):**
+
+![WardEscrow source-verified on Arc](docs/proof/wardescrow-verified.png)
+
+**The whole thesis in one transaction: the Evaluator calls `complete()`, which releases USDC to the worker.** No owner signature, no human approval. The release is signed by the CRE oracle address (`0xDdd0047...c038`), not the owner. The amount shows 1 USDC because live jobs are faucet-bounded on testnet; the cinematic narrates a 150 USDC dispatch, but every settlement link points to a real on-chain release like this:
+
+![complete() release transaction on Arc](docs/proof/tx-complete-release.png)
+
+**The agent (Client) funding the escrow with `fund()`:**
+
+![fund() escrow transaction on Arc](docs/proof/tx-fund-escrow.png)
+
+**WorkerRegistry, source code verified (stake + reputation):**
+
+![WorkerRegistry source-verified on Arc](docs/proof/workerregistry-verified.png)
+
+The full list of transaction hashes is in [DEMO-EVIDENCE.md](DEMO-EVIDENCE.md).
+
 ## Links
 
 | | |
