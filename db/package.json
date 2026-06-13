@@ -1,0 +1,19 @@
+{
+  "name": "@ward/db",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WARD Supabase persistence — schema migrations + canonical demo seed.",
+  "type": "module",
+  "scripts": {
+    "seed": "tsx seed/run.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,35 @@
+{
+  "name": "@ward/ens",
+  "version": "0.1.0",
+  "private": true,
+  "description": "WARD ENS identity layer — ENSIP-25 agent verification + ENSIP-26 agent text records, live resolution and worker-subname discovery on Sepolia (viem).",
+  "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./resolve": "./src/resolve.ts",
+    "./records": "./src/records.ts",
+    "./verify": "./src/verify.ts",
+    "./subnames": "./src/subnames.ts",
+    "./discover": "./src/discover.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "ens": "tsx src/cli.ts",
+    "resolve": "tsx src/cli.ts resolve",
+    "records": "tsx src/cli.ts records",
+    "verify": "tsx src/cli.ts verify",
+    "mint-subname": "tsx src/cli.ts mint-subname",
+    "discover": "tsx src/cli.ts discover"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}
