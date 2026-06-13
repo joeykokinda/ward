@@ -1,6 +1,6 @@
 # WARD — STATUS (resume here)
 
-**Last updated: 2026-06-13.** Single source of truth for current state. To resume: read this, then `README.md` / `INTEGRATION.md` / `DEMO-EVIDENCE.md`.
+**Last updated: 2026-06-13.** Single source of truth for current state. To resume: read this, then `README.md` / `docs/INTEGRATION.md` / `DEMO-EVIDENCE.md`.
 
 ## TL;DR
 Both anchor bounties are proven on real infra. Frontend is live (mock mode). Two user actions remain to fully wire the live demo: (1) flip the `brach` agent to live chain, (2) ENS subname owner key. Everything is committed/pushed to `github.com/joeykokinda/ward` (main).
@@ -11,9 +11,9 @@ Both anchor bounties are proven on real infra. Frontend is live (mock mode). Two
 | Frontend (Vercel, **v2 light UI live**, mock mode) | https://web-nine-ashen-75.vercel.app |
 | Sim (brach, public) | https://brach.taild3399f.ts.net |
 | Agent SSE (brach, public, **DRY**) | https://brach.taild3399f.ts.net:8443 |
-| Arc JobEscrow | `0x5585487A2EbabbE72406b72d5278dDFc5Ed706d8` |
-| Arc WorkerRegistry | `0xc59fabC06Cd268F826a905Cc13eD232a90A79CAc` |
-| Arc CreVerifier (MockCreVerifier) | `0x985e4CCEb3ff73C60b3F9FbF2044B4cF394b267A` |
+| Arc WardEscrow (ERC-8183) | `0xe118A51B105DF46F54AE4Fb01a1EF43F6a8dE5D8` |
+| Arc WorkerRegistry | `0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4` |
+| Arc Evaluator | `0xDdd0047d0664235998791fe2163Bb9b31c2Fc038` |
 | Arc USDC (native, 6dp, also gas) | `0x3600000000000000000000000000000000000000` |
 | Agent/deployer wallet (~18 USDC) | `0xDCe59831DbA9Ea1B097Ef3f16993667D756bAea4` |
 | Worker `mike.ward-agent.eth` | `0x6d7Bc6A9Ce537950a878A97E9669B48305B0f033` |
@@ -22,7 +22,7 @@ Both anchor bounties are proven on real infra. Frontend is live (mock mode). Two
 | CRE Arc forwarder / chain-selector | `0x76c9…E62` / `3034092155422581607` |
 
 ## Bounty status
-- **Arc (USDC conditional escrow)** — ✅ PROVEN: full lifecycle settled on-chain (DEMO-EVIDENCE.md, settle tx `0x4e3d320e…`). Architecture diagram in ARCHITECTURE.md.
+- **Arc (USDC conditional escrow, ERC-8183)** — ✅ PROVEN: full ERC-8183 lifecycle settled on-chain (DEMO-EVIDENCE.md, complete tx `0x0cf9c5a6…`). Architecture diagram in ARCHITECTURE.md.
 - **Chainlink CRE** — ✅ EVIDENCE: `cre workflow simulate --target local-simulation-settings` green against the live sim → dry-run WriteReport → settled (cre/sim-output-live.txt). Live-DON deploy optional (Chainlink deploys qualifying sims).
 - **ENS (AI agents, ENSIP-25/26)** — 🟡 PARTIAL: name registered; `packages/ens` implements ENSIP-25 verify + ENSIP-26 records + dry-run subname mint; live subname minting blocked on owner key (below). HARD GATE: present at ENS booth Sunday AM.
 
@@ -43,7 +43,7 @@ Both anchor bounties are proven on real infra. Frontend is live (mock mode). Two
 2. **ENS on Sepolia (decided 2026-06-13: use a name I control).** rex's registered `ward-agent.eth` is NOT on mainnet/Sepolia L1 (verified; likely ENS v2/L2) — so we're doing the ENS bounty on **Sepolia with the deployer wallet** instead (seed not needed; seed-derived key deleted). `ward-agent.eth` is available on Sepolia → register it there + mint worker subnames + ENSIP-25/26 records. **BLOCKER: Sepolia ETH** — fund controller `0xDCe59831DbA9Ea1B097Ef3f16993667D756bAea4` (currently 0) via a Sepolia faucet (~0.05 ETH covers registration + subname mints). Then Claude registers + mints + wires live resolution.
 
 ## PENDING — UI redesign (rex feedback 2026-06-13)
-- Current frontend is "slop": too many colors + too many elements on screen, not soothing/calm. **Make it cleaner**: shrink the in-use palette (most text → fg/muted; reserve amber for money/active, green/red for status only; drop the rainbow of per-log-type colors to ~2-3), add whitespace/breathing room, reduce simultaneous dense panels, calmer hierarchy. Keep mission-control identity but restrained (Bloomberg calm, not arcade). Then redeploy to Vercel. See DESIGN.md "Restraint pass".
+- Current frontend is "slop": too many colors + too many elements on screen, not soothing/calm. **Make it cleaner**: shrink the in-use palette (most text → fg/muted; reserve amber for money/active, green/red for status only; drop the rainbow of per-log-type colors to ~2-3), add whitespace/breathing room, reduce simultaneous dense panels, calmer hierarchy. Keep mission-control identity but restrained (Bloomberg calm, not arcade). Then redeploy to Vercel. See docs/DESIGN.md "Restraint pass".
 
 ## PENDING — Claude does (after #1 / autonomous)
 - After brach is LIVE: redeploy frontend live → `cd web && pnpm dlx vercel@latest deploy --prod --yes --scope speks-projects-7a61d7b1 --token $VERCEL_TOKEN` with env `NEXT_PUBLIC_DATA_ADAPTER=live`, `NEXT_PUBLIC_AGENT_URL=https://brach.taild3399f.ts.net:8443`, deployment addresses.
@@ -60,4 +60,4 @@ Both anchor bounties are proven on real infra. Frontend is live (mock mode). Two
 - Local full stack: `scripts/dev-stack.sh up`
 - Redeploy frontend: see above
 - Flip brach live: `scripts/brach-live.sh` (on brach)
-- Plans/strategy: `docs`-less now; everything is root `*.md`. Memory index: `~/.claude/projects/-home-rex-Projects-web3-EthGlobal2026/memory/MEMORY.md`.
+- Plans/strategy: judge-facing docs at root; internal docs under `docs/`. Memory index: `~/.claude/projects/-home-rex-Projects-web3-EthGlobal2026/memory/MEMORY.md`.

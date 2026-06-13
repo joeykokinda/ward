@@ -1,36 +1,42 @@
 # WARD — On-chain Evidence (Arc Testnet, chainId 5042002)
 
-Explorer: https://testnet.arcscan.app · USDC is the native gas + settlement asset (6dp).
+Explorer base: https://testnet.arcscan.app/tx/ · USDC is the native gas + settlement asset (6dp).
 
-## Contracts (live, verified wiring)
+## Contracts (current canonical deployment — ERC-8183 WardEscrow)
+
+These are the live addresses. They supersede any older addresses that may appear elsewhere.
 
 | Contract | Address |
 |---|---|
-| JobEscrow | `0x5585487A2EbabbE72406b72d5278dDFc5Ed706d8` |
-| WorkerRegistry | `0xc59fabC06Cd268F826a905Cc13eD232a90A79CAc` |
-| CreVerifier (MockCreVerifier; swaps to WardCreConsumer) | `0x985e4CCEb3ff73C60b3F9FbF2044B4cF394b267A` |
-| USDC (native Arc) | `0x3600000000000000000000000000000000000000` |
-| Agent wallet | `0xDCe59831DbA9Ea1B097Ef3f16993667D756bAea4` |
-| Worker `mike.ward-agent.eth` | `0x6d7Bc6A9Ce537950a878A97E9669B48305B0f033` |
+| WorkerRegistry | `0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4` |
+| WardEscrow (ERC-8183, keyed JobEscrow) | `0xe118A51B105DF46F54AE4Fb01a1EF43F6a8dE5D8` |
+| Evaluator | `0xDdd0047d0664235998791fe2163Bb9b31c2Fc038` |
+| USDC (native Arc, 6dp, also gas) | `0x3600000000000000000000000000000000000000` |
 
-## First live sensor-settled escrow lifecycle (job #1) — all real Arc txs
+## Live ERC-8183 lifecycle (current deployment)
 
-| Step | tx |
+Full ERC-8183 Job: Open → Funded → Submitted → Completed. All transactions on Arc testnet.
+
+| ERC-8183 step | tx hash |
 |---|---|
-| Worker approve (stake) | `0x6d51c8a9e50f15abb66083ce090733fcd56efb628436022646839b434ec8fb4e` |
-| Worker register (mike.ward-agent.eth) | `0x961828c4f26547c534f8db99e4b05a690d2af81e3c0aa17ebecae60786b33291` |
-| Worker stake 1 USDC | `0xc3b8f6c82f31f707dd77e26f9d67e36c550cc4dec9f549a9f86a91be8d7fd842` |
-| Agent approve escrow | `0x36e87dbe37cf03065906add436e294ef218dcd18eab0ce6abe46caf6389fb488` |
-| **createJob** (escrow 1 USDC) | `0x34081641789da06ada6856c4f8153cc696a28d23efca71b70dd84ee3ab64091c` |
-| acceptJob | `0x26a99e8c00a79e71213ed814cb961984b28cbe4b1b00465d36b7ee4f511d2561` |
-| markWorkDone | `0x97dbe3032f9f37a4e71e208590f40c80d6190bacb8fa42d5c2562d0ce68bcbb8` |
-| **settle** (attested healthy → release) | `0x4e3d320ee9d2c4644be6caaed1fe4e1785c92ef57483b64429f8a497d34cb1cc` |
+| createJob | [`0xe65a7352007bf269874f4bf83e138c67d29d24d9009facd083af296cbcebf217`](https://testnet.arcscan.app/tx/0xe65a7352007bf269874f4bf83e138c67d29d24d9009facd083af296cbcebf217) |
+| setBudget | [`0xb4875473ae81ba87b4a9424bf9c8ac743a02a69efea8d4601ab0e0cd44542bd4`](https://testnet.arcscan.app/tx/0xb4875473ae81ba87b4a9424bf9c8ac743a02a69efea8d4601ab0e0cd44542bd4) |
+| fund | [`0x1afb161733819d2004d24d10bf13312ba941e91394e9f3463a90df2240e01ea0`](https://testnet.arcscan.app/tx/0x1afb161733819d2004d24d10bf13312ba941e91394e9f3463a90df2240e01ea0) |
+| submit | [`0x48d22cd077f7e32670a2589e977991a6917b511f3cc6c515449f72065360827a`](https://testnet.arcscan.app/tx/0x48d22cd077f7e32670a2589e977991a6917b511f3cc6c515449f72065360827a) |
+| complete (Evaluator attests, USDC releases) | [`0x0cf9c5a691225575de86937491fb6ae577c1f3e2b7a49959104a6c3a6084cb8d`](https://testnet.arcscan.app/tx/0x0cf9c5a691225575de86937491fb6ae577c1f3e2b7a49959104a6c3a6084cb8d) |
 
-Post-state (via `cast`): `jobState(1) == 4` (Settled), `reputationOf(worker) == 1`, USDC released to worker, escrow drained. **Proof-of-physical-work settlement, end-to-end, on Arc.**
+**Proof-of-Physical-Work settlement, end-to-end, on Arc. ERC-8183 implemented.**
 
 ## Chainlink CRE — qualifying simulation (GREEN)
 
-`cre workflow simulate ./workflow --target local-simulation-settings` fetched the live sim `https://brach.taild3399f.ts.net/device/prop-2-router/status`, computed `healthy=true`, ran identical-consensus, and produced `EVM Chain WriteReport Dry-Run Successful` → `settled jobId=1`. Arc chain-selector `3034092155422581607`. Full log: `cre/sim-output-live.txt`.
+`cre workflow simulate ./workflow --target local-simulation-settings` fetched the live sim `https://brach.taild3399f.ts.net/device/prop-2-router/status`, computed `healthy=true`, ran identical-consensus, and produced `EVM Chain WriteReport Dry-Run Successful` → settled. Arc chain-selector `3034092155422581607`. Full log: `cre/sim-output-live.txt`.
+
+## ENS (Sepolia)
+
+- Agent primary name: `ward-agent.eth`
+- Worker subnames: `mike.ward-agent.eth` (and others)
+- ENSIP-26 text records: skills, region, reputation pointer per worker subname
+- ENSIP-25 agent name verification: wired
 
 ## Backend (always-on, public)
 
