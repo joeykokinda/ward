@@ -22,6 +22,12 @@ remaining live-only items tracked under **Open**.
 
 ## LIVE STATE (2026-06-13)
 
+- **Frontend LIVE on Vercel: https://web-nine-ashen-75.vercel.app** (project `web` under team `speks-projects-7a61d7b1`; deployed via token, mock-adapter mode — the scripted incident player works backend-free, HTTP 200, title "WARD · mission control"). Redeploy: `cd web && pnpm dlx vercel@latest deploy --prod --yes --scope speks-projects-7a61d7b1 --token $VERCEL_TOKEN`.
+- **Contracts LIVE on Arc + first job settled on-chain** — see DEMO-EVIDENCE.md (settle tx 0x4e3d320e…).
+- **CRE simulation GREEN** (`--target local-simulation-settings`), evidence cre/sim-output-live.txt.
+- **To flip brach agent to LIVE chain:** run `scripts/brach-live.sh` on brach (steps in its header) → agent emits real Arc tx hashes; then redeploy web with `NEXT_PUBLIC_DATA_ADAPTER=live` + `NEXT_PUBLIC_AGENT_URL=https://brach.taild3399f.ts.net:8443`.
+
+
 - **Backend up on `brach` (always-on PC), public via Tailscale Funnel, systemd-persistent:**
   - Sim: `https://brach.taild3399f.ts.net` (CRE telemetry source; smoke-tested `/healthz` ok)
   - Agent: `https://brach.taild3399f.ts.net:8443` (SSE feed; currently **DRY mode** — rules diagnosis, in-memory chain). Flip to live by filling brach `agent/.env` (ANTHROPIC_API_KEY, ARC_RPC_URL+funded AGENT_PRIVATE_KEY, deployments, SUPABASE_*) and `systemctl --user restart ward-agent`.
