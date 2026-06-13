@@ -1,7 +1,7 @@
 "use client";
 
 import { Cpu, Link2, Wrench, type LucideIcon } from "lucide-react";
-import type { NarrativePhaseId, WardSnapshot } from "@/lib/data/types";
+import type { Job, NarrativePhaseId, WardSnapshot } from "@/lib/data/types";
 import { formatUsdc } from "@/lib/format";
 import { Dot, toneText, type Tone } from "../primitives";
 
@@ -11,7 +11,11 @@ import { Dot, toneText, type Tone } from "../primitives";
 export function ActorStrip({ snapshot }: { snapshot: WardSnapshot }) {
   const phase: NarrativePhaseId | "idle" = snapshot.narrative?.id ?? "idle";
   const done = snapshot.narrative?.done ?? false;
-  const job = snapshot.activeJob;
+  // Once the job completes, activeJob clears. Keep showing the resolved job
+  // (worker + amount) while the narrative is still on screen, so the strip
+  // doesn't degrade to "no one hired / paid".
+  const job =
+    snapshot.activeJob ?? (snapshot.narrative ? latestCompleted(snapshot.jobs) : undefined);
   const amount = job ? `${formatUsdc(job.amount)} USDC` : null;
   const workerEns = job?.worker ?? null;
 
@@ -50,6 +54,17 @@ export function ActorStrip({ snapshot }: { snapshot: WardSnapshot }) {
 }
 
 type ActorRow = { Icon: LucideIcon; role: string; name: string; state: string; tone: Tone };
+
+// Most recently settled job, so the resolved state keeps showing who got paid.
+function latestCompleted(jobs: Job[]): Job | undefined {
+  return [...jobs]
+    .filter((j) => j.state === "Completed")
+    .sort(
+      (a, b) =>
+        new Date(b.settledAtIso ?? b.createdAtIso).getTime() -
+        new Date(a.settledAtIso ?? a.createdAtIso).getTime(),
+    )[0];
+}
 
 function agentState(phase: NarrativePhaseId | "idle", done: boolean): { state: string; tone: Tone } {
   switch (phase) {

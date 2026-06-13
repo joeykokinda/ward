@@ -184,10 +184,10 @@ function LiveLegend({ incident }: { incident: Incident }) {
   return (
     <span className="flex items-center gap-2 text-[12px]">
       <span
-        className={`dot ${calm ? "bg-accent ward-live-dot" : "bg-warn ward-live-dot"}`}
+        className={`dot ward-live-dot ${calm ? "bg-success" : "bg-warn"}`}
         aria-hidden
       />
-      <span className={calm ? "text-accent-ink" : "text-warn"}>{label}</span>
+      <span className={calm ? "text-success-ink" : "text-warn"}>{label}</span>
     </span>
   );
 }

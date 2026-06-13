@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Worker, WardSnapshot } from "@/lib/data/types";
 import { Modal } from "../Modal";
 import { ActorStrip } from "./ActorStrip";
+import { AgentReasoning } from "./AgentReasoning";
 import { DeviceModal } from "./DeviceModal";
 import { FloorPlan } from "./FloorPlan";
 import { IntroOverlay } from "./IntroOverlay";
@@ -102,22 +103,25 @@ export function HostView({
       )}
 
       <div className="mx-auto w-full max-w-6xl px-5 py-5">
-        {/* stage: floor plan (hero) + actor strip / trigger panel */}
-        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.65fr_1fr]">
+        {/* presenter controls */}
+        <TriggerPanel
+          snapshot={snapshot}
+          isRunning={isRunning}
+          onTrigger={onKillDevice}
+          onReset={onReset}
+        />
+
+        {/* stage: floor plan (hero) + actors / agent thinking */}
+        <div className="mt-4 grid grid-cols-1 gap-5 lg:grid-cols-[1.5fr_1fr]">
           <FloorPlan
             snapshot={snapshot}
             onKillDevice={onKillDevice}
             onDeviceClick={(id) => setOpenDeviceId(id)}
             onWorkerClick={() => setWorkerOpen(true)}
           />
-          <div className="flex flex-col gap-5">
+          <div className="flex min-h-0 flex-col gap-5">
             <ActorStrip snapshot={snapshot} />
-            <TriggerPanel
-              snapshot={snapshot}
-              isRunning={isRunning}
-              onTrigger={onKillDevice}
-              onReset={onReset}
-            />
+            <AgentReasoning events={snapshot.events} mounted={mounted} />
           </div>
         </div>
 
@@ -126,9 +130,9 @@ export function HostView({
           <PhaseHUD narrative={snapshot.narrative} />
         </div>
 
-        {/* on-chain activity: three latest, human-readable, clickable */}
+        {/* on-chain proof: escrow created + settled, verified on Arc */}
         <div className="mt-5 pb-2">
-          <OnChainStrip activity={snapshot.activity} now={now} mounted={mounted} />
+          <OnChainStrip snapshot={snapshot} now={now} mounted={mounted} />
         </div>
       </div>
 

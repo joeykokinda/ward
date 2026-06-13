@@ -291,20 +291,21 @@ body {
   animation: ward-wrench 0.5s ease-out;
 }
 
-/* A gentle "fixed" green flash on the room when the device recovers. */
+/* A gentle "fixed" green flash on the room when the device recovers, then it
+   turns OFF (holds at opacity 0 via forwards, so the room never stays green). */
 @keyframes ward-heal-flash {
   0% {
     opacity: 0;
   }
   30% {
-    opacity: 0.45;
+    opacity: 0.4;
   }
   100% {
     opacity: 0;
   }
 }
 .ward-heal-flash {
-  animation: ward-heal-flash 1.4s ease-out;
+  animation: ward-heal-flash 1.4s ease-out forwards;
 }
 
 /* Modal / overlay backdrop + card entrance. */

@@ -10,7 +10,7 @@ const DEVICES: { id: string; label: string; Icon: LucideIcon; hero?: boolean }[]
   { id: "home-thermostat", label: "HVAC fault", Icon: Thermometer },
 ];
 
-// Presenter controls: trip any of the four devices to start an incident, or
+// Presenter control bar: trip any of the four devices to start an incident, or
 // reset to a clean pre-staged state. The leak is the hero (amber).
 export function TriggerPanel({
   snapshot,
@@ -29,39 +29,35 @@ export function TriggerPanel({
   };
 
   return (
-    <div className="rounded-sm border border-border bg-surface p-3 card-shadow">
-      <div className="flex items-center justify-between px-1 pb-2.5">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-          Trigger a fault
-        </span>
-        <button
-          onClick={onReset}
-          className="inline-flex items-center gap-1.5 rounded-sm border border-border px-2 py-1 text-[11px] font-medium text-muted transition-colors hover:bg-subtle hover:text-fg"
-        >
-          <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
-          Reset
-        </button>
-      </div>
-      <div className="grid grid-cols-2 gap-2">
-        {DEVICES.map((d) => {
-          const disabled = isRunning || faulted(d.id);
-          return (
-            <button
-              key={d.id}
-              onClick={() => onTrigger(d.id)}
-              disabled={disabled}
-              className={`inline-flex items-center justify-center gap-2 rounded-sm px-3 py-2.5 text-[12px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                d.hero
-                  ? "bg-accent text-[#0a0a0f] hover:bg-accent-hover"
-                  : "border border-border bg-subtle text-fg-soft hover:border-border-strong hover:bg-surface"
-              }`}
-            >
-              <d.Icon className="h-4 w-4" strokeWidth={2} />
-              {d.label}
-            </button>
-          );
-        })}
-      </div>
+    <div className="flex flex-wrap items-center gap-2 rounded-sm border border-border bg-surface px-3 py-2.5 card-shadow">
+      <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
+        Trigger a fault
+      </span>
+      {DEVICES.map((d) => {
+        const disabled = isRunning || faulted(d.id);
+        return (
+          <button
+            key={d.id}
+            onClick={() => onTrigger(d.id)}
+            disabled={disabled}
+            className={`inline-flex items-center gap-2 rounded-sm px-3 py-2 text-[12px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+              d.hero
+                ? "bg-accent text-[#0a0a0f] hover:bg-accent-hover"
+                : "border border-border bg-subtle text-fg-soft hover:border-border-strong hover:bg-surface"
+            }`}
+          >
+            <d.Icon className="h-4 w-4" strokeWidth={2} />
+            {d.label}
+          </button>
+        );
+      })}
+      <button
+        onClick={onReset}
+        className="ml-auto inline-flex items-center gap-1.5 rounded-sm border border-border px-3 py-2 text-[12px] font-medium text-muted transition-colors hover:bg-subtle hover:text-fg"
+      >
+        <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
+        Reset
+      </button>
     </div>
   );
 }

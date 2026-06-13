@@ -29,12 +29,12 @@ export function Identity() {
           </Cell>
           <Cell title="Agents own their identity">
             Each home or fleet runs its own agent with its own name, wallet, and
-            on-chain history. The demo agent,{" "}
-            <span className="mono text-fg-soft">ward-agent.eth</span>, is verified
-            per ENSIP-25. In production it&apos;s{" "}
-            <span className="mono text-fg-soft">agent.alice.eth</span>,{" "}
-            <span className="mono text-fg-soft">agent.helium-fleet-7.eth</span>. No
-            shared backend wallet.
+            on-chain history. We registered{" "}
+            <span className="mono text-fg-soft">agent.demo-home.eth</span> &mdash; a
+            sovereign agent under its owner&apos;s domain, live and ENSIP-25
+            verified on Sepolia &mdash; right next to the protocol agent{" "}
+            <span className="mono text-fg-soft">ward-agent.eth</span>. No shared
+            backend wallet.
           </Cell>
           <Cell title="No lock-in">
             If WARD shut down tomorrow, the worker still owns their name and their
