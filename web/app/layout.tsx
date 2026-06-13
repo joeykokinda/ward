@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -8,7 +8,10 @@ const inter = Inter({
   display: "swap",
 });
 
-const geistMono = Geist_Mono({
+// JetBrains Mono is the data/log typeface. The CSS var keeps its historical
+// name (--font-mono-geist) so every `.mono` / `var(--font-mono-geist)` usage
+// across the app picks it up with no further edits.
+const jetBrainsMono = JetBrains_Mono({
   variable: "--font-mono-geist",
   subsets: ["latin"],
   display: "swap",
@@ -21,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#fafafa",
+  themeColor: "#0a0a0f",
   width: "device-width",
   initialScale: 1,
 };
@@ -30,7 +33,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${geistMono.variable} h-full`}>
+    <html lang="en" className={`${inter.variable} ${jetBrainsMono.variable} h-full`}>
       <body className="min-h-full">{children}</body>
     </html>
   );

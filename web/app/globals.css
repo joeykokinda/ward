@@ -1,37 +1,44 @@
 @import "tailwindcss";
 
-/* WARD design tokens — v2, Profound-style. Light, calm, premium.
-   One lime accent; everything else neutral slate/gray. */
+/* WARD design tokens — dark mission-control. Near-black surfaces, hairline
+   borders, monospace data. One amber accent for money + active states, green
+   for healthy + resolved, red for alerts. Zero gradients, zero glassmorphism,
+   sharp corners (max 4px radius). */
 @theme {
   /* surfaces */
-  --color-bg: #fafafa;        /* page background */
-  --color-surface: #ffffff;   /* card / panel background */
-  --color-subtle: #f4f5f6;    /* recessed rows, inputs, chips */
-  --color-border: #e5e7eb;    /* all hairline borders */
-  --color-border-strong: #d4d8dd;
+  --color-bg: #0a0a0f;        /* page background */
+  --color-surface: #111118;   /* card / panel background */
+  --color-subtle: #16161f;    /* recessed rows, inputs, chips */
+  --color-border: #1e1e2e;    /* all hairline borders */
+  --color-border-strong: #2c2c40;
 
   /* text */
-  --color-fg: #0f172a;        /* primary text */
-  --color-fg-soft: #1e293b;   /* secondary headings / strong body */
-  --color-muted: #64748b;     /* secondary / meta text */
-  --color-faint: #94a3b8;     /* tertiary / placeholder */
+  --color-fg: #e2e8f0;        /* primary text */
+  --color-fg-soft: #cbd5e1;   /* secondary headings / strong body */
+  --color-muted: #94a3b8;     /* secondary / meta text */
+  --color-faint: #64748b;     /* tertiary / placeholder */
 
-  /* one accent */
-  --color-accent: #84cc16;        /* lime — primary actions + key highlights */
-  --color-accent-hover: #65a30d;  /* darker lime — hover */
-  --color-accent-soft: #f0fdd4;   /* lime tint background */
-  --color-accent-ink: #3f6212;    /* lime text on tint */
+  /* accent = amber — money + active states */
+  --color-accent: #f59e0b;
+  --color-accent-hover: #d97706;
+  --color-accent-soft: #2a2008;   /* dark amber tint background */
+  --color-accent-ink: #fbbf24;    /* amber text on dark */
+
+  /* success = green — healthy + resolved */
+  --color-success: #22c55e;
+  --color-success-soft: #0c2417;
+  --color-success-ink: #4ade80;
 
   /* status (used sparingly, paired with text) */
-  --color-danger: #dc2626;
-  --color-danger-soft: #fef2f2;
-  --color-warn: #b45309;
-  --color-warn-soft: #fffbeb;
+  --color-danger: #ef4444;
+  --color-danger-soft: #2a1212;
+  --color-warn: #f59e0b;
+  --color-warn-soft: #2a2008;
 
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
   --font-mono: var(--font-mono-geist), ui-monospace, "SFMono-Regular", monospace;
 
-  --radius-ward: 10px;
+  --radius-ward: 4px;
 }
 
 * {
@@ -68,16 +75,15 @@ body {
   font-feature-settings: "tnum";
 }
 
-/* Soft card shadow — tasteful, subtle. */
+/* Card shadow — on dark, separation comes from borders; the shadow is a faint
+   drop only, no glow. */
 .card-shadow {
-  box-shadow:
-    0 1px 2px 0 rgb(15 23 42 / 0.04),
-    0 1px 3px 0 rgb(15 23 42 / 0.03);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.5);
 }
 .card-shadow-lg {
   box-shadow:
-    0 4px 6px -1px rgb(15 23 42 / 0.05),
-    0 2px 4px -2px rgb(15 23 42 / 0.04);
+    0 8px 24px -6px rgb(0 0 0 / 0.7),
+    0 2px 6px -2px rgb(0 0 0 / 0.5);
 }
 
 /* Live indicator: a quiet pulse on a small accent dot. No glow. */
@@ -87,21 +93,21 @@ body {
     opacity: 1;
   }
   50% {
-    opacity: 0.35;
+    opacity: 0.3;
   }
 }
 .ward-live-dot {
   animation: ward-pulse-dot 1.8s ease-in-out infinite;
 }
 
-/* Active card: a gentle accent ring breathing, no harsh border. */
+/* Active card: a gentle amber ring breathing, no harsh border. */
 @keyframes ward-ring {
   0%,
   100% {
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 35%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 30%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 75%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-accent) 70%, transparent);
   }
 }
 .ward-active {
@@ -133,14 +139,13 @@ body {
 }
 
 /* ───────────────────────── Floor-plan hero animations ─────────────────────
-   All tuned to read on a LIGHT surface — color, motion, and soft tints, no
-   dark-glow reliance. */
+   Tuned to read on a DARK surface — saturated color, motion, soft tints. */
 
 /* Leak (HERO): blue concentric ripples expanding from the sensor. */
 @keyframes ward-ripple {
   0% {
     r: 6px;
-    opacity: 0.55;
+    opacity: 0.6;
     stroke-width: 2.5;
   }
   100% {
@@ -164,10 +169,10 @@ body {
 @keyframes ward-water-tint {
   0%,
   100% {
-    opacity: 0.22;
+    opacity: 0.18;
   }
   50% {
-    opacity: 0.42;
+    opacity: 0.4;
   }
 }
 .ward-water-tint {
@@ -181,15 +186,15 @@ body {
     opacity: 0.15;
   }
   50% {
-    opacity: 0.5;
+    opacity: 0.55;
   }
 }
 .ward-arc-out {
   animation: ward-arc-out 1.6s ease-in-out infinite;
 }
 
-/* Red alert pulse on a device (lock / generic fault). On light: a soft red
-   ring that breathes, paired with text — never color-only. */
+/* Red alert pulse on a device (lock / generic fault): a soft red ring that
+   breathes, paired with text — never color-only. */
 @keyframes ward-alert-ring {
   0%,
   100% {
@@ -225,7 +230,7 @@ body {
 @keyframes ward-healthy-breath {
   0%,
   100% {
-    opacity: 0.85;
+    opacity: 0.9;
   }
   50% {
     opacity: 0.4;
@@ -286,13 +291,13 @@ body {
   animation: ward-wrench 0.5s ease-out;
 }
 
-/* A gentle "fixed!" green flash on the room when the device recovers. */
+/* A gentle "fixed" green flash on the room when the device recovers. */
 @keyframes ward-heal-flash {
   0% {
     opacity: 0;
   }
   30% {
-    opacity: 0.5;
+    opacity: 0.45;
   }
   100% {
     opacity: 0;
@@ -302,7 +307,7 @@ body {
   animation: ward-heal-flash 1.4s ease-out;
 }
 
-/* Modal backdrop + card entrance. */
+/* Modal / overlay backdrop + card entrance. */
 @keyframes ward-fade-in {
   from {
     opacity: 0;
