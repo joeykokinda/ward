@@ -80,14 +80,14 @@ export const SEPOLIA_ENS: EnsContracts = {
 // registration is asserted as real.
 export const WARD_AGENT_REGISTRY = env(
   "WARD_AGENT_REGISTRY",
-  // Placeholder ERC-8004 registry address; replace with the real one once the
-  // agent is registered. Used only to COMPUTE the verification key, never to
-  // assert a result.
-  "0x0000000000000000000000000000000000000000",
+  // The live WARD WorkerRegistry on Arc testnet (chain 5042002). The agent's
+  // ENSIP-25 agent-registration text record on ward-agent.eth is set against
+  // this address; used to COMPUTE the verification key, never to assert a result.
+  "0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4",
 ) as Address;
 
 export const WARD_AGENT_REGISTRY_CHAIN_ID = Number(
-  env("WARD_AGENT_REGISTRY_CHAIN_ID", "11155111"),
+  env("WARD_AGENT_REGISTRY_CHAIN_ID", "5042002"),
 );
 
 export const WARD_AGENT_ID = env("WARD_AGENT_ID", "1");

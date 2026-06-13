@@ -51,11 +51,12 @@ export const SEPOLIA_ENS = {
 
 // The WARD agent root + the on-chain ENSIP-25 registration the agent attests to.
 // Defaults are the values actually written on Sepolia (read off ward-agent.eth's
-// resolver): registry 0xc59f…9CAc on Arc (chainId 5042002), agentId "1".
+// resolver): the redeployed Arc WorkerRegistry 0x2bdD…3bB4 (chainId 5042002),
+// agentId "1". (The pre-ERC-8183 registry 0xc59f…9CAc is retired.)
 export const WARD_ENS_ROOT = env("WARD_ENS_ROOT", "ward-agent.eth");
 export const WARD_AGENT_REGISTRY = env(
   "WARD_AGENT_REGISTRY",
-  "0xc59fabC06Cd268F826a905Cc13eD232a90A79CAc",
+  "0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4",
 ) as Address;
 export const WARD_AGENT_REGISTRY_CHAIN_ID = Number(
   env("WARD_AGENT_REGISTRY_CHAIN_ID", "5042002"),
