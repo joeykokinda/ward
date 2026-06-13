@@ -1,6 +1,6 @@
 {
 	"schedule": "0 */1 * * * *",
-	"statusUrl": "https://jsonplaceholder.typicode.com/todos/1",
+	"statusUrl": "https://brach.taild3399f.ts.net/device/prop-2-router/status",
 	"jobId": "1",
 	"evms": [
 		{

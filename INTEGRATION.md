@@ -20,6 +20,18 @@ remaining live-only items tracked under **Open**.
 | CRE + Arc spike | `cre/`, `spike/arc/` | done — GATE CLEARED (CRE→Arc=YES) | fba9535 |
 | ENS + Supabase | `packages/ens/`, `db/` | done, live-resolve + Postgres verified | 0f61d0a |
 
+## LIVE STATE (2026-06-13)
+
+- **Backend up on `brach` (always-on PC), public via Tailscale Funnel, systemd-persistent:**
+  - Sim: `https://brach.taild3399f.ts.net` (CRE telemetry source; smoke-tested `/healthz` ok)
+  - Agent: `https://brach.taild3399f.ts.net:8443` (SSE feed; currently **DRY mode** — rules diagnosis, in-memory chain). Flip to live by filling brach `agent/.env` (ANTHROPIC_API_KEY, ARC_RPC_URL+funded AGENT_PRIVATE_KEY, deployments, SUPABASE_*) and `systemctl --user restart ward-agent`.
+  - CRE workflow `cre/workflow/config.json` `statusUrl` now points at the live sim (`/device/prop-2-router/status`).
+- **`ward-agent.eth` registered** (ENS), owner `0x87Ab…8521`. To mint worker subnames + set ENSIP-26 records we need that owner key, OR set a wallet-we-control as ENS manager, OR rex runs `packages/ens` mint with the owner wallet. DECISION NEEDED.
+- **Arc deployer `0xDCe59831DbA9Ea1B097Ef3f16993667D756bAea4` is OURS** (key in `spike/arc/.env`), but **UNFUNDED** (0 native, 0 USDC). Faucet it (`https://faucet.circle.com` → Arc Testnet → USDC) → this is the gate for live Arc deploy.
+- **CRE auth: REQUIRED but FREE.** Tested `cre workflow simulate` (CLI v1.20.0) headless → `authentication required: not logged in and no CRE_API_KEY set`. Need either `cre login` (interactive, browser device-code) or a free `CRE_API_KEY` (app.chain.link → Account Settings). `cre workflow build` works with no auth. Simulation is the Chainlink bounty evidence bar.
+- Anthropic key received → stored in local `.env` (gitignored); also needs to go into brach `agent/.env` to flip the live agent's LLM on.
+- Vercel: accessible via MCP (team `spek's projects`). No token needed; frontend deployable on demand.
+
 ## Arc / CRE deployment facts (live-verified by spike)
 
 - Arc Testnet: RPC `https://rpc.testnet.arc.network`, **chainId 5042002**, explorer `https://testnet.arcscan.app` (Blockscout — verify with `--verifier blockscout`, no API key).
