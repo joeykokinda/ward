@@ -22,13 +22,21 @@ One Brooklyn apartment. Four smart devices: WiFi router, thermostat, smart lock,
 - At least 3 completed historical jobs in the activity feed (real Arc txs).
 - By Sunday morning: dozens of historical transactions on Arc from weekend testing — the app never looks like a fresh demo.
 
+## The escalation ladder (show both cases)
+
+WARD does not jump to hiring a human. It climbs a ladder cheapest-first: L1 self-fix in software (free, autonomous, most incidents end here), optional L2 guided remote, and L3 hire a human (escrowed, proof-settled) only when the fault is physical and software cannot resolve it. Show both ends so the agent reads as intelligent, not "always hires a human."
+
+**The WiFi self-fix (everyday case, L1).** Trigger a WiFi/router fault: the agent runs a remote reboot, the link comes back, no human, no escrow, no spend. This is the value 99% of the time.
+
+**The 2am leak (hero case, L3).** Water is the fault software almost never fixes, because the burst is upstream of any valve the agent controls, so it escalates to a plumber.
+
 ## HERO incident — the 2am leak (90 seconds)
 
 The homeowner is in Tokyo. It's 2am back home. The leak sensor triggers.
 
 1. Judge clicks **Simulate Leak** on the apartment dashboard.
-2. Agent reasoning streams: MONITOR (leak detected) → DIAGNOSE (physical leak — cannot self-fix) → ACTION (escalating to Level 3).
-3. Agent queries the worker registry via ENS, selects the highest-reputation nearby worker.
+2. Agent reasoning streams: MONITOR (leak detected) → DIAGNOSE (physical leak, L1 self-fix can't resolve it: burst is upstream of the valve) → ACTION (escalating to L3, hire a human).
+3. Agent discovers and ranks the ENS-registered workers (skill match, proximity/ETA, on-chain reputation), selects the best candidate. There is a /workers registry page in the app showing the live roster.
 4. **ERC-8183 Job created:** agent escrows **~150 USDC on Arc** as a Job with the agent as Client. Real tx hash appears with Arc explorer link. (Below the owner-approval threshold, so no sign-off needed; mention the threshold exists.)
 5. Worker view (judge's phone via QR, or second tab): job notification appears; judge accepts as Mike (mike.ward-agent.eth), marks work done.
 6. **Chainlink CRE workflow fires:** polls the leak sensor endpoint, sees moisture reading is dry, attests onchain. In ERC-8183 terms the Evaluator confirms completion.

@@ -1,6 +1,6 @@
 # WARD
 
-WARD is an autonomous agent for your home. It watches your devices, fixes what it can in software, and when it can't, it hires a verified human and pays them in USDC the moment a sensor confirms the repair is done. Nobody clicks approve. The sensor does.
+WARD is rails for an autonomous system to hire and pay a verified human for physically-verifiable work, settled on-chain. The instrumented home is the first instance, not the product: a home agent watches your devices, fixes what it can in software, and when the fault is physical it hires a verified human and pays them in USDC the moment a sensor attests the repair. Nobody clicks approve. The sensor does.
 
 It runs end to end on Arc testnet: worker identity and discovery on ENS, escrow and settlement on Arc, and the fix attested by a Chainlink CRE workflow. It is a working implementation of ERC-8183, Ethereum's Agentic Commerce standard.
 
@@ -95,6 +95,10 @@ ERC-8183 defines a *Job*: an escrowed budget, three roles, one state machine. Th
 | **Client** | The autonomous home agent. Requests the repair, funds the escrow. |
 | **Provider** | The field tech who shows up and fixes the hardware. Calls `submit`. |
 | **Evaluator** | The Chainlink CRE workflow. Reads device telemetry, attests the fix, and is the only role that calls `complete()`, which releases USDC and bumps the worker's reputation. |
+
+## The escalation ladder
+
+WARD does not jump to hiring a human. It climbs a ladder, cheapest first. **L1 self-fix** is free, instant, and autonomous: software remedies the agent runs itself (reboot, reconfigure, re-pair, cycle a relay, close a smart valve). Most incidents end here, and this is the everyday value. **L2 guided remote** is an optional scripted multi-step remediation, still no human. **L3 hire a human** is the last resort, used only when the fault is physical and software cannot resolve it: it spends money and dispatches a person, so it runs only within the owner's spending policy. In the demo a WiFi fault is fixed at L1 by a remote reboot (no human, no escrow); the 2am leak fails L1 because the burst is upstream of the valve, so it escalates to L3 and hires a plumber. That contrast is the point: the agent is intelligent, not "always hires a human." How the agent thinks (the full ladder, per-device steps, worker selection, and roadmap) is specced in [docs/AGENT-PLAYBOOK.md](docs/AGENT-PLAYBOOK.md).
 
 ## The three integrations
 

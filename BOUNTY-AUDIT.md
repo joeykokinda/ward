@@ -7,6 +7,12 @@ live audit that each of the three bounties actually works, with on-chain links.
 All network calls hit live testnets (Arc chainId 5042002, Ethereum Sepolia).
 No code or other docs were modified. Foundry 1.7.1.
 
+The live run exercises the escalation ladder, not a blind hire: the agent attempts
+the free L1 self-fix first (a remote reboot on `home-wifi`), and only after that
+fails does it escalate to L3 and hire a worker discovered + ranked via ENS. The
+timeline below records both steps (see `ACTION L1 remote restart` then `DIAGNOSE
+field tech required (L3)`).
+
 ---
 
 ## Summary table

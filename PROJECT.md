@@ -2,9 +2,9 @@
 
 ## What it is
 
-WARD is the autonomous agent for your home. It watches everything, fixes what it can, hires someone when it can't, and tells you what happened. You stop being on-call for your own house.
+WARD is rails for an autonomous system to hire and pay a verified human for physically-verifiable work, settled on-chain. The instrumented home is the first instance, not the product. As a home agent it watches your devices, fixes what it can in software, and when the fault is physical it hires a verified human, pays them on attested completion, and tells you what happened. You stop being on-call for your own house. Crypto is load-bearing only when it pays a human, which is why the real buyers are software with no bank account.
 
-It monitors instrumented devices (smart locks, thermostats, WiFi routers, leak sensors), attempts software self-fixes when something breaks, and when self-fix fails it hires a verified human worker — escrowing USDC on Arc and dispatching the highest-reputation worker discovered through ENS. Payment releases the moment device telemetry confirms the repair. Below the spending threshold the whole cycle is autonomous; above it the owner approves. The agent holds its own ENS identity; workers hold ENS subnames with onchain reputation.
+It monitors instrumented devices (smart locks, thermostats, WiFi routers, leak sensors) and climbs an escalation ladder cheapest-first: software self-fixes (reboot, reconfigure, re-pair, cycle a relay, close a valve) when something breaks, and only when the fault is physical and software cannot resolve it does it hire a verified human, escrowing USDC on Arc and dispatching the worker it discovers and ranks through ENS by skill match, proximity, and on-chain reputation. Payment releases the moment device telemetry confirms the repair. Below the spending threshold the whole cycle is autonomous; above it the owner approves. The agent holds its own ENS identity; workers hold ENS subnames with onchain reputation. Identity and reputation live on ENS, payment and proof live on-chain on Arc, so settlement is trustless and auditable instead of locked inside one vendor's cloud.
 
 ## The novel primitive
 
@@ -32,8 +32,13 @@ That one mapping unifies all three bounties: Arc is the chain the ERC-8183 Job s
 
 ## Escalation ladder
 
-- **Level 1 — self-fix (free, autonomous):** remote reboot, reconfig, re-onboard. Most incidents end here. This is the everyday value.
-- **Level 3 — hire a human (escrowed, proof-settled):** hardware fault confirmed → escrow USDC on Arc as an ERC-8183 Job → dispatch highest-reputation registered worker → telemetry recovers → CRE attests → contract releases payment, reputation increments.
+The agent climbs a ladder, cheapest first. It does not jump to hiring a human; hiring is the last resort because it spends money and dispatches a person.
+
+- **L1, self-fix (free, instant, autonomous):** software remedies the agent runs itself: reboot, reconfigure, re-pair, cycle a relay, close a smart valve. Most incidents end here. This is the everyday value.
+- **L2, guided remote (optional):** a scripted multi-step remote remediation when one action is not enough (for example a firmware reflash). Still no human.
+- **L3, hire a human (escrowed, proof-settled):** only when the fault is physical and software cannot resolve it. Confirm hardware fault, discover and rank a verified worker via ENS, escrow USDC on Arc as an ERC-8183 Job, dispatch, telemetry recovers, CRE attests, contract releases payment, reputation increments. Runs only within the owner's spending policy (per-job cap, daily cap, owner-approval threshold).
+
+In the demo a WiFi fault is fixed at L1 by a remote reboot (no human, no escrow); the 2am leak fails L1 because the burst is upstream of any valve the agent controls, so it escalates to L3 and hires a plumber. The contrast shows the agent is intelligent, not "always hires a human." Full per-device steps and worker selection are in `docs/AGENT-PLAYBOOK.md`.
 
 ## Wedge market and roadmap
 
