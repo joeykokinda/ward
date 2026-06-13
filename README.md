@@ -48,6 +48,24 @@ Both contracts are source-verified on Arc, and the demo's transaction links reso
 
 ![WorkerRegistry source-verified on Arc](docs/proof/workerregistry-verified.png)
 
+## ENS, live on Sepolia
+
+Worker identity and discovery run on real ENS, not a label on top of a database. `ward-agent.eth` carries an ENSIP-25 `agent-registration` record that verifies against the Arc WorkerRegistry. Each field tech is a subname with ENSIP-26 text records, and the agent resolves them live to discover and rank candidates. Nothing is hardcoded; the UI reads all of it through `/api/ens`. Screenshots from the ENS app on Sepolia ([sepolia.app.ens.domains](https://sepolia.app.ens.domains/ward-agent.eth)):
+
+**The agent name, with its ENSIP-25 `agent-registration` record and agent-context:**
+
+![ward-agent.eth on ENS (Sepolia)](docs/proof/ens-ward-agent.png)
+
+**The worker registry: five field techs registered as subnames of `ward-agent.eth`:**
+
+![ward-agent.eth subnames on ENS](docs/proof/ens-ward-subnames.png)
+
+**A worker's ENSIP-26 records: skills, region, role, and a reputation pointer:**
+
+![mike.ward-agent.eth records on ENS](docs/proof/ens-mike-records.png)
+
+That reputation record is a CAIP-10 pointer, `eip155:5042002:0x2bdD...3bB4/reputationOf/0xA395...dECE`. ENS holds the portable identity; the Arc WorkerRegistry holds the live reputation. The agent reads the ENS record to find the worker, follows the pointer to read reputation on-chain, and ranks by skill match plus score. That is how a worker's reputation stays ENS-owned and portable while remaining on-chain and tamper-evident: another agent network could read the same records tomorrow and hire the same person, no re-signup.
+
 ## The homeowner is the demo. The customer is software.
 
 The homeowner is the demo because the pain is visceral: it's 2am, you're asleep in a hotel in Tokyo, and the leak sensor in your Brooklyn apartment just tripped. WARD can't fix water with a reboot, so it discovers and hires Mike (`mike.ward-agent.eth`), escrows USDC on Arc, and dispatches him. Mike fixes the leak, the moisture sensor reads dry, a Chainlink CRE workflow attests it on-chain, and the escrow releases. You slept through the whole thing.
