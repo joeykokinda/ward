@@ -62,9 +62,15 @@ function tone(type: string): string {
   return "text-faint";
 }
 
+// brach emits the explorer URL with a bare 64-hex hash (no 0x); arcscan returns
+// 422 without the prefix, so normalize it.
+function normalizeTxUrl(url: string): string {
+  return url.replace(/\/tx\/(?!0x)([0-9a-fA-F]{64})\b/, "/tx/0x$1");
+}
+
 function shortHashFromUrl(url: string): string {
-  const h = url.split("/").pop() ?? url;
-  return h.length > 16 ? `${h.slice(0, 10)}…${h.slice(-6)}` : h;
+  const h = normalizeTxUrl(url).split("/").pop() ?? url;
+  return h.length > 18 ? `${h.slice(0, 10)}…${h.slice(-6)}` : h;
 }
 
 export default function LivePage() {
@@ -250,7 +256,7 @@ export default function LivePage() {
                     <p className="mt-0.5 text-[13px] leading-relaxed text-fg-soft">{e.message}</p>
                     {e.txHash && (
                       <a
-                        href={e.txHash}
+                        href={normalizeTxUrl(e.txHash)}
                         target="_blank"
                         rel="noreferrer"
                         title="Verified on arcscan · click to open"

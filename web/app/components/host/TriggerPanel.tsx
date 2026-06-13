@@ -1,6 +1,15 @@
 "use client";
 
-import { Droplet, Lock, RotateCcw, Thermometer, WifiOff, type LucideIcon } from "lucide-react";
+import Link from "next/link";
+import {
+  ArrowRight,
+  Droplet,
+  Lock,
+  RotateCcw,
+  Thermometer,
+  WifiOff,
+  type LucideIcon,
+} from "lucide-react";
 import type { WardSnapshot } from "@/lib/data/types";
 
 const DEVICES: { id: string; label: string; Icon: LucideIcon; hero?: boolean }[] = [
@@ -51,13 +60,23 @@ export function TriggerPanel({
           </button>
         );
       })}
-      <button
-        onClick={onReset}
-        className="ml-auto inline-flex items-center gap-1.5 rounded-sm border border-border px-3 py-2 text-[12px] font-medium text-muted transition-colors hover:bg-subtle hover:text-fg"
-      >
-        <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
-        Reset
-      </button>
+      <div className="ml-auto flex items-center gap-2">
+        <Link
+          href="/live"
+          className="inline-flex items-center gap-1.5 rounded-sm border border-success/50 bg-success-soft px-3 py-2 text-[12px] font-semibold text-success-ink transition-colors hover:bg-surface"
+        >
+          <span className="dot bg-success ward-live-dot" aria-hidden />
+          Run it live
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
+        </Link>
+        <button
+          onClick={onReset}
+          className="inline-flex items-center gap-1.5 rounded-sm border border-border px-3 py-2 text-[12px] font-medium text-muted transition-colors hover:bg-subtle hover:text-fg"
+        >
+          <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
+          Reset
+        </button>
+      </div>
     </div>
   );
 }

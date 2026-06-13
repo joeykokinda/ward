@@ -9,7 +9,8 @@ It runs end to end on Arc testnet: worker identity and discovery on ENS, escrow 
 | | |
 |---|---|
 | Live homepage | https://web-nine-ashen-75.vercel.app |
-| Live demo (cinematic) | https://web-nine-ashen-75.vercel.app/demo |
+| **Live agent (real, runs end-to-end on Arc)** | **https://web-nine-ashen-75.vercel.app/live** |
+| Demo (scripted cinematic / narrated walkthrough) | https://web-nine-ashen-75.vercel.app/demo |
 | Demo video | (link added on submission) |
 | GitHub (open source) | https://github.com/joeykokinda/ward |
 | WardEscrow (ERC-8183, source-verified) | https://testnet.arcscan.app/address/0xe118A51B105DF46F54AE4Fb01a1EF43F6a8dE5D8 |
@@ -22,9 +23,13 @@ It runs end to end on Arc testnet: worker identity and discovery on ENS, escrow 
 
 Arc network: chainId `5042002`, RPC `https://rpc.testnet.arc.network`, explorer `https://testnet.arcscan.app`. CRE: chain-selector `3034092155422581607`, forwarder `0x76c9cf548b4179F8901cda1f8623568b58215E62`.
 
-## See it run
+## Run it live (the real agent)
 
-A 2am leak, the owner asleep in Tokyo. WARD detects it, fails the free remote fix, hires a plumber via ENS, locks USDC escrow on Arc, and releases payment when a Chainlink CRE workflow confirms the sensor reads dry. About 27 seconds, every step on-chain. [Watch the live demo.](https://web-nine-ashen-75.vercel.app/demo)
+[**`/live`**](https://web-nine-ashen-75.vercel.app/live) is the real WARD agent, not a script. Trigger any fault and the agent reacts on its own loop: it diagnoses with Claude, tries the free Level-1 fix, and when that fails it opens and funds a real USDC escrow on Arc, dispatches a worker, and the Chainlink CRE evaluator releases payment when telemetry attests the fix. The whole loop settles in about 10 seconds, with real, clickable transactions. Amounts are faucet-bounded (1 USDC). The page proxies the agent server-side, so the on-chain settlement is genuinely live.
+
+## See it run (scripted walkthrough)
+
+The same flow as a narrated cinematic: a 2am leak, the owner asleep in Tokyo. WARD detects it, fails the free remote fix, hires a plumber via ENS, locks USDC escrow on Arc, and releases payment when a Chainlink CRE workflow confirms the sensor reads dry. About 27 seconds, every step on-chain. [Watch the scripted demo.](https://web-nine-ashen-75.vercel.app/demo)
 
 ![WARD demo: escrow locked on Arc, worker dispatched, ENS and on-chain badges firing](web/public/shots/arc.png)
 

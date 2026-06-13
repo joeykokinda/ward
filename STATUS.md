@@ -9,13 +9,14 @@ WARD is judge-ready. **All three bounties (Chainlink CRE · Arc · ENS) material
 
 **Roadmap (one line, not the pitch).** The same rails scale from the home to property managers, DePIN fleets, and DAO treasuries; hardware sensor devices are a later step.
 
-Frontend live on Vercel; backend live on `brach`. **Frontend is now a two-page dark mission-control build: homepage at `/` (single-scroll explainer) + cinematic at `/demo` (5-phase HUD, actor strip, walking ENS-labeled worker, human-readable on-chain strip).** What's left is human-only: record the video, ENS Sunday booth, rotate the chat-exposed keys.
+Frontend live on Vercel; backend live on `brach`. **THE JUDGE DEMO IS NOW `/live`: the real agent, end-to-end.** A judge clicks a fault and the real brach agent diagnoses (Claude), tries L1, funds a real USDC escrow on Arc, dispatches a worker, and the CRE evaluator releases payment, all in ~10s with clickable real txns. Verified end-to-end through the deployed Vercel proxy on 2026-06-13 (Job #5 settled). `/live` proxies brach via server-side routes (`/api/live/*`) to avoid CORS. `/demo` is the scripted narrated walkthrough of the same flow (reliable fallback); `/` is the homepage. What's left is human-only: record the video, ENS Sunday booth, rotate the chat-exposed keys.
 
 ## Live endpoints / addresses
 | Thing | Value |
 |---|---|
-| Live homepage (Vercel, dark single-scroll explainer) | https://web-nine-ashen-75.vercel.app |
-| Live demo cinematic (mock cinematic + live ENS + real Arc tx links) | https://web-nine-ashen-75.vercel.app/demo |
+| Live homepage (Vercel) | https://web-nine-ashen-75.vercel.app |
+| **Live agent (REAL, judge demo, real Arc txns)** | **https://web-nine-ashen-75.vercel.app/live** |
+| Demo (scripted cinematic walkthrough) | https://web-nine-ashen-75.vercel.app/demo |
 | Repo | https://github.com/joeykokinda/ward |
 | Backend sim (brach, Tailscale Funnel) | https://brach.taild3399f.ts.net |
 | Backend agent SSE (brach, LIVE on ERC-8183) | https://brach.taild3399f.ts.net:8443 |

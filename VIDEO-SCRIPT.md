@@ -53,6 +53,12 @@ WARD climbs a ladder: it self-fixes for free at L1, and only hires a human at L3
 `[~1:45 DO]` Gesture to the on-chain proof panel and the persistent legend + proof links at the bottom.
 `[SAY]` "Every step maps to one system. ERC-8183 is the standard: WARD is the Client, Mike the Provider, the Chainlink workflow the Evaluator. Arc is the settlement rail. ENS is the identity. The proof for every step is one click away, right here."
 
+### ~2:05 to 2:15 · Prove it's real (the live agent)
+This is the slideshow-killer. The walkthrough above is narrated; now show the real thing.
+`[DO]` Open `/live` and click **Trigger leak**.
+`[SAY]` "And that was the narrated version. This is the real agent, no script. Watch: it diagnoses, tries the free fix, funds a real escrow on Arc, dispatches a worker, and the Chainlink evaluator releases payment. About ten seconds, real transactions, any hash is clickable."
+`[~10s ON SCREEN]` The real reasoning streams in and the real fund + release txns appear, clickable to arcscan. Amounts are 1 USDC (faucet-bounded), say so plainly.
+
 ### 2:15 to 2:45 · Why crypto (honest)
 `[SAY]` "The homeowner is the demo because every judge has felt 2am home panic. But the real customer is software with no bank account. For one homeowner paying a local plumber, traditional payment rails work fine, credit cards, ACH, Venmo. The crypto matters when the buyer is a smart contract: a DePIN network paying the humans who service its hardware, an autonomous DAO, an AI agent treasury. Those literally can't open a bank account. WARD is the rails for them."
 
