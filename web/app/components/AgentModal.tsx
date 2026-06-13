@@ -88,6 +88,19 @@ export function AgentModal({
 
       <div className="mt-5">
         <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted">
+          How the agent runs
+        </div>
+        <div className="divide-y divide-border overflow-hidden rounded-sm border border-border">
+          <StackRow label="Runtime" value="Purpose-built Python agent, asyncio control loop, no framework" />
+          <StackRow label="Reasoning" value="Claude via the Anthropic SDK, structured JSON output + extended thinking" />
+          <StackRow label="On-chain" value="web3.py, opens + funds the ERC-8183 escrow on Arc" />
+          <StackRow label="Discovery" value="ENS resolution, finds + ranks workers by on-chain reputation" />
+          <StackRow label="Settlement" value="Chainlink CRE attests telemetry, releases the escrow" />
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <div className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted">
           Action history · Arc · chain {deployment.chainId}
         </div>
         <div className="overflow-hidden rounded-xl border border-border">
@@ -124,6 +137,17 @@ export function AgentModal({
           })}
         </div>
       </div>
+    </div>
+  );
+}
+
+function StackRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start gap-3 px-3.5 py-2.5">
+      <span className="w-[72px] flex-none text-[11px] font-medium uppercase tracking-wide text-muted">
+        {label}
+      </span>
+      <span className="text-[12px] leading-snug text-fg-soft">{value}</span>
     </div>
   );
 }
