@@ -10,7 +10,13 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import type { DeviceKind, PropertyStatus, WardSnapshot, Worker } from "@/lib/data/types";
+import type {
+  DeviceKind,
+  NarrativePhase,
+  PropertyStatus,
+  WardSnapshot,
+  Worker,
+} from "@/lib/data/types";
 import {
   avatarTarget,
   deriveIncident,
@@ -91,7 +97,13 @@ export function FloorPlan({
     <section className="flex min-h-0 flex-col rounded-xl border border-border bg-surface card-shadow">
       <header className="flex items-center justify-between gap-2 border-b border-border px-4 py-3">
         <h2 className="text-[13px] font-semibold text-fg-soft">Apartment · Brooklyn, NY</h2>
-        <LiveLegend incident={incident} />
+        <LiveLegend
+          narrative={snapshot.narrative}
+          incident={incident}
+          anyFault={snapshot.properties.some(
+            (p) => p.device.faultMode !== "none" || !p.device.online,
+          )}
+        />
       </header>
       <div className="min-h-0 flex-1 p-3 sm:p-4">
         <svg
@@ -169,24 +181,51 @@ export function FloorPlan({
   );
 }
 
-function LiveLegend({ incident }: { incident: Incident }) {
-  const label =
-    incident.phase === "idle"
-      ? "All systems nominal"
-      : incident.phase === "dispatched"
+function LiveLegend({
+  narrative,
+  incident,
+  anyFault,
+}: {
+  narrative?: NarrativePhase | null;
+  incident: Incident;
+  anyFault: boolean;
+}) {
+  // The narrative is set the moment an incident begins (before the escrow job
+  // exists), so prefer it; fall back to the avatar walk phase and raw fault.
+  let label: string;
+  let calm = false;
+  if (narrative?.done) {
+    label = "Resolved · all nominal";
+    calm = true;
+  } else if (narrative) {
+    label =
+      narrative.id === "detect"
+        ? "Fault detected"
+        : narrative.id === "diagnose"
+          ? "Diagnosing"
+          : narrative.id === "hire"
+            ? "Hiring a tech"
+            : narrative.id === "repair"
+              ? "Repair in progress"
+              : "Verifying the fix";
+  } else if (incident.phase !== "idle") {
+    label =
+      incident.phase === "dispatched"
         ? "Escrow funded · tech selected"
         : incident.phase === "enroute"
           ? "Tech en route"
           : incident.phase === "fixing"
             ? "Repair in progress"
             : "Resolving";
-  const calm = incident.phase === "idle";
+  } else if (anyFault) {
+    label = "Fault detected";
+  } else {
+    label = "All systems nominal";
+    calm = true;
+  }
   return (
     <span className="flex items-center gap-2 text-[12px]">
-      <span
-        className={`dot ward-live-dot ${calm ? "bg-success" : "bg-warn"}`}
-        aria-hidden
-      />
+      <span className={`dot ward-live-dot ${calm ? "bg-success" : "bg-warn"}`} aria-hidden />
       <span className={calm ? "text-success-ink" : "text-warn"}>{label}</span>
     </span>
   );

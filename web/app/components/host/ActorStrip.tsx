@@ -11,17 +11,23 @@ import { Dot, toneText, type Tone } from "../primitives";
 export function ActorStrip({ snapshot }: { snapshot: WardSnapshot }) {
   const phase: NarrativePhaseId | "idle" = snapshot.narrative?.id ?? "idle";
   const done = snapshot.narrative?.done ?? false;
-  // Once the job completes, activeJob clears. Keep showing the resolved job
-  // (worker + amount) while the narrative is still on screen, so the strip
-  // doesn't degrade to "no one hired / paid".
-  const job =
-    snapshot.activeJob ?? (snapshot.narrative ? latestCompleted(snapshot.jobs) : undefined);
+  // The live job once the escrow exists. After completion activeJob clears, so
+  // in the resolved state fall back to the just-settled job (to keep showing who
+  // got paid). Do NOT fall back mid-incident: before the escrow is funded there
+  // is no job yet, and pulling a historical job would show the wrong worker.
+  const job = snapshot.activeJob ?? (done ? latestCompleted(snapshot.jobs) : undefined);
   const amount = job ? `${formatUsdc(job.amount)} USDC` : null;
   const workerEns = job?.worker ?? null;
+  const idleish = phase === "idle" || phase === "detect" || phase === "diagnose";
 
   const rows: ActorRow[] = [
     { Icon: Cpu, role: "Agent", name: snapshot.agent.ensName, ...agentState(phase, done) },
-    { Icon: Wrench, role: "Human", name: workerEns ?? "no one hired", ...humanState(phase, done) },
+    {
+      Icon: Wrench,
+      role: "Human",
+      name: workerEns ?? (idleish ? "no one hired" : "selecting"),
+      ...humanState(phase, done, workerEns),
+    },
     { Icon: Link2, role: "Arc chain", name: "Arc testnet", ...chainState(phase, done, amount) },
   ];
 
@@ -83,10 +89,16 @@ function agentState(phase: NarrativePhaseId | "idle", done: boolean): { state: s
   }
 }
 
-function humanState(phase: NarrativePhaseId | "idle", done: boolean): { state: string; tone: Tone } {
+function humanState(
+  phase: NarrativePhaseId | "idle",
+  done: boolean,
+  workerEns: string | null,
+): { state: string; tone: Tone } {
   switch (phase) {
     case "hire":
-      return { state: "selected", tone: "accent" };
+      return workerEns
+        ? { state: "selected", tone: "accent" }
+        : { state: "selecting via ENS", tone: "accent" };
     case "repair":
       return { state: "on site", tone: "accent" };
     case "verify":
@@ -101,16 +113,17 @@ function chainState(
   done: boolean,
   amount: string | null,
 ): { state: string; tone: Tone } {
-  const amt = amount ?? "USDC";
   switch (phase) {
     case "hire":
-      return { state: `escrow locked: ${amt}`, tone: "accent" };
+      return amount
+        ? { state: `escrow locked: ${amount}`, tone: "accent" }
+        : { state: "locking escrow", tone: "accent" };
     case "repair":
-      return { state: `holding ${amt}`, tone: "accent" };
+      return { state: amount ? `holding ${amount}` : "escrow held", tone: "accent" };
     case "verify":
       return done
-        ? { state: `released: ${amt}`, tone: "success" }
-        : { state: `releasing ${amt}`, tone: "accent" };
+        ? { state: amount ? `released: ${amount}` : "released", tone: "success" }
+        : { state: "releasing escrow", tone: "accent" };
     default:
       return { state: "no open escrow", tone: "muted" };
   }
