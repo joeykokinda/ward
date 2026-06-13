@@ -1,55 +1,53 @@
-# WARD — STATUS (resume here)
+# WARD — STATUS (resume anchor)
 
-**Last updated: 2026-06-13.** Single source of truth for current state. To resume: read this, then `README.md` / `docs/INTEGRATION.md` / `DEMO-EVIDENCE.md`.
+**Last updated 2026-06-13.** If you're resuming with fresh context: read this top-to-bottom, then `README.md` + `BOUNTY-AUDIT.md`. Memory index: `~/.claude/projects/-home-rex-Projects-web3-EthGlobal2026/memory/MEMORY.md`.
 
 ## TL;DR
-All three bounties are proven on real infra: ERC-8183 contract live + fully settled on Arc (56 tests), Chainlink CRE green CLI sim, ENS live on Sepolia (`ward-agent.eth` + 5 subnames, ENSIP-25/26 + CAIP-10 reputation pointers). Frontend = animated floor-plan hero in light Profound, deployed live at the Vercel URL (currently mock-data mode). Remaining: flip the live `brach` agent + frontend from mock to the live ERC-8183 contract (batched re-wire, in progress), then redeploy. Everything is committed/pushed to `github.com/joeykokinda/ward` (main).
+WARD is judge-ready. **All three bounties (Chainlink CRE · Arc · ENS) materially PASS**, plus the ETHGlobal Finalist play (the animated floor-plan hero). It's a working **ERC-8183 (Agentic Commerce)** implementation live on Arc testnet: a home agent (Client) hires a field tech (Provider), escrows USDC, and a Chainlink CRE workflow (Evaluator) releases it when device telemetry attests the fix. Frontend live on Vercel; backend live on `brach`. What's left is human-only (record video, ENS Sunday booth, rotate keys) + one in-flight UI polish.
 
 ## Live endpoints / addresses
 | Thing | Value |
 |---|---|
-| Frontend (Vercel, **floor-plan hero, light Profound**, mock-data mode) | https://web-nine-ashen-75.vercel.app |
-| Sim (brach, public) | https://brach.taild3399f.ts.net |
-| Agent SSE (brach, public, **flip to LIVE in progress**) | https://brach.taild3399f.ts.net:8443 |
-| Arc WardEscrow (ERC-8183) | `0xe118A51B105DF46F54AE4Fb01a1EF43F6a8dE5D8` |
-| Arc WorkerRegistry | `0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4` |
-| Arc Evaluator | `0xDdd0047d0664235998791fe2163Bb9b31c2Fc038` |
+| Live demo (Vercel, floor-plan hero, mock cinematic + live ENS + real Arc history) | https://web-nine-ashen-75.vercel.app |
+| Repo | https://github.com/joeykokinda/ward |
+| Backend sim (brach, Tailscale Funnel) | https://brach.taild3399f.ts.net |
+| Backend agent SSE (brach, LIVE on ERC-8183) | https://brach.taild3399f.ts.net:8443 |
+| Arc WardEscrow (ERC-8183, verified) | `0xe118A51B105DF46F54AE4Fb01a1EF43F6a8dE5D8` |
+| Arc WorkerRegistry (verified) | `0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4` |
+| Arc Evaluator (CRE oracle EOA) | `0xDdd0047d0664235998791fe2163Bb9b31c2Fc038` |
 | Arc USDC (native, 6dp, also gas) | `0x3600000000000000000000000000000000000000` |
-| Agent/deployer wallet (~18 USDC) | `0xDCe59831DbA9Ea1B097Ef3f16993667D756bAea4` |
-| ENS agent name (Sepolia, ENSIP-25 verified) | `ward-agent.eth` (register tx `0x093751c8…`) |
-| ENS worker subnames (Sepolia, ENSIP-26 + CAIP-10 rep) | `mike` / `sara` / `deon` / `lena` / `raj`.`ward-agent.eth` |
-| Worker `mike.ward-agent.eth` (Arc registry) | `0x6d7Bc6A9Ce537950a878A97E9669B48305B0f033` |
+| Agent/deployer wallet (~9.8 USDC) | `0xDCe59831DbA9Ea1B097Ef3f16993667D756bAea4` |
+| Worker `mike.ward-agent.eth` | `0xA39542BedbF17c63a6c5543Da4460DCd9bBadECE` |
+| ENS (Sepolia) | `ward-agent.eth` (ENSIP-25 verify=YES) + mike/sara/deon/lena/raj subnames |
 | Arc | chainId 5042002 · RPC https://rpc.testnet.arc.network · explorer https://testnet.arcscan.app |
-| CRE Arc forwarder / chain-selector | `0x76c9…E62` / `3034092155422581607` |
+| CRE | green sim `cre/sim-output-live.txt` · chain-selector 3034092155422581607 · forwarder 0x76c9…E62 |
 
-## Bounty status
-- **Arc (USDC conditional escrow, ERC-8183)** — ✅ PROVEN: full ERC-8183 lifecycle settled on-chain (DEMO-EVIDENCE.md, complete tx `0x0cf9c5a6…`); 56 contract tests pass. Architecture diagram in ARCHITECTURE.md.
-- **Chainlink CRE** — ✅ EVIDENCE: `cre workflow simulate --target local-simulation-settings` green against the live sim → dry-run WriteReport → settled (cre/sim-output-live.txt). Live-DON deploy optional (Chainlink deploys qualifying sims).
-- **ENS (AI agents, ENSIP-25/26)** — ✅ LIVE on Sepolia: `ward-agent.eth` registered + ENSIP-25 verified (register tx `0x093751c8…`); 5 worker subnames (mike/sara/deon/lena/raj) with ENSIP-26 text records (skills, region, reputation) + CAIP-10 reputation pointers; agent discovers + ranks workers via ENS resolution. HARD GATE: present at ENS booth Sunday AM.
+## Bounty status — all PASS (see BOUNTY-AUDIT.md for the verified run)
+- **Chainlink CRE** ✅ — green CLI simulation fetches the live device API → consensus → WriteReport that drives `complete()`. The CRE workflow IS the ERC-8183 Evaluator. (Honest: sim settle is the qualifying dry-run; on-chain `complete()` is signed by the evaluator EOA, not yet the live DON forwarder.)
+- **Arc — Advanced Stablecoin Logic** ✅ — WardEscrow (ERC-8183) holds native USDC, auto-releases on attestation; both contracts source-verified on Blockscout; full lifecycle settled live (DEMO-EVIDENCE.md), ~12s end-to-end, 56 forge tests.
+- **ENS — AI Agents** ✅ — ward-agent.eth ENSIP-25 verify=YES; 5 worker subnames with ENSIP-26 records + live reputation pointers (discover ranks mike, live rep); resolved live in the UI (`/api/ens`), zero hardcoded. HARD GATE: present at the ENS booth Sunday morning, in person.
 
-## What's done (committed)
-- **ERC-8183 WardEscrow live on Arc** — full Job lifecycle (createJob → setBudget → fund → submit → complete) settled on-chain; 56 contract tests pass. Evaluator-only `complete()` releases USDC + bumps reputation.
-- **Chainlink CRE** — green CLI simulation against the live sim → dry-run WriteReport → settled (cre/sim-output-live.txt). Arc chain-selector `3034092155422581607`, forwarder `0x76c9…E62`.
-- **ENS live on Sepolia** — `ward-agent.eth` (ENSIP-25 verified) + 5 worker subnames with ENSIP-26 records + CAIP-10 reputation pointers. Agent discovery via ENS resolution.
-- **Agent autonomy fixed + wired to ERC-8183** — poll → diagnose → L1 self-fix → L3 dispatch → createJob/fund on WardEscrow.
-- **Frontend** — animated floor-plan hero in light Profound aesthetic, deployed live to Vercel (mock-data mode), three personas.
-- **Backend** (sim + agent) persistent on brach via Tailscale Funnel.
-- **Docs consolidated** — README, PROJECT, ARCHITECTURE(+mermaid), BOUNTIES, DEMO, PITCHES, DESIGN, SUBMISSION, CUTS, SPIKES, INTERFACES, INTEGRATION, DEMO-EVIDENCE, DEPLOY, BACKEND-SETUP.
+## What's done (committed + pushed to main)
+6 components built + verified; ERC-8183 contract live + verified on Arc; agent autonomous (one-job guard, auto-complete, evaluator signs complete); CRE green sim; ENS live + hardened on Sepolia; animated floor-plan hero deployed (light Profound) with live ENS + real clickable Arc history; backend live + persistent on brach; docs consolidated (judge-facing at root, internal in `docs/`); per-bounty SUBMISSION.md; PITCHES.md (booth scripts + objection answers); VIDEO-SCRIPT.md (3-min); BOUNTY-AUDIT.md.
 
-## PENDING
-1. **Flip the live `brach` agent to the ERC-8183 contract (IN PROGRESS).** Batched re-wire: re-scp `spike/arc/.env` (now carries the evaluator key) + `spike/arc/.env.worker.json` to brach → `git pull` on brach → `bash scripts/brach-live.sh`. Expect `/healthz` shows `"chain":"LIVE"` and the agent creating/funding live ERC-8183 Jobs on WardEscrow.
-2. **After brach is LIVE (then Claude / autonomous):** wire live ENS resolution into the floor plan (resolve `ward-agent.eth` + subnames, render ENSIP-26 records + reputation in the UI) → flip the frontend to the live data adapter → redeploy to Vercel (`NEXT_PUBLIC_DATA_ADAPTER=live`, `NEXT_PUBLIC_AGENT_URL=https://brach.taild3399f.ts.net:8443`, live deployment addresses).
-3. **Pre-stage more real Arc history** for the activity feed (cast cycle; ~0.0014 USDC/tx; recycle USDC worker→agent) so the app shows dozens of historical txs by Sunday.
-4. **Backup demo video** — ≤3-min screen recording of a perfect run, on the phone, played if anything breaks live.
-5. **Timed test pass** — full end-to-end dry run against the live stack on a clock, to nail the 90-second booth flow + verify the live URL from a phone on cell data.
-
-## Honest gaps / notes
-- Live demo settles via the escrow's MockCreVerifier; fully-autonomous live CRE-DON settle needs the workflow to take a dynamic jobId (currently static) — documented, not faked. CRE green sim is the bounty bar.
-- Worker on-chain = mike only (1 registered worker); frontend mock fixtures show 5 for visuals. Register more on Arc later for richer live roster if desired.
-- **Secrets pasted in chat (ROTATE after event): Anthropic API key, Vercel token.** Both in gitignored local `.env`. Testnet private keys live in `spike/arc/.env` + `spike/arc/.env.worker.json` (gitignored).
+## In flight / pending
+- **(in flight) UI polish** — floor-plan made architectural (shared walls, door arc), calmer healthy palette so faults pop, better hierarchy, balanced layout (activity feed not cut off). When it lands: `git add web/ && commit`, then redeploy (command below), verify the leak animation + modals + live ENS still work, and that the UX reads clearly (obvious CTA, what's clickable, narrative reasoning).
+- **(human-only) Record the 2–3 min demo video** using VIDEO-SCRIPT.md (can't screen-capture from here).
+- **(human-only, HARD GATE) ENS booth, Sunday morning, in person.**
+- **(human-only) Rotate the Anthropic API key + Vercel token** (both pasted in chat; in gitignored local `.env`).
+- **(optional) Pre-stage more Arc history** — trigger a few more live incidents (each ~1 USDC) so the feed shows 20+ real settled jobs by Sunday.
 
 ## Resume commands
-- Local full stack: `scripts/dev-stack.sh up`
-- Flip brach live: re-scp `spike/arc/.env` (evaluator key) + `.env.worker.json` → `git pull` on brach → `bash scripts/brach-live.sh` (on brach)
-- Redeploy frontend live (after brach LIVE): `cd web && pnpm dlx vercel@latest deploy --prod --yes --scope speks-projects-7a61d7b1 --token $VERCEL_TOKEN` with `NEXT_PUBLIC_DATA_ADAPTER=live` + agent URL + live addresses
-- Plans/strategy: judge-facing docs at root; internal docs under `docs/`. Memory index: `~/.claude/projects/-home-rex-Projects-web3-EthGlobal2026/memory/MEMORY.md`.
+- Redeploy frontend (Vercel): `cd web && pnpm dlx vercel@latest deploy --prod --yes --scope speks-projects-7a61d7b1 --token $VERCEL_TOKEN` with build-env `NEXT_PUBLIC_ARC_EXPLORER=https://testnet.arcscan.app NEXT_PUBLIC_ARC_CHAIN_ID=5042002 NEXT_PUBLIC_JOB_ESCROW=0xe118… NEXT_PUBLIC_WORKER_REGISTRY=0x2bdD… NEXT_PUBLIC_USDC_ADDRESS=0x3600…` and env `SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com`. Token is in gitignored `.env`.
+- Drive a live incident: `curl -X POST https://brach.taild3399f.ts.net:8443/incident/simulate -d '{"deviceId":"home-leak","mode":"hard"}'`, watch `…:8443/events/recent`, then `curl -X POST https://brach.taild3399f.ts.net/reset`.
+- Local full stack (no creds): `scripts/dev-stack.sh up`. Contracts: `cd contracts && export PATH=$HOME/.foundry/bin:$PATH && forge test`.
+- brach is LIVE; re-wire only if needed: re-scp `spike/arc/.env` → `bash scripts/brach-live.sh` on brach.
+- Live keys (gitignored, on the dev box): `spike/arc/.env` (Arc deployer/worker/evaluator + Anthropic), root `.env` (Anthropic + Vercel token).
+
+## Doc map
+Root (judge-facing): README · PROJECT · ARCHITECTURE (mermaid) · BOUNTIES · DEMO · DEMO-EVIDENCE · PITCHES · SUBMISSION · VIDEO-SCRIPT · BOUNTY-AUDIT · STATUS. Internal: `docs/` (SPIKES, CUTS, INTEGRATION, TODO, BACKEND-SETUP, INTERFACES, DEPLOY, DESIGN).
+
+## Honest gaps (documented, not hidden)
+- CRE: sim settle is a dry-run (the qualifying bar); live on-chain `complete()` is evaluator-EOA-signed, not yet routed through the DON forwarder. Fully-autonomous live-DON settle would need the workflow to take a dynamic jobId.
+- Devices are simulated (intentional; the CRE trust pipeline is identical for real device APIs — PITCHES.md Q3).
+- Live job amount is 1 USDC (faucet-bounded); the demo narrative shows 150 USDC (the mock cinematic). Real settled jobs are small but real.
