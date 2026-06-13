@@ -1,0 +1,12 @@
+{
+	"schedule": "0 */1 * * * *",
+	"statusUrl": "https://jsonplaceholder.typicode.com/todos/1",
+	"jobId": "1",
+	"evms": [
+		{
+			"wardConsumerAddress": "0x0000000000000000000000000000000000000000",
+			"chainSelectorName": "arc-testnet",
+			"gasLimit": "500000"
+		}
+	]
+}

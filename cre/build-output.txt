@@ -1,0 +1,4 @@
+  Compiling workflow...
+✓ Workflow compiled successfully
+  Binary hash: f0cd018d4a1fdd43a8e9e46faebd3ef2396232f15bf6a522dc97c87f3d1a0df3
+✓ Build output written to /home/rex/Projects/web3/EthGlobal2026/cre/workflow/binary.wasm

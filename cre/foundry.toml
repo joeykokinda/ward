@@ -1,0 +1,24 @@
+# Foundry config for the WARD CRE consumer contract.
+# The consumer conforms to the SAME ICreConsumer seam as the main contracts/
+# project, so it remaps directly into ../contracts (shared interface + OZ lib).
+[profile.default]
+src = "contracts"
+out = "out"
+solc = "0.8.24"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+# Allow reading the sibling contracts project (shared interface + OZ lib).
+fs_permissions = [{access = "read", path = "../contracts"}]
+remappings = [
+    "@openzeppelin/contracts/=../contracts/lib/openzeppelin-contracts/contracts/",
+    "@ward-contracts/=../contracts/src/",
+    "forge-std/=../contracts/lib/forge-std/src/",
+]
+libs = ["../contracts/lib"]
+
+[fmt]
+line_length = 120
+tab_width = 4
+bracket_spacing = false
+int_types = "long"

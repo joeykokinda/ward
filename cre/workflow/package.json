@@ -1,0 +1,15 @@
+{
+	"name": "ward-attest-workflow",
+	"version": "0.1.0",
+	"private": true,
+	"type": "module",
+	"description": "WARD CRE attestation workflow: device-status fetch -> onchain settle on Arc Testnet",
+	"dependencies": {
+		"@chainlink/cre-sdk": "1.11.0",
+		"viem": "2.34.0",
+		"zod": "3.25.76"
+	},
+	"devDependencies": {
+		"typescript": "5.9.3"
+	}
+}

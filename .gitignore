@@ -13,3 +13,4 @@ dependencies/
 .vercel/
 dist/
 *.log
+*.wasm

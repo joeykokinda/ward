@@ -1,0 +1,28 @@
+# ==========================================================================
+# WARD — CRE PROJECT SETTINGS
+# ==========================================================================
+# Project root for the WARD attestation workflow. `cre workflow simulate ./workflow`
+# resolves RPCs from here. Arc Testnet is a CRE-supported network
+# (min: CLI v1.0.7+, TS SDK v1.3.1+) with a live Forwarder; see README.md.
+#
+# arc-testnet is the CRE chain-selector name (CRE Forwarder Directory).
+# Public Arc Testnet RPC: https://rpc.testnet.arc.network (chain id 5042002).
+# ==========================================================================
+
+local-simulation-settings:
+  rpcs:
+    - chain-name: arc-testnet
+      url: https://rpc.testnet.arc.network
+
+staging-settings:
+  rpcs:
+    - chain-name: arc-testnet
+      url: https://rpc.testnet.arc.network
+
+production-settings:
+  account:
+    # Workflow owner wallet/MSIG. Required for deploy; not required for simulate.
+    workflow-owner-address: "<YOUR_WORKFLOW_OWNER_ADDRESS>"
+  rpcs:
+    - chain-name: arc-testnet
+      url: https://rpc.testnet.arc.network
