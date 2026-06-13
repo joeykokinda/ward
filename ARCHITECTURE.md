@@ -1,5 +1,39 @@
 # WARD — Architecture
 
+```mermaid
+flowchart TB
+    subgraph offchain["Off-chain (Railway / public HTTPS)"]
+        SIM["Device simulator<br/>FastAPI · /status /fail /restart /repair"]
+        AGENT["WARD agent<br/>Python · asyncio · web3.py · Claude<br/>diagnose → L1 self-fix → L3 dispatch"]
+    end
+    subgraph cre["Chainlink CRE (DON)"]
+        WF["CRE workflow<br/>cron → fetch telemetry → consensus → onReport"]
+    end
+    subgraph arc["Arc Testnet (chainId 5042002, USDC gas)"]
+        ESCROW["JobEscrow<br/>USDC held · caps · owner threshold"]
+        REG["WorkerRegistry<br/>stake · reputation"]
+        VER["WardCreConsumer<br/>(ICreConsumer)"]
+    end
+    subgraph ens["ENS (Sepolia)"]
+        ID["ward-agent.eth + worker subnames<br/>ENSIP-25 verify · ENSIP-26 records"]
+    end
+    UI["Dashboard (Next.js / Vercel)<br/>Host · Worker · Agent"]
+    DB[("Supabase<br/>jobs · workers · events")]
+
+    AGENT -->|poll + remote fix| SIM
+    AGENT -->|createJob / dispatch| ESCROW
+    AGENT -->|discover workers| ID
+    WF -->|fetch telemetry| SIM
+    WF -->|onReport attestation| VER
+    VER -->|verifyHealthy| ESCROW
+    ESCROW -->|release USDC + bump rep| REG
+    AGENT -->|decision feed SSE| UI
+    AGENT --> DB
+    UI -->|read state| DB
+    UI -->|read names/records| ID
+    UI -->|tx links| arc
+```
+
 ```
 [Device simulator (FastAPI, public HTTPS via Railway/Fly)]
    ▲ poll + remote-fix calls          ▲ HTTP fetch (telemetry)
