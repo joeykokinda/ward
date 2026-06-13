@@ -84,14 +84,17 @@ export function OnChainStrip({
               href={explorerTxUrl(a.txHash)}
               target="_blank"
               rel="noreferrer"
-              className="group flex flex-col gap-1 bg-surface px-3.5 py-3 transition-colors hover:bg-subtle"
+              title="Verified on arcscan · click to open"
+              className="ward-flash-amber group flex flex-col gap-1 bg-surface px-3.5 py-3 transition-colors hover:bg-subtle"
             >
-              <span className="text-[12.5px] font-medium leading-snug text-fg-soft">
+              {/* human-readable first (primary), hash + chain second (dim) */}
+              <span className="text-[12.5px] font-semibold leading-snug text-fg">
                 {readableLabel(a)}
               </span>
               <span className="flex items-center justify-between gap-2">
                 <span className="mono text-[11px] text-faint group-hover:text-muted">
                   {shortHash(a.txHash)}
+                  <span className="text-faint"> · Arc</span>
                   <ArrowUpRight className="ml-1 inline h-3 w-3 align-[-1px]" strokeWidth={2} />
                 </span>
                 <span className="text-[11px] text-faint">

@@ -308,6 +308,20 @@ body {
   animation: ward-heal-flash 1.4s ease-out forwards;
 }
 
+/* A transaction landing: a brief amber wash on the new activity row, settling
+   back to the panel surface. Draws the eye to the on-chain moment. */
+@keyframes ward-flash-amber {
+  0% {
+    background-color: color-mix(in srgb, var(--color-accent) 24%, var(--color-surface));
+  }
+  100% {
+    background-color: var(--color-surface);
+  }
+}
+.ward-flash-amber {
+  animation: ward-flash-amber 0.6s ease-out;
+}
+
 /* Modal / overlay backdrop + card entrance. */
 @keyframes ward-fade-in {
   from {
