@@ -41,6 +41,18 @@ export function fakeAddress(seed: string): string {
   return `0x${full.slice(2, 42)}`;
 }
 
+// REAL Arc testnet tx hashes from the canonical ERC-8183 WardEscrow lifecycle
+// (DEMO-EVIDENCE.md). Wired into the historical settled jobs so every tx link in
+// the activity feed opens a real https://testnet.arcscan.app/tx/<hash> txn —
+// not a synthetic hash. chainId 5042002, full Open→Funded→Submitted→Completed.
+export const ARC_TX = {
+  createJob: "0xe65a7352007bf269874f4bf83e138c67d29d24d9009facd083af296cbcebf217",
+  setBudget: "0xb4875473ae81ba87b4a9424bf9c8ac743a02a69efea8d4601ab0e0cd44542bd4",
+  fund: "0x1afb161733819d2004d24d10bf13312ba941e91394e9f3463a90df2240e01ea0",
+  submit: "0x48d22cd077f7e32670a2589e977991a6917b511f3cc6c515449f72065360827a",
+  complete: "0x0cf9c5a691225575de86937491fb6ae577c1f3e2b7a49959104a6c3a6084cb8d",
+} as const;
+
 const AGENT_ADDRESS = "0xWa2d10A9e7f3b1c4D58e96Fa0bB7cC83d4E2f1A6";
 
 function isoMinutesAgo(min: number): string {
@@ -143,9 +155,9 @@ export function buildJobs(): Job[] {
       workerAddress: fakeAddress("worker-deon"),
       amount: usdc(60),
       state: "Completed",
-      txCreate: fakeTxHash("job-1041-create"),
-      txAccept: fakeTxHash("job-1041-accept"),
-      txSettle: fakeTxHash("job-1041-settle"),
+      txCreate: ARC_TX.createJob,
+      txAccept: ARC_TX.fund,
+      txSettle: ARC_TX.complete,
       createdAtIso: isoHoursAgo(52),
       settledAtIso: isoHoursAgo(51),
       deadlineIso: isoHoursAgo(48),
@@ -158,9 +170,9 @@ export function buildJobs(): Job[] {
       workerAddress: fakeAddress("worker-lena"),
       amount: usdc(75),
       state: "Completed",
-      txCreate: fakeTxHash("job-1042-create"),
-      txAccept: fakeTxHash("job-1042-accept"),
-      txSettle: fakeTxHash("job-1042-settle"),
+      txCreate: ARC_TX.setBudget,
+      txAccept: ARC_TX.fund,
+      txSettle: ARC_TX.submit,
       createdAtIso: isoHoursAgo(28),
       settledAtIso: isoHoursAgo(27),
       deadlineIso: isoHoursAgo(24),
@@ -173,9 +185,10 @@ export function buildJobs(): Job[] {
       workerAddress: fakeAddress("worker-sara"),
       amount: usdc(75),
       state: "Completed",
-      txCreate: fakeTxHash("job-1043-create"),
-      txAccept: fakeTxHash("job-1043-accept"),
-      txSettle: fakeTxHash("job-1043-settle"),
+      // The full canonical lifecycle (most recent job): real create → fund → complete.
+      txCreate: ARC_TX.createJob,
+      txAccept: ARC_TX.fund,
+      txSettle: ARC_TX.complete,
       createdAtIso: isoHoursAgo(6),
       settledAtIso: isoHoursAgo(5),
       deadlineIso: isoHoursAgo(2),
@@ -191,7 +204,7 @@ export function buildActivity(): Activity[] {
       ts: isoHoursAgo(72),
       kind: "TREASURY_FUNDED",
       label: "Treasury funded",
-      txHash: fakeTxHash("treasury-fund"),
+      txHash: ARC_TX.fund,
       amountUsdc: usdc(500),
       ensName: AGENT_ENS,
     },

@@ -1,14 +1,17 @@
 "use client";
 
-import { Cpu } from "lucide-react";
+import { BadgeCheck, Cpu } from "lucide-react";
 import type { WardSnapshot } from "@/lib/data/types";
 import { deployment } from "@/lib/config";
 import { clock, formatUsdc } from "@/lib/format";
+import { useEnsLive } from "@/lib/useEnsLive";
 import { AddressLink, EnsLink } from "./links";
 import { Chip } from "./primitives";
 
 // Header "ward-agent.eth" click -> the agent's identity + a compact action
-// history (recent autonomous decisions, latest first).
+// history (recent autonomous decisions, latest first). The agent's name is
+// resolved LIVE on Sepolia (GET /api/ens/<name>) and the ENSIP-25 verification
+// badge reflects the real on-chain agent-registration attestation.
 export function AgentModal({
   snapshot,
   mounted,
@@ -17,6 +20,11 @@ export function AgentModal({
   mounted: boolean;
 }) {
   const { agent } = snapshot;
+  // AgentModal only mounts when its modal is open, so always resolve on mount.
+  const { data, loading } = useEnsLive(agent.ensName, true);
+  const live = data.live;
+  const ensip25Verified = live && data.ensip25Verified;
+  const liveAddress = live && data.address ? data.address : agent.address;
   const decisions = [...snapshot.jobs]
     .sort((a, b) => +new Date(b.createdAtIso) - +new Date(a.createdAtIso))
     .slice(0, 6);
@@ -28,11 +36,31 @@ export function AgentModal({
           <Cpu className="h-5 w-5" strokeWidth={2} />
         </span>
         <div className="min-w-0">
-          <h3 id="agent-modal-title">
+          <h3 id="agent-modal-title" className="flex flex-wrap items-center gap-2">
             <EnsLink name={agent.ensName} className="text-[16px]" />
+            {loading ? (
+              <span className="text-[11px] text-faint">verifying…</span>
+            ) : ensip25Verified ? (
+              <Chip tone="accent" className="!py-0.5">
+                <BadgeCheck className="h-3 w-3" strokeWidth={2.4} />
+                ENSIP-25 ✓
+              </Chip>
+            ) : null}
           </h3>
           <div className="mt-1">
-            <AddressLink address={agent.address} />
+            <AddressLink address={liveAddress} />
+          </div>
+          <div className="mt-1 text-[11px]">
+            {loading ? (
+              <span className="text-faint">resolving live · Sepolia</span>
+            ) : live ? (
+              <span className="inline-flex items-center gap-1.5 font-medium text-accent-ink">
+                <span className="dot bg-accent ward-live-dot" aria-hidden />
+                resolved live · Sepolia
+              </span>
+            ) : (
+              <span className="text-faint">fixture · RPC unavailable</span>
+            )}
           </div>
         </div>
       </div>
