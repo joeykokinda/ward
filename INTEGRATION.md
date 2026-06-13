@@ -11,8 +11,21 @@ Running list of cross-component seams to reconcile once all agents land. Update 
 | Contracts | `contracts/` | done, 50 tests + anvil e2e | 9a148da |
 | Agent runtime | `agent/` | done, DRY-run verified | f818995 |
 | Frontend | `web/` | building | — |
-| CRE + Arc spike | `cre/`, `spike/arc/` | building | — |
+| CRE + Arc spike | `cre/`, `spike/arc/` | done — GATE CLEARED (CRE→Arc=YES) | fba9535 |
 | ENS + Supabase | `packages/ens/`, `db/` | done, live-resolve + Postgres verified | 0f61d0a |
+
+## Arc / CRE deployment facts (live-verified by spike)
+
+- Arc Testnet: RPC `https://rpc.testnet.arc.network`, **chainId 5042002**, explorer `https://testnet.arcscan.app` (Blockscout — verify with `--verifier blockscout`, no API key).
+- **Gas is paid in USDC.** Native USDC ERC-20 at `0x3600000000000000000000000000000000000000`, 6 decimals. Set `USDC_ADDRESS` to this (not MockUSDC) for the live Arc deploy.
+- CRE Arc forwarder: `0x76c9cf548b4179F8901cda1f8623568b58215E62`.
+- CRE CLI installs headless: `curl -sSL https://cre.chain.link/install.sh | bash` → `~/.cre/bin/cre`. WASM build needs no account. **Simulation (bounty evidence) needs a free `CRE_API_KEY`** from app.chain.link → Account Settings.
+- **Throwaway deployer to fund (Arc faucet, captcha/browser-only):** `0xDCe59831DbA9Ea1B097Ef3f16993667D756bAea4` (key in `spike/arc/.env`, gitignored). Circle faucet `https://faucet.circle.com` → Arc Testnet → USDC → this address (20 USDC/2h, also pays gas). This is the only blocker to deploying live on Arc.
+- Caveat: do NOT trust forge local-fork dry-run of Arc USDC transfers (blocklist precompile reverts on fork); deploy/interact with `--broadcast` on live Arc only.
+
+## DECISION — CRE verifier seam (orchestrator)
+
+Two implementations exist: `WardCreConsumer` (CRE-native push via `onReport`) and `AuthorizedReporterVerifier` (ECDSA sign-then-pull). **For the live demo + Chainlink bounty, wire `WardCreConsumer` as the escrow's `creVerifier`** (`setCreVerifier`) so the settlement is genuinely a CRE onchain report — the most authentic "CRE writes to Arc and releases escrow" story. Keep `AuthorizedReporterVerifier` for the agent's offline/DRY mode and as the fallback if live CRE deploy access is delayed. Reconcile reconciliation item #1 (settle signature) against whichever verifier is wired.
 
 ## Reconciliation TODO (integration phase)
 
