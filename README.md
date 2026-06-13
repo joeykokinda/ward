@@ -1,8 +1,52 @@
 # WARD
 
-**WARD is an autonomous home agent that hires humans and settles payment on machine-attested telemetry, not human approval.** It is, as far as we know, the first production implementation of **ERC-8183** (Ethereum's new Agentic Commerce standard), running end-to-end on live Arc testnet.
+WARD is an autonomous agent for your home. It watches your devices, fixes what it can in software, and when it can't, it hires a verified human and pays them in USDC the moment a sensor confirms the repair is done. Nobody clicks approve. The sensor does.
 
-WARD watches your instrumented devices, fixes what it can in software, and when it can't, it hires a verified human, escrows USDC on Arc as an ERC-8183 Job, dispatches the highest-reputation worker it discovers through ENS, and releases payment the moment device telemetry confirms the repair. No human clicks "approve" in the happy path.
+It runs end to end on Arc testnet: worker identity and discovery on ENS, escrow and settlement on Arc, and the fix attested by a Chainlink CRE workflow. It is a working implementation of ERC-8183, Ethereum's Agentic Commerce standard.
+
+## Links
+
+| | |
+|---|---|
+| Live homepage | https://web-nine-ashen-75.vercel.app |
+| Live demo (cinematic) | https://web-nine-ashen-75.vercel.app/demo |
+| Demo video | (link added on submission) |
+| GitHub (open source) | https://github.com/joeykokinda/ward |
+| WardEscrow (ERC-8183, source-verified) | https://testnet.arcscan.app/address/0xe118A51B105DF46F54AE4Fb01a1EF43F6a8dE5D8 |
+| WorkerRegistry (source-verified) | https://testnet.arcscan.app/address/0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4 |
+| Evaluator (CRE oracle EOA) | https://testnet.arcscan.app/address/0xDdd0047d0664235998791fe2163Bb9b31c2Fc038 |
+| USDC (native Arc, 6dp, also gas) | `0x3600000000000000000000000000000000000000` |
+| ENS records (Sepolia) | https://sepolia.app.ens.domains/ward-agent.eth |
+| CRE sim log (green) | `cre/sim-output-live.txt` |
+| All transaction hashes | [DEMO-EVIDENCE.md](DEMO-EVIDENCE.md) |
+
+Arc network: chainId `5042002`, RPC `https://rpc.testnet.arc.network`, explorer `https://testnet.arcscan.app`. CRE: chain-selector `3034092155422581607`, forwarder `0x76c9cf548b4179F8901cda1f8623568b58215E62`.
+
+## See it run
+
+A 2am leak, the owner asleep in Tokyo. WARD detects it, fails the free remote fix, hires a plumber via ENS, locks USDC escrow on Arc, and releases payment when a Chainlink CRE workflow confirms the sensor reads dry. About 27 seconds, every step on-chain. [Watch the live demo.](https://web-nine-ashen-75.vercel.app/demo)
+
+![WARD demo: escrow locked on Arc, worker dispatched, ENS and on-chain badges firing](web/public/shots/arc.png)
+
+## Verifiable on-chain
+
+Both contracts are source-verified on Arc, and the demo's transaction links resolve to real `fund` and `complete` calls on the live escrow. These are screenshots from [testnet.arcscan.app](https://testnet.arcscan.app); every address and hash is clickable in the Links table above.
+
+**WardEscrow, source code verified (ERC-8183 Job escrow):**
+
+![WardEscrow source-verified on Arc](docs/proof/wardescrow-verified.png)
+
+**The whole thesis in one transaction: the Evaluator calls `complete()`, which releases USDC to the worker.** No owner signature, no human approval. The release is signed by the CRE oracle address (`0xDdd0047...c038`), not the owner. It shows 1 USDC because live jobs are faucet-bounded on testnet; the cinematic narrates a 150 USDC dispatch, but every settlement link points to a real on-chain release like this:
+
+![complete() release transaction on Arc](docs/proof/tx-complete-release.png)
+
+**The agent (Client) funding the escrow with `fund()`:**
+
+![fund() escrow transaction on Arc](docs/proof/tx-fund-escrow.png)
+
+**WorkerRegistry, source code verified (stake + reputation):**
+
+![WorkerRegistry source-verified on Arc](docs/proof/workerregistry-verified.png)
 
 ## The homeowner is the demo. The customer is software.
 
@@ -41,46 +85,6 @@ ERC-8183 defines a *Job*: an escrowed budget, three roles, one state machine. Th
 **Arc (the settlement rail).** WardEscrow is a keyed ERC-8183 JobEscrow holding native USDC under a real policy layer: per-job caps, daily caps, an owner-approval threshold, and deadline auto-refund (the standard's Expired state), all in the contract, not middleware. The Job runs Open to Funded to Submitted to Completed, and the Evaluator auto-releases the instant the attestation lands. USDC is also the gas token on Arc, so settlement is gas-free and sub-cent: a sub-$200 dispatch fee that mainnet gas would eat alive is negligible here. Both contracts are source-verified; 56 forge tests pass.
 
 **ENS (identity and discovery).** The agent holds its own primary name `ward-agent.eth`, verified per ENSIP-25. Every worker is a subname carrying ENSIP-26 text records (skills, region, and a CAIP-10 reputation pointer to the on-chain registry). When a Job needs a Provider, the agent discovers and ranks workers through live ENS resolution: ENS is the registry, not a label on top of one, and the reputation is ENS-owned and portable. The UI resolves all of this live via `/api/ens` with zero hardcoded values.
-
-## Verifiable on-chain
-
-Both contracts are source-verified on Arc, and the demo's transaction links resolve to real `fund` and `complete` calls on the live escrow. These are screenshots from [testnet.arcscan.app](https://testnet.arcscan.app); every link is clickable in the table below.
-
-**WardEscrow, source code verified (ERC-8183 Job escrow):**
-
-![WardEscrow source-verified on Arc](docs/proof/wardescrow-verified.png)
-
-**The whole thesis in one transaction: the Evaluator calls `complete()`, which releases USDC to the worker.** No owner signature, no human approval. The release is signed by the CRE oracle address (`0xDdd0047...c038`), not the owner. The amount shows 1 USDC because live jobs are faucet-bounded on testnet; the cinematic narrates a 150 USDC dispatch, but every settlement link points to a real on-chain release like this:
-
-![complete() release transaction on Arc](docs/proof/tx-complete-release.png)
-
-**The agent (Client) funding the escrow with `fund()`:**
-
-![fund() escrow transaction on Arc](docs/proof/tx-fund-escrow.png)
-
-**WorkerRegistry, source code verified (stake + reputation):**
-
-![WorkerRegistry source-verified on Arc](docs/proof/workerregistry-verified.png)
-
-The full list of transaction hashes is in [DEMO-EVIDENCE.md](DEMO-EVIDENCE.md).
-
-## Links
-
-| | |
-|---|---|
-| Live homepage | https://web-nine-ashen-75.vercel.app |
-| Live cinematic demo | https://web-nine-ashen-75.vercel.app/demo |
-| Demo video | (link added on submission) |
-| GitHub (open source) | https://github.com/joeykokinda/ward |
-| WardEscrow (ERC-8183, source-verified) | https://testnet.arcscan.app/address/0xe118A51B105DF46F54AE4Fb01a1EF43F6a8dE5D8 |
-| WorkerRegistry (source-verified) | https://testnet.arcscan.app/address/0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4 |
-| Evaluator (CRE oracle EOA) | https://testnet.arcscan.app/address/0xDdd0047d0664235998791fe2163Bb9b31c2Fc038 |
-| USDC (native Arc, 6dp, also gas) | `0x3600000000000000000000000000000000000000` |
-| ENS records (Sepolia) | https://sepolia.app.ens.domains/ward-agent.eth |
-| CRE sim log (green) | `cre/sim-output-live.txt` |
-| On-chain evidence (all tx hashes) | [DEMO-EVIDENCE.md](DEMO-EVIDENCE.md) |
-
-Arc network: chainId `5042002`, RPC `https://rpc.testnet.arc.network`, explorer `https://testnet.arcscan.app`. CRE: chain-selector `3034092155422581607`, forwarder `0x76c9cf548b4179F8901cda1f8623568b58215E62`.
 
 ## Setup / run
 
@@ -122,7 +126,7 @@ Written from scratch during the event:
 - **Contracts** (`contracts/`): WardEscrow (the ERC-8183 keyed JobEscrow + policy layer), WorkerRegistry, the CRE verifier seam, deploy + seed scripts, 56 forge tests.
 - **Agent** (`agent/`): the autonomous runtime in plain Python (asyncio poll loop, web3.py, Claude API for reasoning, ENS-driven worker discovery and ranking, escalation ladder, SSE decision feed). No agent framework.
 - **CRE workflow** (`cre/`): the TS SDK workflow that fetches telemetry, runs consensus, and produces the `WriteReport` to Arc, plus the on-chain consumer.
-- **Frontend** (`web/`): the Next.js dashboard, floor-plan hero animation, the three personas, and the live ENS resolver route.
+- **Frontend** (`web/`): the Next.js homepage and cinematic demo, floor-plan hero animation, the three personas, and the live ENS resolver route.
 - **ENS setup** (`packages/ens/`): subname minting, ENSIP-25/26 record writes, the ERC-7930 verification key builder, and the discovery/ranking CLI.
 
 Reused standard libraries (not reimplemented): Next.js, React, Tailwind, lucide, web3.py, viem, Foundry, OpenZeppelin, FastAPI. The first commit is a docs scaffold created right after kickoff; the build proceeds as frequent incremental commits showing real progression (never a single large dump, never backdated).
