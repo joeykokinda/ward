@@ -40,7 +40,7 @@ export function App() {
           now={now}
           mounted={mounted}
           isRunning={isRunning}
-          onSimulate={() => runScenario("router-failure")}
+          onSimulate={() => runScenario("wifi-outage")}
           onReset={reset}
         />
       )}
@@ -56,6 +56,12 @@ export function App() {
       )}
 
       {persona === "agent" && <AgentView snapshot={snapshot} mounted={mounted} />}
+
+      <footer className="flex flex-none items-center justify-center border-t border-border bg-surface px-5 py-2">
+        <span className="text-[11px] text-faint">
+          Today homeowners · tomorrow property managers &amp; DePIN — same protocol
+        </span>
+      </footer>
     </div>
   );
 }

@@ -1,9 +1,23 @@
 "use client";
 
-import { Wifi, WifiOff } from "lucide-react";
-import type { PropertyStatus } from "@/lib/data/types";
+import {
+  Droplet,
+  Lock,
+  Thermometer,
+  Wifi,
+  WifiOff,
+  type LucideIcon,
+} from "lucide-react";
+import type { DeviceKind, PropertyStatus } from "@/lib/data/types";
 import { formatDuration, signalLabel } from "@/lib/format";
 import { Chip, Panel, type Tone } from "../primitives";
+
+const KIND_ICON: Record<DeviceKind, LucideIcon> = {
+  router: Wifi,
+  thermostat: Thermometer,
+  lock: Lock,
+  leak_sensor: Droplet,
+};
 
 function deviceTone(p: PropertyStatus): Tone {
   if (!p.device.online || p.device.faultMode === "hard") return "danger";
@@ -15,6 +29,11 @@ function statusText(p: PropertyStatus): string {
   if (!p.device.online) return "Offline";
   if (p.device.faultMode !== "none") return "Degraded";
   return "Healthy";
+}
+
+// The leak sensor has no meaningful signal strength.
+function hasSignal(kind: DeviceKind): boolean {
+  return kind !== "leak_sensor";
 }
 
 export function FleetGrid({
@@ -31,7 +50,7 @@ export function FleetGrid({
 
   return (
     <Panel
-      title="Properties"
+      title="My home"
       right={
         <span className="text-[12px] text-muted">
           <span className={allHealthy ? "text-accent-ink" : "text-warn"}>{healthy}</span>
@@ -46,6 +65,7 @@ export function FleetGrid({
         const status = statusText(p);
         const offline = !p.device.online;
         const uptime = offline ? 0 : (liveUptime[p.id] ?? p.device.uptimeSec);
+        const Icon = offline ? WifiOff : KIND_ICON[p.deviceKind];
         return (
           <div key={p.id} className="flex items-start gap-3 px-4 py-3.5">
             <span
@@ -53,11 +73,7 @@ export function FleetGrid({
                 offline ? "bg-danger-soft text-danger" : "bg-subtle text-muted"
               }`}
             >
-              {offline ? (
-                <WifiOff className="h-4 w-4" strokeWidth={2} />
-              ) : (
-                <Wifi className="h-4 w-4" strokeWidth={2} />
-              )}
+              <Icon className="h-4 w-4" strokeWidth={2} />
             </span>
             <div className="min-w-0 flex-1">
               <div className="flex items-center justify-between gap-2">
@@ -78,17 +94,26 @@ export function FleetGrid({
                     {offline ? "—" : formatDuration(uptime)}
                   </span>
                 </span>
-                <span className="text-muted">
-                  Signal{" "}
-                  <span className="mono text-fg-soft">
-                    {offline ? "none" : `${p.device.signalDbm} dBm`}
-                  </span>
-                  {!offline && (
-                    <span className="ml-1 text-faint">
-                      {signalLabel(p.device.signalDbm).toLowerCase()}
+                {hasSignal(p.deviceKind) ? (
+                  <span className="text-muted">
+                    Signal{" "}
+                    <span className="mono text-fg-soft">
+                      {offline ? "none" : `${p.device.signalDbm} dBm`}
                     </span>
-                  )}
-                </span>
+                    {!offline && (
+                      <span className="ml-1 text-faint">
+                        {signalLabel(p.device.signalDbm).toLowerCase()}
+                      </span>
+                    )}
+                  </span>
+                ) : (
+                  <span className="text-muted">
+                    Sensor{" "}
+                    <span className="mono text-fg-soft">
+                      {offline ? "fault" : "armed"}
+                    </span>
+                  </span>
+                )}
               </div>
             </div>
           </div>

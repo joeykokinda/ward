@@ -1,7 +1,8 @@
 // Mock adapter: fully self-contained demo state + scripted incident player.
 // No backend, no credentials. The scripted player drives the entire
-// DEMO.md "Simulate Router Failure" sequence as a timed series of agent
-// reasoning events, activity-feed entries, and job-bar lifecycle changes.
+// "Simulate: WiFi outage" hero sequence (your home WiFi dies at 2am) as a
+// timed series of agent reasoning events, activity-feed entries, and job-bar
+// lifecycle changes.
 //
 // The same WardAdapter interface will later be implemented against the live
 // agent SSE feed + Arc contracts; this player is just one implementation.
@@ -28,8 +29,9 @@ import type {
 } from "./types";
 
 const DEMO_JOB_ID = 1044;
-const DEMO_PROPERTY = "prop-2"; // Greenwich Cottage
-const DEMO_DEVICE = "prop-2-router";
+const DEMO_PROPERTY = "home-wifi"; // the hero device: your home WiFi router
+const DEMO_DEVICE = "home-wifi";
+const DEMO_SKILL = "network"; // dispatch to the highest-rep networking tech
 const DEMO_AMOUNT = usdc(75);
 
 // One scripted beat. `at` is ms offset from scenario start.
@@ -146,8 +148,9 @@ function bumpReputation(s: MutableState, ensName: string): { from: number; to: n
   return { from, to };
 }
 
-// The scripted router-failure incident. Mirrors DEMO.md step-for-step.
-function routerFailureBeats(): Beat[] {
+// The scripted WiFi-outage hero incident: your home WiFi dies at 2am.
+// detect → reboot → fails → hire networking tech → escrow → dispatch.
+function wifiOutageBeats(): Beat[] {
   const createTx = fakeTxHash(`job-${DEMO_JOB_ID}-create-${Date.now()}`);
   const acceptHintTx = fakeTxHash(`job-${DEMO_JOB_ID}-accepthint`);
 
@@ -165,7 +168,7 @@ function routerFailureBeats(): Beat[] {
         pushEvent(
           s,
           "MONITOR",
-          "ALERT · prop-2-router (Greenwich Cottage) stopped responding · 3 missed heartbeats",
+          "ALERT · home WiFi router (home-wifi) stopped responding · 3 missed heartbeats · 02:14 local",
           { propertyId: DEMO_PROPERTY },
         );
       },
@@ -198,7 +201,7 @@ function routerFailureBeats(): Beat[] {
         pushEvent(
           s,
           "ACTION",
-          "Issuing remote reboot → POST /device/prop-2-router/restart",
+          "Issuing remote reboot → POST /device/home-wifi/restart",
           { propertyId: DEMO_PROPERTY },
         ),
     },
@@ -209,31 +212,29 @@ function routerFailureBeats(): Beat[] {
         pushEvent(
           s,
           "RESULT",
-          "Remote reboot FAILED · device still offline after 3 attempts · fault is hardware",
+          "Remote reboot FAILED · WiFi still down after 3 attempts · fault is hardware/line",
           { propertyId: DEMO_PROPERTY },
         ),
     },
-    // 4. query registry, select highest-rep worker
+    // 4. query registry, select highest-rep worker by skill
     {
       at: 6600,
       run: (s) =>
         pushEvent(
           s,
           "DIAGNOSE",
-          "Escalating to L3 (hire human) · querying WorkerRegistry via ENS for region Greenwich, CT",
+          "Escalating to L3 (hire human) · querying WorkerRegistry via ENS for skill 'network'",
         ),
     },
     {
       at: 7800,
       run: (s) => {
-        const candidates = s.snapshot.workers
-          .filter((w) => w.region.includes("Greenwich") || w.skills.includes("router"))
-          .sort((a, b) => b.reputation - a.reputation);
+        const candidates = dispatchCandidates(s);
         const top = candidates[0];
         pushEvent(
           s,
           "DISPATCH",
-          `Ranked ${candidates.length} staked workers · selected ${top.ensName} (rep ${top.reputation}, skills: ${top.skills.join("/")})`,
+          `Ranked ${candidates.length} staked techs for 'network' · selected ${top.ensName} (rep ${top.reputation}, skills: ${top.skills.join("/")})`,
         );
       },
     },
@@ -302,11 +303,15 @@ function routerFailureBeats(): Beat[] {
   ];
 }
 
-function topWorker(s: MutableState): Worker {
-  const candidates = s.snapshot.workers
-    .filter((w) => w.region.includes("Greenwich") || w.skills.includes("router"))
+// Highest-reputation staked tech whose skills match the WiFi fault (network).
+function dispatchCandidates(s: MutableState): Worker[] {
+  return s.snapshot.workers
+    .filter((w) => w.staked && w.skills.includes(DEMO_SKILL))
     .sort((a, b) => b.reputation - a.reputation);
-  return candidates[0];
+}
+
+function topWorker(s: MutableState): Worker {
+  return dispatchCandidates(s)[0];
 }
 
 class MockAdapter implements WardAdapter {
@@ -339,10 +344,10 @@ class MockAdapter implements WardAdapter {
   }
 
   runScenario(id: ScenarioId): void {
-    if (id !== "router-failure") return;
+    if (id !== "wifi-outage") return;
     if (this.running) return;
     this.running = true;
-    const beats = routerFailureBeats();
+    const beats = wifiOutageBeats();
     for (const beat of beats) {
       const t = setTimeout(() => {
         beat.run(this.state);
@@ -387,7 +392,7 @@ class MockAdapter implements WardAdapter {
     pushEvent(
       this.state,
       "DISPATCH",
-      `${ensName} ACCEPTED Job #${jobId} · en route to Greenwich Cottage`,
+      `${ensName} ACCEPTED Job #${jobId} · en route to the home`,
       { jobId, txHash: acceptTx, propertyId: job.propertyId },
     );
     pushActivity(this.state, {
@@ -409,7 +414,7 @@ class MockAdapter implements WardAdapter {
     pushEvent(
       this.state,
       "RESULT",
-      `${job.worker} marked WORK DONE on Job #${jobId} · router power-cycled + firmware reflashed`,
+      `${job.worker} marked WORK DONE on Job #${jobId} · router line replaced + firmware reflashed`,
       { jobId, txHash: workDoneTx, propertyId: job.propertyId },
     );
     pushActivity(this.state, {
@@ -434,7 +439,7 @@ class MockAdapter implements WardAdapter {
       pushEvent(
         this.state,
         "MONITOR",
-        "Device telemetry recovering · prop-2-router back online · signal -57dBm",
+        "Device telemetry recovering · home-wifi back online · signal -57dBm",
         { jobId, propertyId: job.propertyId },
       );
       this.emit();
@@ -497,7 +502,7 @@ class MockAdapter implements WardAdapter {
       pushEvent(
         this.state,
         "RESOLVED",
-        `Job #${jobId} SETTLED · ${ensName} paid 75.00 USDC · reputation ${rep.from} → ${rep.to} · Greenwich Cottage HEALTHY`,
+        `Job #${jobId} SETTLED · ${ensName} paid 75.00 USDC · reputation ${rep.from} → ${rep.to} · home WiFi HEALTHY`,
         { jobId, txHash: settleTx, propertyId: cur.propertyId },
       );
       this.running = false;

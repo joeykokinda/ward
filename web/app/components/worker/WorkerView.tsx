@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { CheckCircle2, Loader2, MapPin, Star } from "lucide-react";
-import type { Job, WardSnapshot, Worker } from "@/lib/data/types";
+import type { DeviceKind, Job, WardSnapshot, Worker } from "@/lib/data/types";
 import { JOB_STATE_LABEL } from "@/lib/config";
 import { formatDuration, formatUsdc, secondsSince } from "@/lib/format";
 import { EnsLink, TxLink } from "../links";
@@ -134,7 +134,7 @@ export function WorkerView({
 
         {/* available / active jobs */}
         <h2 className="mt-6 mb-2.5 text-[13px] font-semibold text-fg-soft">
-          Available jobs near you
+          Jobs at homes near you
         </h2>
         <div className="flex flex-col gap-3">
           {myJobs.length === 0 && (
@@ -149,8 +149,8 @@ export function WorkerView({
               key={job.jobId}
               job={job}
               me={me}
-              property={
-                snapshot.properties.find((p) => p.id === job.propertyId)?.name
+              deviceKind={
+                snapshot.properties.find((p) => p.id === job.propertyId)?.deviceKind
               }
               now={now}
               mounted={mounted}
@@ -194,10 +194,25 @@ export function WorkerView({
   );
 }
 
+// Human-readable framing for each device kind, from the worker's perspective.
+const JOB_TITLE: Record<DeviceKind, string> = {
+  router: "WiFi outage at a home nearby",
+  thermostat: "Thermostat fault at a home nearby",
+  lock: "Smart lock fault at a home nearby",
+  leak_sensor: "Water leak at a home nearby",
+};
+
+const JOB_DESC: Record<DeviceKind, string> = {
+  router: "WiFi offline · remote reboot failed · on-site repair required.",
+  thermostat: "Thermostat unresponsive · remote reconfig failed · on-site HVAC fix needed.",
+  lock: "Smart lock offline · remote restart failed · on-site locksmith needed.",
+  leak_sensor: "Leak detected · physical fault · plumber needed on-site.",
+};
+
 function WorkerJobCard({
   job,
   me,
-  property,
+  deviceKind,
   now,
   mounted,
   onAccept,
@@ -205,7 +220,7 @@ function WorkerJobCard({
 }: {
   job: Job;
   me: Worker;
-  property?: string;
+  deviceKind?: DeviceKind;
   now: number;
   mounted: boolean;
   onAccept: (jobId: number, workerAddress: string) => void;
@@ -216,14 +231,16 @@ function WorkerJobCard({
   const canAccept = job.state === "OPEN";
   const canComplete = job.state === "ACCEPTED" && job.worker === me.ensName;
   const inProgress = job.state === "WORK_DONE" || job.state === "ATTESTING";
+  const title = deviceKind ? JOB_TITLE[deviceKind] : "Repair at a home nearby";
+  const desc = deviceKind
+    ? JOB_DESC[deviceKind]
+    : "Remote fix failed · on-site repair required.";
 
   return (
     <Panel>
       <div className="px-5 py-4">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-[15px] font-semibold text-fg">
-            {property ?? job.propertyId}
-          </span>
+          <span className="text-[15px] font-semibold text-fg">{title}</span>
           <Chip tone={tone}>{JOB_STATE_LABEL[job.state]}</Chip>
         </div>
 
@@ -240,9 +257,7 @@ function WorkerJobCard({
           </span>
         </div>
 
-        <p className="mt-2.5 text-[13px] text-muted">
-          Router offline · remote reboot failed · on-site repair required.
-        </p>
+        <p className="mt-2.5 text-[13px] text-muted">{desc}</p>
 
         {/* big touch targets */}
         <div className="mt-4">

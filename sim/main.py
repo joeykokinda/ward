@@ -12,12 +12,13 @@ from pydantic import BaseModel
 # ---------------------------------------------------------------------------
 
 FaultMode = Literal["none", "soft", "hard"]
+DeviceKind = Literal["router", "thermostat", "lock", "leak_sensor"]
 
 
 class DeviceStatus(BaseModel):
     deviceId: str
     propertyId: str
-    kind: Literal["router"]
+    kind: DeviceKind
     online: bool
     uptimeSec: int
     signalDbm: int
@@ -29,13 +30,18 @@ class DeviceStatus(BaseModel):
 # In-memory state
 # ---------------------------------------------------------------------------
 
+# ONE home, four instrumented devices. propertyId == deviceId so each device is
+# tracked independently (the agent's one-open-job-per-property guard then works
+# per-device). The leak sensor has no meaningful signalDbm, so it seeds at 0.
 _SEED = [
-    {"deviceId": "prop-1-router", "propertyId": "prop-1", "kind": "router",
-     "signalDbm": -52},
-    {"deviceId": "prop-2-router", "propertyId": "prop-2", "kind": "router",
-     "signalDbm": -58},
-    {"deviceId": "prop-3-router", "propertyId": "prop-3", "kind": "router",
-     "signalDbm": -61},
+    {"deviceId": "home-wifi", "propertyId": "home-wifi",
+     "kind": "router", "signalDbm": -52},
+    {"deviceId": "home-thermostat", "propertyId": "home-thermostat",
+     "kind": "thermostat", "signalDbm": -58},
+    {"deviceId": "home-lock", "propertyId": "home-lock",
+     "kind": "lock", "signalDbm": -61},
+    {"deviceId": "home-leak", "propertyId": "home-leak",
+     "kind": "leak_sensor", "signalDbm": 0},
 ]
 
 
@@ -120,6 +126,10 @@ def fail_device(device_id: str, mode: FaultMode = "soft"):
     if mode not in ("soft", "hard"):
         raise HTTPException(status_code=422, detail="mode must be 'soft' or 'hard'")
     d = _get(device_id)
+    # A leak is physical: any fault on the leak sensor needs a human (a plumber),
+    # so it is recorded as a hard fault regardless of the requested mode.
+    if d["kind"] == "leak_sensor":
+        mode = "hard"
     d["online"] = False
     d["faultMode"] = mode
     d["signalDbm"] = 0
@@ -131,8 +141,9 @@ def fail_device(device_id: str, mode: FaultMode = "soft"):
 @app.post("/device/{device_id}/restart", response_model=DeviceStatus)
 def restart_device(device_id: str):
     d = _get(device_id)
-    if d["faultMode"] == "soft":
-        # soft fault heals on restart
+    # Soft faults heal on a remote restart — but never on the leak sensor, whose
+    # faults are always physical and require a human fix.
+    if d["faultMode"] == "soft" and d["kind"] != "leak_sensor":
         d["online"] = True
         d["faultMode"] = "none"
         d["signalDbm"] = d["_seedSignalDbm"]
@@ -170,7 +181,7 @@ _CONSOLE_HTML = """<!DOCTYPE html>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WARD // Device Console</title>
+  <title>WARD // My Home — device console</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -339,8 +350,8 @@ _CONSOLE_HTML = """<!DOCTYPE html>
 <body>
 
 <header>
-  <h1>WARD // Device Console</h1>
-  <span>fleet telemetry simulator</span>
+  <h1>MY HOME // Device Console</h1>
+  <span>home telemetry simulator</span>
 </header>
 
 <div id="reset-bar">
@@ -389,7 +400,6 @@ function renderCard(d) {
         <span class="badge ${badgeClass}">${badgeText}</span>
       </div>
       <div class="fields">
-        <span>property</span>  <span class="val">${d.propertyId}</span>
         <span>kind</span>      <span class="val">${d.kind}</span>
         <span>uptime</span>    <span class="val">${d.uptimeSec}s</span>
         <span>signal</span>    <span class="val">${d.signalDbm} dBm</span>

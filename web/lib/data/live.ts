@@ -165,7 +165,7 @@ class LiveAdapter implements WardAdapter {
     void fetch(`${AGENT_URL}/incident/simulate`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ propertyId: "prop-2", mode: "hard", autoComplete: true }),
+      body: JSON.stringify({ propertyId: "home-wifi", mode: "hard", autoComplete: true }),
     }).catch((err) => console.warn("[ward] live runScenario POST failed:", err));
   }
 

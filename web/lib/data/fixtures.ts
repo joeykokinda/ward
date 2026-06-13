@@ -1,6 +1,6 @@
-// Canonical pre-staged demo state (DEMO.md + INTERFACES.md).
-// 3 properties healthy, 5 workers with ENS subnames + reputation,
-// agent = ward-agent.eth with 500 USDC, 3+ completed historical jobs.
+// Canonical pre-staged demo state — ONE homeowner's smart home.
+// 4 instrumented devices healthy, 5 ENS techs (subnames + reputation) as the
+// worker registry, agent = ward-agent.eth with 500 USDC, 3 completed jobs.
 
 import { AGENT_ENS } from "../config";
 import { usdc } from "../format";
@@ -8,10 +8,14 @@ import type {
   Activity,
   AgentEvent,
   AgentIdentity,
+  DeviceKind,
   Job,
   PropertyStatus,
   Worker,
 } from "./types";
+
+// The single home everything lives in (apartment dweller).
+export const HOME_REGION = "Brooklyn, NY";
 
 // Deterministic but realistic-looking fake tx hashes (0x + 64 hex).
 export function fakeTxHash(seed: string): string {
@@ -61,24 +65,27 @@ export function buildAgent(): AgentIdentity {
   };
 }
 
+// The four devices in the home. id == deviceId == propertyId so each device is
+// tracked independently and the agent's one-open-job-per-property guard is
+// effectively one-open-job-per-device.
 export function buildProperties(): PropertyStatus[] {
   const base = isoHoursAgo(0);
   const mk = (
-    id: string,
+    deviceId: string,
     name: string,
-    region: string,
+    kind: DeviceKind,
     uptimeSec: number,
     signalDbm: number,
   ): PropertyStatus => ({
-    id,
+    id: deviceId,
     name,
-    deviceId: `${id}-router`,
-    deviceKind: "router",
-    region,
+    deviceId,
+    deviceKind: kind,
+    region: HOME_REGION,
     device: {
-      deviceId: `${id}-router`,
-      propertyId: id,
-      kind: "router",
+      deviceId,
+      propertyId: deviceId,
+      kind,
       online: true,
       uptimeSec,
       signalDbm,
@@ -87,17 +94,21 @@ export function buildProperties(): PropertyStatus[] {
     },
   });
   return [
-    mk("prop-1", "The Brooklyn Loft", "Brooklyn, NY", 412_880, -52),
-    mk("prop-2", "Greenwich Cottage", "Greenwich, CT", 268_140, -58),
-    mk("prop-3", "Hudson Studio", "Hudson, NY", 99_360, -61),
+    mk("home-wifi", "WiFi router", "router", 412_880, -52),
+    mk("home-thermostat", "Thermostat", "thermostat", 268_140, -58),
+    mk("home-lock", "Front-door lock", "lock", 99_360, -61),
+    mk("home-leak", "Leak sensor", "leak_sensor", 540_120, 0),
   ];
 }
 
+// The five local techs registered with WARD. Skills cover the home's device
+// kinds (network / hvac / locksmith / plumber) so dispatch-by-skill reads
+// sensibly. mike is the highest-reputation network tech -> picked for the
+// WiFi-outage hero incident.
 export function buildWorkers(): Worker[] {
   const mk = (
     handle: string,
     skills: string[],
-    region: string,
     reputation: number,
     completedJobs: number,
   ): Worker => ({
@@ -105,29 +116,29 @@ export function buildWorkers(): Worker[] {
     ensName: `${handle}.${AGENT_ENS}`,
     address: fakeAddress(`worker-${handle}`),
     skills,
-    region,
+    region: HOME_REGION,
     reputation,
     staked: true,
     stakeUsdc: usdc(100),
     completedJobs,
   });
-  // mike highest reputation in Greenwich region -> picked in the scripted flow.
   return [
-    mk("mike", ["network", "router", "hardware"], "Greenwich, CT", 98, 41),
-    mk("sara", ["network", "smart-lock"], "Stamford, CT", 91, 33),
-    mk("deon", ["hardware", "hvac"], "Brooklyn, NY", 87, 28),
-    mk("lena", ["network", "sensor"], "Hudson, NY", 84, 22),
-    mk("raj", ["router", "general"], "Greenwich, CT", 79, 17),
+    mk("mike", ["network", "router", "isp"], 98, 41),
+    mk("sara", ["network", "smart-lock", "locksmith"], 91, 33),
+    mk("deon", ["hvac", "thermostat"], 87, 28),
+    mk("lena", ["plumber", "leak", "sensor"], 84, 22),
+    mk("raj", ["network", "general", "locksmith"], 79, 17),
   ];
 }
 
-// 3+ completed historical jobs so the feed is never empty.
+// 3 completed historical jobs so the feed is never empty — one per non-hero
+// device, each settled to the matching-skill tech.
 export function buildJobs(): Job[] {
   return [
     {
       jobId: 1041,
-      propertyId: "prop-1",
-      deviceId: "prop-1-router",
+      propertyId: "home-thermostat",
+      deviceId: "home-thermostat",
       worker: `deon.${AGENT_ENS}`,
       workerAddress: fakeAddress("worker-deon"),
       amount: usdc(60),
@@ -141,8 +152,8 @@ export function buildJobs(): Job[] {
     },
     {
       jobId: 1042,
-      propertyId: "prop-3",
-      deviceId: "prop-3-router",
+      propertyId: "home-leak",
+      deviceId: "home-leak",
       worker: `lena.${AGENT_ENS}`,
       workerAddress: fakeAddress("worker-lena"),
       amount: usdc(75),
@@ -156,8 +167,8 @@ export function buildJobs(): Job[] {
     },
     {
       jobId: 1043,
-      propertyId: "prop-2",
-      deviceId: "prop-2-router",
+      propertyId: "home-wifi",
+      deviceId: "home-wifi",
       worker: `mike.${AGENT_ENS}`,
       workerAddress: fakeAddress("worker-mike"),
       amount: usdc(75),
@@ -218,14 +229,14 @@ export function buildEvents(): AgentEvent[] {
       id: "ev-seed-1",
       ts: isoMinutesAgo(14),
       type: "MONITOR",
-      message: "Fleet sweep complete · 3/3 devices online · all telemetry nominal",
+      message: "Home sweep complete · 4/4 devices online · all telemetry nominal",
     },
     {
       id: "ev-seed-2",
       ts: isoMinutesAgo(9),
       type: "MONITOR",
-      message: "prop-1-router uptime 4d 18h · signal -52dBm · within policy",
-      propertyId: "prop-1",
+      message: "home-wifi uptime 4d 18h · signal -52dBm · within policy",
+      propertyId: "home-wifi",
     },
     {
       id: "ev-seed-3",
@@ -233,7 +244,7 @@ export function buildEvents(): AgentEvent[] {
       type: "RESOLVED",
       message: "Job #1043 settled · mike.ward-agent.eth paid 75.00 USDC · reputation 97 → 98",
       jobId: 1043,
-      propertyId: "prop-2",
+      propertyId: "home-wifi",
     },
     {
       id: "ev-seed-4",

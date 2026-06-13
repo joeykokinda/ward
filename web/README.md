@@ -1,9 +1,14 @@
 # WARD — frontend
 
-Mission-control terminal UI for WARD, the autonomous property-operations agent.
-Three personas (Host / Worker / Agent) behind a header dropdown, built strictly to
-`DESIGN.md` tokens. Ships with a fully scripted, backend-free demo so the whole
-flow is judge-ready with zero credentials.
+UI for WARD, the autonomous agent for YOUR HOME: it watches every device, fixes
+what it can, hires a verified human when it can't, and tells you what happened —
+so you stop being on-call for your own house. One home, four instrumented devices
+(WiFi router, thermostat, front-door lock, leak sensor). Three personas
+(Home / Worker / Agent) behind a header dropdown, built strictly to `DESIGN.md`
+tokens (v2 Profound-style light theme). Ships with a fully scripted, backend-free
+demo so the whole flow is judge-ready with zero credentials.
+
+Roadmap: today homeowners · tomorrow property managers & DePIN — same protocol.
 
 Stack: Next.js 16 (app router) + Tailwind 4 + TypeScript. JetBrains Mono + Inter
 via `next/font`. pnpm.
@@ -29,16 +34,16 @@ demo work out of the box.
 
 Switch with the dropdown in the header (top right).
 
-- **Host** — three columns. Left: fleet grid (3 properties, dense rows with status
-  dot + name + device id + ticking uptime + signal). Middle: agent reasoning stream
-  in terminal-log style `[HH:MM:SS] [TYPE] message` with the per-type colors from
-  `DESIGN.md`. Right: onchain activity feed (tx hashes → Arc explorer, USDC in amber,
-  ENS names). Bottom: active-job bar (property // worker ENS // amount // status //
-  elapsed) with an amber border-opacity pulse, shown only while a job is live.
-  Header shows the agent ENS name, a blinking LIVE indicator, and the USDC treasury.
-- **Worker** — mobile-first single column (the QR target). Reputation header,
-  available jobs (amount in amber, distance, property), big Accept / Mark-Complete
-  touch targets, recent payouts.
+- **Home** (homeowner) — the device grid (4 home devices: WiFi router, thermostat,
+  front-door lock, leak sensor — each with a friendly name, lucide icon, status,
+  uptime, signal). The agent reasoning timeline leads; the device grid + on-chain
+  activity feed (tx hashes → Arc explorer, USDC, ENS names) sit beside it. An
+  active-job bar appears while a job is live. The Simulate control is
+  **Simulate: WiFi outage** (the hero). Header shows the agent ENS name, a live
+  indicator, and the USDC treasury.
+- **Worker** (local tech) — mobile-first single column (the QR target). Reputation
+  header, jobs at homes near you ("WiFi outage at a home nearby"), big Accept /
+  Mark-Complete touch targets, recent payouts.
 - **Agent** — identity card (ENS name, address, live USDC balance), spending-policy
   panel (per-job cap, daily cap, owner-approval threshold = 100 USDC), decision
   history, and the recent reasoning trace.
@@ -84,30 +89,31 @@ deployed, point the env vars at the real values (or wire
 
 ## Scripted incident player (the demo)
 
-In the **Host** view, **▶ SIMULATE ROUTER FAILURE** (targets Greenwich Cottage,
-`prop-2`) runs the entire `DEMO.md` 90-second flow as a timed sequence — no backend:
+In the **Home** view, **Simulate: WiFi outage** (the hero — your WiFi just died at
+2am, device `home-wifi`) runs the entire flow as a timed sequence — no backend:
 
-1. detect (router goes offline, hard fault) →
+1. detect (home WiFi router goes offline, hard fault) →
 2. diagnose telemetry →
 3. attempt remote reboot →
 4. reboot **FAILS** (hard fault) →
-5. query the worker registry via ENS, rank by reputation, select
-   `mike.ward-agent.eth` →
+5. query the worker registry via ENS for skill `network`, rank by reputation,
+   select `mike.ward-agent.eth` →
 6. note 75 USDC < the 100 USDC owner-approval threshold → escrow **75 USDC** on Arc
    (realistic tx hash + explorer link), job `OPEN`, treasury 500 → 425 →
 7. worker accepts (judge's phone in the Worker view, or auto-pilot for unattended
    demos) → marks complete →
 8. device recovers → Chainlink CRE attests `online && faultMode === none` → escrow
    auto-releases to the worker → reputation 98 → 99 →
-9. activity feed updates, property returns to **HEALTHY**.
+9. activity feed updates, home WiFi returns to **HEALTHY**.
 
-**⟲ RESET** returns to the clean pre-staged state (3 healthy properties, 5 workers
-with ENS subnames + reputation, agent wallet 500 USDC, 3 historical settled jobs in
-the feed). Designed to be used 50+ times over a weekend.
+**⟲ RESET** returns to the clean pre-staged state (4 healthy home devices, 5 ENS
+techs with reputation, agent wallet 500 USDC, 3 historical settled jobs in the
+feed). Designed to be used 50+ times over a weekend.
 
-Pre-staged fixtures (`lib/data/fixtures.ts`) match the `INTERFACES.md` canonical
-list: properties `prop-1/2/3`, workers `mike/sara/deon/lena/raj.ward-agent.eth`,
-agent `ward-agent.eth`, jobs `#1041/#1042/#1043`.
+Pre-staged fixtures (`lib/data/fixtures.ts`): devices `home-wifi` (router, hero),
+`home-thermostat`, `home-lock`, `home-leak` (leak sensor); techs
+`mike/sara/deon/lena/raj.ward-agent.eth` with skills network / hvac / locksmith /
+plumber; agent `ward-agent.eth`; jobs `#1041/#1042/#1043`.
 
 ## Live wiring (later)
 

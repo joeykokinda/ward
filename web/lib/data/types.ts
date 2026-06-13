@@ -2,30 +2,34 @@
 // Both the mock adapter and the supabase adapter conform to these shapes,
 // and the live agent SSE feed + Arc contracts will produce the same data.
 
-export type DeviceKind = "router";
+// One home, four instrumented device kinds.
+export type DeviceKind = "router" | "thermostat" | "lock" | "leak_sensor";
 
 export type FaultMode = "none" | "soft" | "hard";
 
 export type DeviceStatus = {
   deviceId: string;
-  propertyId: string;
+  propertyId: string; // == deviceId: each device is tracked independently
   kind: DeviceKind;
   online: boolean;
   uptimeSec: number;
-  signalDbm: number;
+  signalDbm: number; // not meaningful for the leak sensor (0)
   faultMode: FaultMode;
   lastChangedIso: string;
 };
 
+// A device in the home. `propertyId` (id) == deviceId so the agent's
+// one-open-job-per-property guard works per-device. The `Property`/
+// `PropertyStatus` names are kept so the shared snapshot shape is stable.
 export type Property = {
   id: string;
-  name: string;
+  name: string; // friendly device name, e.g. "WiFi router"
   deviceId: string;
   deviceKind: DeviceKind;
-  region: string;
+  region: string; // the home's location (same for every device)
 };
 
-// status pairs a property with its current device state for the fleet grid
+// status pairs a device with its current telemetry for the home grid
 export type PropertyStatus = Property & {
   device: DeviceStatus;
 };
@@ -134,14 +138,14 @@ export type WardSnapshot = {
 };
 
 // A simulation/incident scenario the adapter can run.
-export type ScenarioId = "router-failure";
+export type ScenarioId = "wifi-outage";
 
 export type WardAdapter = {
   // Snapshot of all demo state. Cheap to call; safe to poll.
   getSnapshot: () => WardSnapshot;
   // Subscribe to state changes. Returns an unsubscribe fn.
   subscribe: (listener: () => void) => () => void;
-  // Drive the scripted incident (Host: "Simulate Router Failure").
+  // Drive the scripted incident (Home: "Simulate: WiFi outage").
   runScenario: (id: ScenarioId) => void;
   // Worker-side actions (judge's phone).
   acceptJob: (jobId: number, workerAddress: string) => void;

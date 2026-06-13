@@ -1,6 +1,15 @@
 # WARD Device Simulator
 
-FastAPI app that simulates the three instrumented-property routers polled by the WARD agent and fetched by the Chainlink CRE workflow.
+FastAPI app that simulates the four instrumented devices in a single homeowner's
+smart home, polled by the WARD agent and fetched by the Chainlink CRE workflow.
+
+> **Device set changed (2026-06-13):** the old 3-property router fleet
+> (`prop-1/2/3-router`) was replaced by ONE home with four devices
+> (`home-wifi`, `home-thermostat`, `home-lock`, `home-leak`). The HTTP API,
+> CORS, and Dockerfile are unchanged.
+>
+> **brach reload:** `git pull && systemctl --user restart ward-sim`
+> (and `systemctl --user restart ward-agent` so the agent re-reads the fleet).
 
 ## Run locally
 
@@ -18,8 +27,8 @@ Console UI: http://localhost:8090/
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/healthz` | Returns `{"status":"ok"}` |
-| GET | `/` | Node-console HTML dashboard |
-| GET | `/fleet` | `{ devices: DeviceStatus[] }` for all 3 devices |
+| GET | `/` | Home-console HTML dashboard |
+| GET | `/fleet` | `{ devices: DeviceStatus[] }` for all 4 devices |
 | GET | `/device/{id}/status` | Single `DeviceStatus` |
 | POST | `/device/{id}/fail?mode=soft\|hard` | Trigger a fault |
 | POST | `/device/{id}/restart` | Remote reboot (heals soft only) |
@@ -30,8 +39,8 @@ Console UI: http://localhost:8090/
 
 ```json
 {
-  "deviceId":       "prop-2-router",
-  "propertyId":     "prop-2",
+  "deviceId":       "home-wifi",
+  "propertyId":     "home-wifi",
   "kind":           "router",
   "online":         false,
   "uptimeSec":      0,
@@ -41,7 +50,9 @@ Console UI: http://localhost:8090/
 }
 ```
 
-CRE reads `online === true && faultMode === "none"` as "fixed".
+`propertyId === deviceId`: each device is tracked independently, so the agent's
+one-open-job-per-property guard works per-device. CRE reads
+`online === true && faultMode === "none"` as "fixed".
 
 ## Fault-mode semantics
 
@@ -51,15 +62,23 @@ CRE reads `online === true && faultMode === "none"` as "fixed".
 | `soft` | `false` | `true` (healed) | `true` |
 | `hard` | `false` | `false` (no effect) | `true` |
 
-Demo flow: `POST /device/prop-2-router/fail?mode=hard` simulates the router that won't self-heal, forcing the agent to dispatch a human worker. After the worker marks complete, `POST /device/prop-2-router/repair` restores health so CRE attestation passes.
+**Leak sensor exception:** `home-leak` faults are physical, so any
+`POST /device/home-leak/fail?mode=...` is recorded as `hard` and `/restart`
+never heals it — it always needs a plumber.
 
-## Canonical devices
+Hero demo flow: `POST /device/home-wifi/fail?mode=hard` simulates the home WiFi
+router that won't self-heal at 2am, forcing the agent to dispatch a human
+networking tech. After the worker marks complete,
+`POST /device/home-wifi/repair` restores health so CRE attestation passes.
 
-| deviceId | propertyId | Property name |
-|----------|------------|---------------|
-| `prop-1-router` | `prop-1` | The Brooklyn Loft |
-| `prop-2-router` | `prop-2` | Greenwich Cottage |
-| `prop-3-router` | `prop-3` | Hudson Studio |
+## Canonical devices (one home, four devices)
+
+| deviceId | kind | hero? | soft fault | hard fault → human |
+|----------|------|-------|-----------|--------------------|
+| `home-wifi` | `router` | **HERO** | heals on /restart | network / ISP tech |
+| `home-thermostat` | `thermostat` | | heals on /restart (reconfig) | HVAC tech |
+| `home-lock` | `lock` | | heals on /restart | locksmith |
+| `home-leak` | `leak_sensor` | | n/a (always physical) | plumber |
 
 ## Public exposure
 

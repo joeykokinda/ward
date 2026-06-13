@@ -52,10 +52,12 @@ export function HostView({
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-fg">
-              Fleet operations
+              My home
             </h1>
-            <p className="mt-1 text-[14px] text-muted">
-              WARD monitors your properties and dispatches paid repairs autonomously.
+            <p className="mt-1 max-w-2xl text-[14px] text-muted">
+              WARD watches every device, fixes what it can, hires someone when it
+              can&apos;t, and tells you what happened. You stop being on-call for your
+              own house.
             </p>
           </div>
           <div className="flex items-center gap-2.5">
@@ -72,7 +74,7 @@ export function HostView({
               className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
             >
               <Play className="h-4 w-4 fill-current" strokeWidth={0} />
-              {isRunning ? "Simulating…" : "Simulate router failure"}
+              {isRunning ? "Simulating…" : "Simulate: WiFi outage"}
             </button>
           </div>
         </div>

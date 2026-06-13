@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "WARD · autonomous property operations",
+  title: "WARD · the autonomous agent for your home",
   description:
-    "WARD — autonomous property-operations agent. Proof-of-physical-work escrow on Arc.",
+    "WARD watches every device in your home, fixes what it can, and hires a verified human when it can't — settling in USDC on machine-attested telemetry. Proof-of-physical-work escrow on Arc.",
 };
 
 export const viewport: Viewport = {

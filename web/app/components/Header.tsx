@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Building2, ChevronDown, Cpu, ShieldCheck, Wrench } from "lucide-react";
+import { ChevronDown, Cpu, House, ShieldCheck, Wrench } from "lucide-react";
 import { formatUsdc } from "@/lib/format";
 import type { AgentIdentity } from "@/lib/data/types";
 
@@ -11,10 +11,10 @@ const PERSONAS: {
   id: Persona;
   label: string;
   sub: string;
-  Icon: typeof Building2;
+  Icon: typeof House;
 }[] = [
-  { id: "host", label: "Host", sub: "Fleet operator", Icon: Building2 },
-  { id: "worker", label: "Worker", sub: "Field technician", Icon: Wrench },
+  { id: "host", label: "Home", sub: "Homeowner", Icon: House },
+  { id: "worker", label: "Worker", sub: "Local tech", Icon: Wrench },
   { id: "agent", label: "Agent", sub: "ward-agent.eth", Icon: Cpu },
 ];
 
