@@ -37,30 +37,34 @@ const KIND_ICON: Record<DeviceKind, LucideIcon> = {
   leak_sensor: Droplet,
 };
 
+// Dark mission-control palette. Structural grays on near-black, faults
+// saturated so they pop, amber for active repair, green for recovery/healthy.
 const COLOR = {
   // architecture
-  outerWall: "#cbd5e1", // thick perimeter
-  innerWall: "#e2e8f0", // hairline partitions
-  floor: "#fcfcfd", // subtle floor slab fill
-  label: "#94a3b8", // room labels — quiet
-  // calm device puck (neutral — NOT green)
-  puck: "#ffffff",
-  puckStroke: "#d4d8dd",
-  puckInk: "#475569",
-  reading: "#64748b",
-  deviceLabel: "#94a3b8",
-  healthyDot: "#84cc16", // small green status dot only
-  // faults (reserved, saturated — these are what "pop")
-  alert: "#dc2626",
-  alertSoft: "#fef2f2",
-  water: "#2563eb",
-  waterSoft: "#eff4ff",
-  warm: "#d97706",
-  warmSoft: "#fffaf0",
-  // recovery / worker
-  heal: "#84cc16",
-  healInk: "#3f6212",
-  worker: "#84cc16",
+  outerWall: "#3a3a52", // thick perimeter
+  innerWall: "#242438", // hairline partitions
+  floor: "#0d0d14", // inset floor slab (darker than the panel)
+  label: "#64748b", // room labels — quiet
+  // calm device puck (neutral surface)
+  puck: "#16161f",
+  puckStroke: "#2c2c40",
+  puckInk: "#94a3b8",
+  reading: "#94a3b8",
+  deviceLabel: "#64748b",
+  healthyDot: "#22c55e", // green status dot
+  // faults (saturated — these "pop" on dark)
+  alert: "#ef4444",
+  alertSoft: "#2a1414",
+  water: "#3b82f6",
+  waterSoft: "#0f1a2e",
+  warm: "#f59e0b",
+  warmSoft: "#2a2008",
+  // worker + active repair (amber); recovery flash (green)
+  worker: "#f59e0b",
+  fixing: "#f59e0b",
+  fixingSoft: "#2a2008",
+  heal: "#22c55e",
+  healInk: "#4ade80",
 } as const;
 
 export function FloorPlan({
@@ -427,9 +431,9 @@ function DeviceNode({
         : COLOR.alertSoft;
 
   // Calm by default: neutral slate puck. Color is reserved for state changes.
-  const puckStroke = fixing ? COLOR.heal : alert ? faultColor : COLOR.puckStroke;
-  const puckFill = fixing ? "#ffffff" : alert ? faultSoft : COLOR.puck;
-  const iconColor = fixing ? COLOR.healInk : alert ? faultColor : COLOR.puckInk;
+  const puckStroke = fixing ? COLOR.fixing : alert ? faultColor : COLOR.puckStroke;
+  const puckFill = fixing ? COLOR.fixingSoft : alert ? faultSoft : COLOR.puck;
+  const iconColor = fixing ? COLOR.fixing : alert ? faultColor : COLOR.puckInk;
 
   const statusText = fixing
     ? "repairing…"
@@ -448,7 +452,7 @@ function DeviceNode({
           : alert
             ? "11°C · off-target"
             : "21°C";
-  const statusColor = fixing ? COLOR.healInk : alert ? faultColor : COLOR.reading;
+  const statusColor = fixing ? COLOR.fixing : alert ? faultColor : COLOR.reading;
 
   return (
     <g>
@@ -476,7 +480,7 @@ function DeviceNode({
           cy={cy - 19}
           r={4.5}
           fill={COLOR.healthyDot}
-          stroke="#ffffff"
+          stroke="#0d0d14"
           strokeWidth={1.5}
           className="ward-healthy-breath"
         />
@@ -619,13 +623,13 @@ function WorkerLayer({
           opacity: visible ? 1 : 0,
         }}
       >
-        <circle r={16} fill={COLOR.worker} stroke="#ffffff" strokeWidth={2.5} />
+        <circle r={16} fill={COLOR.worker} stroke="#0a0a0f" strokeWidth={2.5} />
         <text
           textAnchor="middle"
           y={5}
           fontSize={15}
           fontWeight={700}
-          fill="#1a2e05"
+          fill="#0a0a0f"
           style={{ fontFamily: "var(--font-inter)" }}
         >
           {initial}
@@ -634,7 +638,7 @@ function WorkerLayer({
         {/* wrench blip while fixing */}
         {atDevice && (
           <g className="ward-wrench" transform="translate(16,-16)">
-            <circle r={11} fill="#ffffff" stroke={COLOR.heal} strokeWidth={2} />
+            <circle r={11} fill="#111118" stroke={COLOR.fixing} strokeWidth={2} />
             <foreignObject x={-8} y={-8} width={16} height={16}>
               <div
                 style={{
@@ -643,7 +647,7 @@ function WorkerLayer({
                   justifyContent: "center",
                   width: 16,
                   height: 16,
-                  color: COLOR.healInk,
+                  color: COLOR.fixing,
                 }}
               >
                 <Wrench size={11} strokeWidth={2.2} />
@@ -670,11 +674,11 @@ function WorkerLayer({
                   flexDirection: "column",
                   alignItems: "center",
                   gap: 1,
-                  padding: "3px 8px",
-                  borderRadius: 8,
-                  background: "#ffffff",
+                  padding: "3px 9px",
+                  borderRadius: 4,
+                  background: "#111118",
                   border: `1px solid ${COLOR.puckStroke}`,
-                  boxShadow: "0 1px 2px rgb(15 23 42 / 0.06)",
+                  boxShadow: "0 2px 6px rgb(0 0 0 / 0.6)",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -683,7 +687,7 @@ function WorkerLayer({
                     fontFamily: "var(--font-mono-geist)",
                     fontSize: 11,
                     fontWeight: 600,
-                    color: "#334155",
+                    color: "#e2e8f0",
                     lineHeight: 1.1,
                   }}
                 >
@@ -694,11 +698,11 @@ function WorkerLayer({
                     style={{
                       fontFamily: "var(--font-inter)",
                       fontSize: 10,
-                      color: COLOR.reading,
+                      color: COLOR.healInk,
                       lineHeight: 1.1,
                     }}
                   >
-                    {[role, "staked", rep != null ? `rep ${rep}` : null]
+                    {[role, "verified", rep != null ? `rep ${rep}` : null]
                       .filter(Boolean)
                       .join(" · ")}
                   </span>

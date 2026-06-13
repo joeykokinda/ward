@@ -137,8 +137,8 @@ export type AgentIdentity = {
 export type NarrativePhaseId =
   | "detect"
   | "diagnose"
-  | "remote"
   | "hire"
+  | "repair"
   | "verify";
 
 export type NarrativePhase = {

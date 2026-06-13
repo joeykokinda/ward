@@ -29,18 +29,20 @@ export function Panel({
   );
 }
 
-export type Tone = "accent" | "danger" | "warn" | "muted";
+export type Tone = "accent" | "success" | "danger" | "warn" | "muted";
 
 // --- Status dot, always paired with a text label by callers. ---
 export function Dot({ tone, pulse = false }: { tone: Tone; pulse?: boolean }) {
   const bg =
     tone === "accent"
       ? "bg-accent"
-      : tone === "danger"
-        ? "bg-danger"
-        : tone === "warn"
-          ? "bg-warn"
-          : "bg-faint";
+      : tone === "success"
+        ? "bg-success"
+        : tone === "danger"
+          ? "bg-danger"
+          : tone === "warn"
+            ? "bg-warn"
+            : "bg-faint";
   return <span className={`dot ${bg} ${pulse ? "ward-live-dot" : ""}`} aria-hidden />;
 }
 
@@ -49,6 +51,8 @@ export function toneText(tone: Tone): string {
   switch (tone) {
     case "accent":
       return "text-accent-ink";
+    case "success":
+      return "text-success-ink";
     case "danger":
       return "text-danger";
     case "warn":
@@ -58,14 +62,15 @@ export function toneText(tone: Tone): string {
   }
 }
 
-// --- Log line types collapsed to a calm 2–3 tone scheme (DESIGN.md v2). ---
-// Routine telemetry is muted; key escrow/resolution events get the accent.
+// --- Log line types collapsed to a calm tone scheme. Routine telemetry is
+// muted; escrow/dispatch (money + active) get amber; resolution gets green. ---
 export function logTone(type: LogType): Tone {
   switch (type) {
     case "ESCROW":
     case "DISPATCH":
-    case "RESOLVED":
       return "accent";
+    case "RESOLVED":
+      return "success";
     default:
       return "muted";
   }
@@ -80,7 +85,7 @@ export function isKeyEvent(type: LogType): boolean {
 export function jobStateTone(state: JobState): Tone {
   switch (state) {
     case "Completed":
-      return "accent";
+      return "success";
     case "Rejected":
     case "Expired":
       return "danger";
@@ -106,11 +111,13 @@ export function Chip({
   const styles =
     tone === "accent"
       ? "bg-accent-soft text-accent-ink"
-      : tone === "danger"
-        ? "bg-danger-soft text-danger"
-        : tone === "warn"
-          ? "bg-warn-soft text-warn"
-          : "bg-subtle text-muted";
+      : tone === "success"
+        ? "bg-success-soft text-success-ink"
+        : tone === "danger"
+          ? "bg-danger-soft text-danger"
+          : tone === "warn"
+            ? "bg-warn-soft text-warn"
+            : "bg-subtle text-muted";
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-semibold ${styles} ${className}`}

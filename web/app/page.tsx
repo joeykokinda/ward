@@ -2,6 +2,7 @@ import { Nav } from "./components/home/Nav";
 import { Hero } from "./components/home/Hero";
 import { Actors } from "./components/home/Actors";
 import { HowItWorks } from "./components/home/HowItWorks";
+import { Identity } from "./components/home/Identity";
 import { WhyCrypto } from "./components/home/WhyCrypto";
 import { Integrations } from "./components/home/Integrations";
 import { Roadmap } from "./components/home/Roadmap";
@@ -14,6 +15,7 @@ export default function Home() {
       <Hero />
       <Actors />
       <HowItWorks />
+      <Identity />
       <WhyCrypto />
       <Integrations />
       <Roadmap />

@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Cpu, House, ShieldCheck, Wrench } from "lucide-react";
+import Link from "next/link";
+import { ArrowLeft, ChevronDown, Cpu, House, Wrench } from "lucide-react";
 import { formatUsdc } from "@/lib/format";
+import { WardMark } from "./WardMark";
 import type { AgentIdentity } from "@/lib/data/types";
 
 export type Persona = "host" | "worker" | "agent";
@@ -13,7 +15,7 @@ const PERSONAS: {
   sub: string;
   Icon: typeof House;
 }[] = [
-  { id: "host", label: "Home", sub: "Homeowner", Icon: House },
+  { id: "host", label: "Homeowner", sub: "This home", Icon: House },
   { id: "worker", label: "Worker", sub: "Local tech", Icon: Wrench },
   { id: "agent", label: "Agent", sub: "ward-agent.eth", Icon: Cpu },
 ];
@@ -52,12 +54,12 @@ export function Header({
     <header className="flex items-center justify-between gap-3 border-b border-border bg-surface px-5 py-3">
       {/* Left: brand + agent identity */}
       <div className="flex min-w-0 items-center gap-4">
-        <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent">
-            <ShieldCheck className="h-4 w-4 text-white" strokeWidth={2.4} />
+        <Link href="/" className="flex items-center gap-2" title="WARD home">
+          <span className="flex h-7 w-7 items-center justify-center rounded-sm bg-accent">
+            <WardMark className="h-[18px] w-[18px]" />
           </span>
           <span className="text-[16px] font-semibold tracking-tight text-fg">WARD</span>
-        </div>
+        </Link>
         <div className="hidden items-center gap-2 border-l border-border pl-4 md:flex">
           <span className="text-[12px] text-muted">Agent</span>
           <button
@@ -107,6 +109,14 @@ export function Header({
           {adapterName}
         </span>
 
+        <Link
+          href="/"
+          className="hidden items-center gap-1.5 text-[12px] text-muted transition-colors hover:text-fg sm:inline-flex"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2} />
+          Home
+        </Link>
+
         {/* Persona dropdown */}
         <div className="relative">
           <button
@@ -141,8 +151,8 @@ export function Header({
                       }`}
                     >
                       <span
-                        className={`flex h-8 w-8 items-center justify-center rounded-lg ${
-                          active ? "bg-accent text-white" : "bg-subtle text-muted"
+                        className={`flex h-8 w-8 items-center justify-center rounded-sm ${
+                          active ? "bg-accent text-[#0a0a0f]" : "bg-subtle text-muted"
                         }`}
                       >
                         <p.Icon className="h-4 w-4" strokeWidth={2} />

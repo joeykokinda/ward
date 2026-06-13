@@ -1,17 +1,22 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Droplet, Play, RotateCcw } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import type { Worker, WardSnapshot } from "@/lib/data/types";
 import { Modal } from "../Modal";
-import { ActiveJobBar } from "./ActiveJobBar";
-import { ActivityFeed } from "./ActivityFeed";
+import { ActorStrip } from "./ActorStrip";
 import { DeviceModal } from "./DeviceModal";
 import { FloorPlan } from "./FloorPlan";
-import { NarrativeBar } from "./NarrativeBar";
-import { ReasoningStream } from "./ReasoningStream";
+import { IntroOverlay } from "./IntroOverlay";
+import { OnChainStrip } from "./OnChainStrip";
+import { PhaseHUD } from "./PhaseHUD";
+import { TriggerPanel } from "./TriggerPanel";
 import { WorkerModal } from "./WorkerModal";
 
+const INTRO_KEY = "ward-intro-dismissed";
+
+// The /demo cinematic. The homepage explains the product, so this view is
+// visual: the floor plan is the stage, the phase HUD carries the story, the
+// actor strip + on-chain strip show the agent / human / chain in lockstep.
 export function HostView({
   snapshot,
   now,
@@ -29,6 +34,27 @@ export function HostView({
   onKillDevice: (deviceId: string) => void;
   onReset: () => void;
 }) {
+  // Intro overlay: show once per session. Starts false so SSR + first client
+  // render match; an effect flips it on if not yet dismissed.
+  const [showIntro, setShowIntro] = useState(false);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    // Defer the read so we don't setState synchronously in the effect body
+    // (matches the useTick pattern used elsewhere).
+    const t = setTimeout(() => {
+      if (!window.sessionStorage.getItem(INTRO_KEY)) setShowIntro(true);
+    }, 0);
+    return () => clearTimeout(t);
+  }, []);
+  const dismissIntro = () => {
+    setShowIntro(false);
+    try {
+      window.sessionStorage.setItem(INTRO_KEY, "1");
+    } catch {
+      // ignore storage failures (private mode); the overlay still dismisses
+    }
+  };
+
   // live uptime: advance per second from the last device snapshot. `now` is a
   // tick timestamp from useTick (0 before mount), so render stays pure.
   const liveUptime = useMemo(() => {
@@ -46,10 +72,6 @@ export function HostView({
     }
     return out;
   }, [snapshot.properties, now]);
-
-  const activeProperty = snapshot.activeJob
-    ? snapshot.properties.find((p) => p.id === snapshot.activeJob!.propertyId)
-    : undefined;
 
   // modal state
   const [openDeviceId, setOpenDeviceId] = useState<string | null>(null);
@@ -69,82 +91,44 @@ export function HostView({
 
   return (
     <div className="min-h-0 flex-1 overflow-auto ward-scroll">
-      <div className="mx-auto w-full max-w-6xl px-5 py-6">
-        {/* page heading + controls */}
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight text-fg">My home</h1>
-            <p className="mt-1 max-w-2xl text-[14px] text-muted">
-              Click any device for its live status, or trip a fault and watch the
-              agent diagnose, hire, and pay.
-            </p>
-          </div>
-          <div className="flex items-center gap-2.5">
-            <button
-              onClick={onReset}
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3.5 py-2 text-[13px] font-medium text-fg-soft transition-colors hover:bg-subtle"
-            >
-              <RotateCcw className="h-4 w-4 text-muted" strokeWidth={2} />
-              Reset
-            </button>
-            <button
-              onClick={onSimulate}
-              disabled={isRunning}
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {isRunning ? (
-                <Play className="h-4 w-4 fill-current" strokeWidth={0} />
-              ) : (
-                <Droplet className="h-4 w-4 fill-current" strokeWidth={0} />
-              )}
-              {isRunning ? "Simulating…" : "Simulate: water leak"}
-            </button>
-          </div>
-        </div>
+      {showIntro && (
+        <IntroOverlay
+          onWatch={() => {
+            dismissIntro();
+            onSimulate();
+          }}
+          onDismiss={dismissIntro}
+        />
+      )}
 
-        {/* narrative spine: the intro explainer when idle, the phase stepper
-            (what's happening + why, with on-chain badges) while it runs */}
-        <div className="mt-6">
-          <NarrativeBar
-            narrative={snapshot.narrative}
-            onStart={onSimulate}
-            isRunning={isRunning}
-          />
-        </div>
-
-        {/* active job — the focal status strip when a job is live */}
-        {snapshot.activeJob && (
-          <div className="mt-6">
-            <ActiveJobBar
-              job={snapshot.activeJob}
-              property={activeProperty}
-              now={now}
-              mounted={mounted}
-            />
-          </div>
-        )}
-
-        {/* HERO: the animated floor plan + the agent reasoning stream */}
-        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.55fr_1fr]">
+      <div className="mx-auto w-full max-w-6xl px-5 py-5">
+        {/* stage: floor plan (hero) + actor strip / trigger panel */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-[1.65fr_1fr]">
           <FloorPlan
             snapshot={snapshot}
             onKillDevice={onKillDevice}
             onDeviceClick={(id) => setOpenDeviceId(id)}
             onWorkerClick={() => setWorkerOpen(true)}
           />
-          <ReasoningStream events={snapshot.events} mounted={mounted} />
+          <div className="flex flex-col gap-5">
+            <ActorStrip snapshot={snapshot} />
+            <TriggerPanel
+              snapshot={snapshot}
+              isRunning={isRunning}
+              onTrigger={onKillDevice}
+              onReset={onReset}
+            />
+          </div>
         </div>
 
-        {/* on-chain activity feed — a compact bottom strip with its own bounded
-            scroll, so the floor plan + reasoning stay the hero and the feed never
-            pushes content into an awkward cutoff at laptop heights */}
-        <div className="mt-6 pb-2">
-          <ActivityFeed
-            activity={snapshot.activity}
-            now={now}
-            mounted={mounted}
-            bodyClassName="max-h-[240px] divide-y divide-border overflow-auto ward-scroll"
-          />
+        {/* phase HUD: what's happening + why */}
+        <div className="mt-5">
+          <PhaseHUD narrative={snapshot.narrative} />
+        </div>
+
+        {/* on-chain activity: three latest, human-readable, clickable */}
+        <div className="mt-5 pb-2">
+          <OnChainStrip activity={snapshot.activity} now={now} mounted={mounted} />
         </div>
       </div>
 

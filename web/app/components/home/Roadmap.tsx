@@ -8,6 +8,11 @@ export function Roadmap() {
           networks, any autonomous system that needs to hire humans for physically
           verifiable work.
         </p>
+        <p className="mt-4 max-w-3xl text-[15px] leading-relaxed text-fg-soft">
+          Every home gets its own agent. Every worker owns their identity. WARD is
+          the protocol they transact over &mdash; never the platform they&apos;re
+          trapped in.
+        </p>
       </div>
     </section>
   );

@@ -14,10 +14,10 @@ export type NarrativePhaseMeta = {
 
 export const NARRATIVE_PHASES: NarrativePhaseMeta[] = [
   { id: "detect", label: "Detect", title: "Detect the fault", onChain: false },
-  { id: "diagnose", label: "Diagnose", title: "Diagnose the problem", onChain: false },
-  { id: "remote", label: "Remote fix", title: "Try the free remote fix", onChain: false },
+  { id: "diagnose", label: "Diagnose", title: "Diagnose, try the free fix", onChain: false },
   { id: "hire", label: "Hire", title: "Hire a human, on-chain", onChain: true },
-  { id: "verify", label: "Verify & pay", title: "Verify the fix, release payment", onChain: true },
+  { id: "repair", label: "Repair", title: "Repair on site", onChain: false },
+  { id: "verify", label: "Verify", title: "Verify the fix, release payment", onChain: true },
 ];
 
 export const NARRATIVE_TOTAL = NARRATIVE_PHASES.length;

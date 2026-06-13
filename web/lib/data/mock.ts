@@ -98,13 +98,13 @@ const INCIDENTS: Record<string, IncidentSpec> = {
       detect:
         "2:11 AM. A pipe lets go in the Brooklyn apartment while the owner sleeps in Tokyo. WARD's leak sensor trips and the agent wakes up.",
       diagnose:
-        "WARD reads the live sensor: water is actively rising, not a one-off splash. This one needs hands on a valve.",
-      remote:
-        "WARD always tries the free fix first, but the burst is upstream of the smart shutoff valve. Software can't stop this leak.",
+        "Water is actively rising. WARD tries the free fix, closing the smart shutoff valve, but the burst is upstream. Software can't stop this one.",
       hire:
-        "WARD looks up verified plumbers via ENS, picks the highest-rated one, and locks 150 USDC in an escrow on Arc, autonomously, owner still asleep.",
+        "WARD looks up verified plumbers via ENS, picks the highest-rated one, and locks 150 USDC in escrow on Arc, autonomously, owner still asleep.",
+      repair:
+        "Mike accepts the job and arrives on site. He replaces the burst coupling and the sensor reads dry again.",
       verify:
-        "Mike fixes the leak and submits proof. A Chainlink oracle reads the sensor, confirms it's dry, and the escrow releases the 150 USDC to Mike, no invoice, no human.",
+        "A Chainlink oracle reads the sensor, confirms it's dry, and the escrow releases the 150 USDC to Mike. No invoice, no human approval.",
     },
   },
   // ── WiFi router ───────────────────────────────────────────────────────────
@@ -135,13 +135,13 @@ const INCIDENTS: Record<string, IncidentSpec> = {
       detect:
         "WARD's routine sweep finds the WiFi router dark, three missed heartbeats in a row.",
       diagnose:
-        "Telemetry shows the link down with no DHCP lease. WARD classifies a power or firmware hang.",
-      remote:
-        "WARD issues a remote reboot, the cheapest fix, but the router stays down after three tries. The fault is hardware.",
+        "The link is down with no DHCP lease. WARD issues a remote reboot, the free fix, but the router stays dark. The fault is hardware.",
       hire:
         "WARD ranks network techs by reputation via ENS and locks 75 USDC in an Arc escrow for the top one, no human in the loop.",
+      repair:
+        "The tech accepts the job, arrives, and replaces the router line. The device comes back online.",
       verify:
-        "The tech replaces the line and submits proof. A Chainlink oracle confirms the router is back online and the escrow releases the 75 USDC.",
+        "A Chainlink oracle confirms the router is back online and the escrow releases the 75 USDC.",
     },
   },
   // ── Smart thermostat ────────────────────────────────────────────────────
@@ -173,13 +173,13 @@ const INCIDENTS: Record<string, IncidentSpec> = {
       detect:
         "WARD notices the apartment drifting cold, 11°C against a 21°C setpoint. The boiler isn't firing.",
       diagnose:
-        "Ambient is still falling and the relay won't engage the boiler. WARD flags an HVAC fault.",
-      remote:
-        "WARD cycles the relay remotely, the free fix, but the boiler still won't fire. It's the zone valve.",
+        "The relay won't engage the boiler. WARD cycles it remotely, the free fix, but it still won't fire. It's the zone valve.",
       hire:
         "WARD finds HVAC techs via ENS and locks 90 USDC in an Arc escrow for the best-rated one, on its own.",
+      repair:
+        "The tech accepts the job, arrives, and swaps the zone valve. The room climbs back toward setpoint.",
       verify:
-        "The tech swaps the zone valve and submits proof. A Chainlink oracle confirms the room is back to setpoint and the escrow releases the 90 USDC.",
+        "A Chainlink oracle confirms the room is back to setpoint and the escrow releases the 90 USDC.",
     },
   },
   // ── Front-door smart lock ─────────────────────────────────────────────────
@@ -211,13 +211,13 @@ const INCIDENTS: Record<string, IncidentSpec> = {
       detect:
         "WARD loses contact with the front-door lock, bolt position unknown. It can't confirm the door is secured.",
       diagnose:
-        "The lock's heartbeat is gone and the bolt state is unreadable. WARD can't verify the home is locked.",
-      remote:
-        "WARD tries a remote re-pair, the free fix, but the bolt still reports unknown. A locksmith is needed.",
+        "The bolt state is unreadable. WARD tries a remote re-pair, the free fix, but it still reports unknown. A locksmith is needed.",
       hire:
         "WARD looks up locksmiths via ENS and locks 80 USDC in an Arc escrow for the top-rated tech, autonomously.",
+      repair:
+        "The locksmith accepts the job, arrives, and reseats the lock module. The bolt reports locked again.",
       verify:
-        "The locksmith reseats the module and submits proof. A Chainlink oracle confirms the door is locked and the escrow releases the 80 USDC.",
+        "A Chainlink oracle confirms the door is locked and the escrow releases the 80 USDC.",
     },
   },
 };
@@ -420,13 +420,11 @@ function incidentBeats(spec: IncidentSpec): Beat[] {
       run: (s) =>
         pushEvent(s, "DIAGNOSE", spec.diagnose2, { propertyId: spec.deviceId }),
     },
-    // ── ACT 3 · TRY THE FREE REMOTE FIX (then it fails) ──────────────────────
+    // ── still ACT 2 · DIAGNOSE: try the free remote fix (then it fails) ───────
     {
       at: 6600,
-      run: (s) => {
-        setNarrative(s, spec, "remote");
-        pushEvent(s, "ACTION", spec.remoteAction, { propertyId: spec.deviceId });
-      },
+      run: (s) =>
+        pushEvent(s, "ACTION", spec.remoteAction, { propertyId: spec.deviceId }),
     },
     {
       at: 8100,
@@ -636,6 +634,9 @@ class MockAdapter implements WardAdapter {
       ensName,
       jobId,
     });
+    // ACT 4 · REPAIR begins: the worker is dispatched and walking in.
+    const spec = INCIDENTS[job.deviceId];
+    if (spec) setNarrative(this.state, spec, "repair");
     this.emit();
   }
 
@@ -643,10 +644,12 @@ class MockAdapter implements WardAdapter {
     const job = findJob(this.state, jobId);
     if (!job || job.state !== "Funded") return;
     const spec = INCIDENTS[job.deviceId];
-    // ACT 5 · VERIFY & PAY. The field tech SUBMITS the fix (Funded -> Submitted).
-    // The device recovers, then the Evaluator (the sensor/CRE) confirms it and
-    // the escrow releases payment (Submitted -> Completed).
-    if (spec) setNarrative(this.state, spec, "verify");
+    // ACT 4 · REPAIR completing: the field tech SUBMITS the fix (Funded ->
+    // Submitted) and the device recovers. The Evaluator (sensor/CRE) then
+    // confirms it (ACT 5 · VERIFY) and the escrow releases (Submitted ->
+    // Completed). Set repair here too so the manual Worker-persona path (which
+    // may skip accept) still advances the phase correctly.
+    if (spec) setNarrative(this.state, spec, "repair");
     const submitTx = ARC_TX.submit; // field tech submitted the fix on-chain
     upsertJob(this.state, { ...job, state: "Submitted", txAccept: job.txAccept });
     pushEvent(
@@ -685,6 +688,8 @@ class MockAdapter implements WardAdapter {
 
     // the Evaluator (sensor/CRE) confirms the physical-world fact
     const attestTimer = setTimeout(() => {
+      // ACT 5 · VERIFY: the Evaluator (Chainlink CRE) reads the device + confirms.
+      if (spec) setNarrative(this.state, spec, "verify");
       const attestTx = ARC_TX.complete; // evaluator attestation drives complete()
       pushEvent(
         this.state,

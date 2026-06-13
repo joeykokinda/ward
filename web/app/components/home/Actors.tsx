@@ -3,13 +3,19 @@ const ACTORS: { label: string; name?: string; body: React.ReactNode }[] = [
     label: "Agent",
     body: (
       <>
-        <span className="mono text-fg-soft">ward-agent.eth</span> decides and pays.
+        <span className="mono text-fg-soft">ward-agent.eth</span> &mdash; this
+        home&apos;s own agent. It decides and pays.
       </>
     ),
   },
   {
     label: "Human",
-    body: <>A verified pro, found and ranked through ENS.</>,
+    body: (
+      <>
+        A verified pro who owns their ENS name and reputation. Found and ranked
+        through ENS.
+      </>
+    ),
   },
   {
     label: "Arc chain",
