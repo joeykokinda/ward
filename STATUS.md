@@ -34,9 +34,12 @@ Both anchor bounties are proven on real infra. Frontend is live (mock mode). Two
 - CRE simulation green. Docs: README, PROJECT, ARCHITECTURE(+mermaid), BOUNTIES, DEMO, PITCHES, DESIGN, SUBMISSION, CUTS, SPIKES, INTERFACES, INTEGRATION, DEMO-EVIDENCE, DEPLOY, BACKEND-SETUP.
 
 ## PENDING — needs user
-1. **Flip brach agent to LIVE chain.** From this dev box, push keys to brach:
-   `scp ~/Projects/web3/EthGlobal2026/spike/arc/.env ~/Projects/web3/EthGlobal2026/spike/arc/.env.worker.json rex@100.64.86.64:~/EthGlobalBackend/ward/spike/arc/`
-   Then on brach: `cd ~/EthGlobalBackend/ward && git pull && export ANTHROPIC_API_KEY=<key> && bash scripts/brach-live.sh` → expect `"chain":"LIVE"`.
+1. **Flip brach agent to LIVE chain.** brach is FULLY STAGED (repo pulled, sim+agent systemd-persistent, `agent/.env` has empty `ANTHROPIC_API_KEY=` placeholder picked up via EnvironmentFile on restart, no key present anywhere on brach). Only two things missing on brach: the secret key files + a real Anthropic key. Steps:
+   - a) From this dev box (`linux`), push the keys (will prompt for brach's password):
+     `scp ~/Projects/web3/EthGlobal2026/spike/arc/.env ~/Projects/web3/EthGlobal2026/spike/arc/.env.worker.json rex@100.64.86.64:~/EthGlobalBackend/ward/spike/arc/`
+   - b) On brach: `cd ~/EthGlobalBackend/ward && export ANTHROPIC_API_KEY=<key> && bash scripts/brach-live.sh` → expect `/healthz` shows `"chain":"LIVE"`.
+   - (Anthropic key is also in this dev box's gitignored `.env` if needed.)
+   - After `chain:LIVE`, Claude flips the Vercel frontend to the live adapter (next section).
 2. **ENS subnames** — provide `ward-agent.eth` owner key (`0x87Ab…8521`), OR set a controlled wallet as its manager, OR run `cd packages/ens && pnpm mint-subname mike --execute` with the owner wallet.
 
 ## PENDING — Claude does (after #1 / autonomous)
