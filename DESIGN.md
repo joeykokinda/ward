@@ -18,6 +18,14 @@ Mission control terminal, not a SaaS dashboard. Reference: SpaceX mission contro
 
 Fonts: **JetBrains Mono** for data/logs/numbers, **Inter** for labels. Border radius **4px maximum**. Zero gradients, zero glassmorphism.
 
+## Restraint pass (rex feedback 2026-06-13 — first build came out too busy)
+
+The first build used too much color and packed too many elements on screen — reads as "slop," not soothing. Correct toward calm:
+- **Color is an accent, not the default.** The vast majority of text is `fg` or `muted`. `amber` = money + active state only. `green`/`red` = health/alert status only. Collapse the 7 per-log-type colors to ~2–3 (e.g. muted for routine MONITOR/RESULT, amber for ACTION/ESCROW, green for RESOLVED) — don't paint every line a different color.
+- **Fewer things at once.** More whitespace and padding; don't show every panel at full density simultaneously. Let one area lead (the reasoning stream or the active incident), demote the rest.
+- **Calm hierarchy.** Bigger type scale jumps, generous line-height, fewer borders/dividers competing. Bloomberg-calm, not arcade.
+- Still: no gradients/glow/emoji, 1px borders, 4px radius. Restraint, not decoration.
+
 ## Hard bans
 
 Gradients (any), glassmorphism, glow effects, big hero cards, emoji in the UI, anything that looks like a shadcn demo. Non-negotiable.

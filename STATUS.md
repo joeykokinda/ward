@@ -42,6 +42,9 @@ Both anchor bounties are proven on real infra. Frontend is live (mock mode). Two
    - After `chain:LIVE`, Claude flips the Vercel frontend to the live adapter (next section).
 2. **ENS subnames** — provide `ward-agent.eth` owner key (`0x87Ab…8521`), OR set a controlled wallet as its manager, OR run `cd packages/ens && pnpm mint-subname mike --execute` with the owner wallet.
 
+## PENDING — UI redesign (rex feedback 2026-06-13)
+- Current frontend is "slop": too many colors + too many elements on screen, not soothing/calm. **Make it cleaner**: shrink the in-use palette (most text → fg/muted; reserve amber for money/active, green/red for status only; drop the rainbow of per-log-type colors to ~2-3), add whitespace/breathing room, reduce simultaneous dense panels, calmer hierarchy. Keep mission-control identity but restrained (Bloomberg calm, not arcade). Then redeploy to Vercel. See DESIGN.md "Restraint pass".
+
 ## PENDING — Claude does (after #1 / autonomous)
 - After brach is LIVE: redeploy frontend live → `cd web && pnpm dlx vercel@latest deploy --prod --yes --scope speks-projects-7a61d7b1 --token $VERCEL_TOKEN` with env `NEXT_PUBLIC_DATA_ADAPTER=live`, `NEXT_PUBLIC_AGENT_URL=https://brach.taild3399f.ts.net:8443`, deployment addresses.
 - Build more settled-job history on Arc for the activity feed (cast cycle; ~0.0014 USDC/tx; recycle USDC worker→agent).
