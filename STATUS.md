@@ -3,12 +3,13 @@
 **Last updated 2026-06-13.** If you're resuming with fresh context: read this top-to-bottom, then `README.md` + `BOUNTY-AUDIT.md`. Memory index: `~/.claude/projects/-home-rex-Projects-web3-EthGlobal2026/memory/MEMORY.md`.
 
 ## TL;DR
-WARD is judge-ready. **All three bounties (Chainlink CRE · Arc · ENS) materially PASS**, plus the ETHGlobal Finalist play (the animated floor-plan hero). It's a working **ERC-8183 (Agentic Commerce)** implementation live on Arc testnet: a home agent (Client) hires a field tech (Provider), escrows USDC, and a Chainlink CRE workflow (Evaluator) releases it when device telemetry attests the fix. Frontend live on Vercel; backend live on `brach`. What's left is human-only (record video, ENS Sunday booth, rotate keys) + one in-flight UI polish.
+WARD is judge-ready. **All three bounties (Chainlink CRE · Arc · ENS) materially PASS**, plus the ETHGlobal Finalist play. It's a working **ERC-8183 (Agentic Commerce)** implementation live on Arc testnet: a home agent (Client) hires a field tech (Provider), escrows USDC, and a Chainlink CRE workflow (Evaluator) releases it when device telemetry attests the fix. Frontend live on Vercel; backend live on `brach`. **Frontend is now a two-page dark mission-control build: homepage at `/` (single-scroll explainer) + cinematic at `/demo` (5-phase HUD, actor strip, walking ENS-labeled worker, human-readable on-chain strip).** What's left is human-only: record the video, ENS Sunday booth, rotate the chat-exposed keys.
 
 ## Live endpoints / addresses
 | Thing | Value |
 |---|---|
-| Live demo (Vercel, floor-plan hero, mock cinematic + live ENS + real Arc history) | https://web-nine-ashen-75.vercel.app |
+| Live homepage (Vercel, dark single-scroll explainer) | https://web-nine-ashen-75.vercel.app |
+| Live demo cinematic (mock cinematic + live ENS + real Arc tx links) | https://web-nine-ashen-75.vercel.app/demo |
 | Repo | https://github.com/joeykokinda/ward |
 | Backend sim (brach, Tailscale Funnel) | https://brach.taild3399f.ts.net |
 | Backend agent SSE (brach, LIVE on ERC-8183) | https://brach.taild3399f.ts.net:8443 |
@@ -28,14 +29,15 @@ WARD is judge-ready. **All three bounties (Chainlink CRE · Arc · ENS) material
 - **ENS — AI Agents** ✅ — ward-agent.eth ENSIP-25 verify=YES; 5 worker subnames with ENSIP-26 records + live reputation pointers (discover ranks mike, live rep); resolved live in the UI (`/api/ens`), zero hardcoded. HARD GATE: present at the ENS booth Sunday morning, in person.
 
 ## What's done (committed + pushed to main)
-6 components built + verified; ERC-8183 contract live + verified on Arc; agent autonomous (one-job guard, auto-complete, evaluator signs complete); CRE green sim; ENS live + hardened on Sepolia; animated floor-plan hero deployed (light Profound) with live ENS + real clickable Arc history; backend live + persistent on brach; docs consolidated (judge-facing at root, internal in `docs/`); per-bounty SUBMISSION.md; PITCHES.md (booth scripts + objection answers); VIDEO-SCRIPT.md (3-min); BOUNTY-AUDIT.md.
+6 components built + verified; ERC-8183 contract live + verified on Arc; agent autonomous (one-job guard, auto-complete, evaluator signs complete); CRE green sim; ENS live + hardened on Sepolia; two-page dark mission-control frontend deployed (homepage `/` + cinematic `/demo`) with live ENS + real clickable Arc tx links; backend live + persistent on brach; docs consolidated (judge-facing at root, internal in `docs/`); per-bounty SUBMISSION.md; PITCHES.md (booth scripts + objection answers); VIDEO-SCRIPT.md (3-min); BOUNTY-AUDIT.md.
 
 ## In flight / pending
-- **(in flight) UI polish** — floor-plan made architectural (shared walls, door arc), calmer healthy palette so faults pop, better hierarchy, balanced layout (activity feed not cut off). When it lands: `git add web/ && commit`, then redeploy (command below), verify the leak animation + modals + live ENS still work, and that the UX reads clearly (obvious CTA, what's clickable, narrative reasoning).
-- **(human-only) Record the 2–3 min demo video** using VIDEO-SCRIPT.md (can't screen-capture from here).
+- **(DONE, shipped + deployed) Two-page dark redesign** — homepage at `/` (single-scroll explainer) + cinematic at `/demo` (dark mission-control tokens, intro overlay, bottom-center 5-phase HUD DETECT/DIAGNOSE/HIRE/REPAIR/VERIFY, right actor strip, ENS-labeled walking worker, human-readable 3-latest on-chain strip, corner trigger panel + reset). Cinematic tx links point at real ARC_TX WardEscrow hashes. build/lint/56 forge tests green.
+- **(human-only) Record the 3:00–3:30 demo video** using VIDEO-SCRIPT.md, real voice, real screen capture (OBS/ScreenStudio), 720p+, no speed-ups, no phone. Record `/` (three-actors) then `/demo` end-to-end.
 - **(human-only, HARD GATE) ENS booth, Sunday morning, in person.**
 - **(human-only) Rotate the Anthropic API key + Vercel token** (both pasted in chat; in gitignored local `.env`).
-- **(optional) Pre-stage more Arc history** — trigger a few more live incidents (each ~1 USDC) so the feed shows 20+ real settled jobs by Sunday.
+- **(verify) Rule 1 (from-scratch):** first commit is Fri 2026-06-12 21:19 (docs scaffold). Confirm that is after the official kickoff time; if kickoff was Saturday, disclose in README.
+- **(optional) Pre-stage more Arc history** — trigger a few more live incidents (each ~1 USDC) so the feed shows more real settled jobs by Sunday. Faucet balance ~7.8 USDC; conserve for the live booth + video.
 
 ## Resume commands
 - Redeploy frontend (Vercel): `cd web && pnpm dlx vercel@latest deploy --prod --yes --scope speks-projects-7a61d7b1 --token $VERCEL_TOKEN` with build-env `NEXT_PUBLIC_ARC_EXPLORER=https://testnet.arcscan.app NEXT_PUBLIC_ARC_CHAIN_ID=5042002 NEXT_PUBLIC_JOB_ESCROW=0xe118… NEXT_PUBLIC_WORKER_REGISTRY=0x2bdD… NEXT_PUBLIC_USDC_ADDRESS=0x3600…` and env `SEPOLIA_RPC_URL=https://ethereum-sepolia-rpc.publicnode.com`. Token is in gitignored `.env`.
