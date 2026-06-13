@@ -19,7 +19,7 @@ export function FloorPlanTeaser({ className = "" }: { className?: string }) {
         strokeWidth="2"
       />
 
-      {/* interior walls — thin #1e1e2e */}
+      {/* interior walls, thin #1e1e2e */}
       {/* vertical split between left rooms and right rooms */}
       <line x1="190" y1="1" x2="190" y2="219" stroke="#1e1e2e" strokeWidth="2" />
       {/* horizontal split on the left side (Living room / Hallway) */}
@@ -41,7 +41,7 @@ export function FloorPlanTeaser({ className = "" }: { className?: string }) {
         Laundry &amp; bath
       </text>
 
-      {/* device dots — all green / healthy */}
+      {/* device dots, all green / healthy */}
       <circle cx="100" cy="78" r="5" fill="#22c55e" />
       <circle cx="100" cy="178" r="5" fill="#22c55e" />
       <circle cx="256" cy="62" r="5" fill="#22c55e" />

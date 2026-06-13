@@ -1,6 +1,6 @@
 // The sovereign-identity story: ENS as the federated identity layer for both
 // sides of the economy. Workers own their reputation, agents own their
-// identity, WARD is the protocol between them — not a platform they're locked
+// identity, WARD is the protocol between them, not a platform they're locked
 // into. This is the ENS-track narrative in product form.
 
 function Cell({ title, children }: { title: string; children: React.ReactNode }) {
