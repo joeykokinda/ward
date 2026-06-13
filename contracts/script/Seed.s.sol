@@ -32,7 +32,9 @@ contract Seed is Script {
 
     function run() external {
         uint256 chainId = block.chainid;
-        string memory deployment = vm.readFile(string.concat("deployments/", vm.toString(chainId), ".json"));
+        // Canonical deployments dir is the repo root /deployments (../ from the
+        // contracts/ foundry project root).
+        string memory deployment = vm.readFile(string.concat("../deployments/", vm.toString(chainId), ".json"));
 
         MockUSDC usdc = MockUSDC(deployment.readAddress(".MockUSDC"));
         WorkerRegistry registry = WorkerRegistry(deployment.readAddress(".WorkerRegistry"));
@@ -44,7 +46,9 @@ contract Seed is Script {
         address agent = vm.addr(agentKey);
 
         string[5] memory handles = ["mike", "sara", "deon", "lena", "raj"];
-        string[5] memory regions = ["Brooklyn NY", "Greenwich CT", "Hudson NY", "Queens NY", "Newark NJ"];
+        // Regions match the canonical fixtures (web/lib/data/fixtures.ts + db/seed)
+        // so mock and live modes show the same worker profiles to a judge.
+        string[5] memory regions = ["Greenwich, CT", "Stamford, CT", "Brooklyn, NY", "Hudson, NY", "Greenwich, CT"];
         uint256[5] memory workerKeys;
         address[5] memory workers;
         for (uint256 i = 0; i < 5; i++) {

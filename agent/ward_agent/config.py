@@ -117,6 +117,13 @@ class Config:
     # JSON list of workers; used when chain is in DRY mode or registry empty.
     worker_roster_json: str | None = field(default_factory=lambda: _env("WARD_WORKER_ROSTER"))
 
+    # --- Worker signing keys (LIVE end-to-end only) ---
+    # JSON map { "0xWorkerAddr": "0xprivkey", ... } so the agent can sign the
+    # worker-side accept/markWorkDone txs in the local end-to-end run (the field
+    # tech's wallet). Unused in DRY mode and in production (real workers sign on
+    # their own phones). Keys are read from env; nothing is hardcoded.
+    worker_keys_json: str | None = field(default_factory=lambda: _env("WARD_WORKER_KEYS"))
+
     @property
     def llm_enabled(self) -> bool:
         return bool(self.anthropic_api_key)

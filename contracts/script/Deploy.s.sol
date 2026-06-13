@@ -12,7 +12,9 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IWorkerRegistry} from "../src/interfaces/IWorkerRegistry.sol";
 
 /// @notice Deploys the WARD contract stack, wires authorizations, and writes
-///         deployments/<chainId>.json + ABIs to deployments/abis/.
+///         the repo-root /deployments/<chainId>.json (+ ABIs via export-abis.sh
+///         to /deployments/abis/). That repo-root dir is the single canonical
+///         location read by the agent (chain.py) and frontend (web/lib/config).
 ///
 /// Env vars (foundry script vars, all optional with sane local defaults):
 ///   PRIVATE_KEY            deployer key (defaults to anvil account 0)
@@ -106,8 +108,10 @@ contract Deploy is Script {
         vm.serializeAddress(key, "JobEscrow", escrow);
         string memory json = vm.serializeString(key, "blockExplorer", blockExplorer);
 
-        vm.createDir("deployments", true);
-        string memory path = string.concat("deployments/", vm.toString(block.chainid), ".json");
+        // Canonical location is the repo-root /deployments (read by the agent +
+        // frontend); the foundry project root is contracts/, so write to ../.
+        vm.createDir("../deployments", true);
+        string memory path = string.concat("../deployments/", vm.toString(block.chainid), ".json");
         vm.writeJson(json, path);
         console2.log("Wrote", path);
     }

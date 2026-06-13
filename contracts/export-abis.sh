@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Export each WARD contract's ABI from the Foundry build artifacts into
-# deployments/abis/<name>.json. Run after `forge build` (and after Deploy).
-# Frontend (web/) and agent read these alongside deployments/<chainId>.json.
+# Export each WARD contract's ABI from the Foundry build artifacts into the
+# repo-root /deployments/abis/<name>.json (the single canonical location read by
+# the agent + frontend). Run after `forge build` (and after Deploy).
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -11,7 +11,9 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 1
 fi
 
-mkdir -p deployments/abis
+# Canonical deployments dir is the repo root /deployments (../ from contracts/).
+DEPLOY_DIR="../deployments"
+mkdir -p "$DEPLOY_DIR/abis"
 
 CONTRACTS=(MockUSDC WorkerRegistry JobEscrow AuthorizedReporterVerifier)
 
@@ -21,6 +23,6 @@ for name in "${CONTRACTS[@]}"; do
         echo "error: missing artifact $artifact (run 'forge build' first)" >&2
         exit 1
     fi
-    jq '.abi' "$artifact" > "deployments/abis/${name}.json"
-    echo "wrote deployments/abis/${name}.json"
+    jq '.abi' "$artifact" > "$DEPLOY_DIR/abis/${name}.json"
+    echo "wrote $DEPLOY_DIR/abis/${name}.json"
 done

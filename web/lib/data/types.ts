@@ -151,5 +151,5 @@ export type WardAdapter = {
   // Whether a scenario is currently mid-flight.
   isRunning: () => boolean;
   // Adapter label for the UI footer.
-  readonly name: "mock" | "supabase";
+  readonly name: "mock" | "supabase" | "live";
 };

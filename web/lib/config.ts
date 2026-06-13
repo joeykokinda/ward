@@ -60,7 +60,12 @@ export const ensProfileUrl = (ensName: string) =>
   `https://sepolia.app.ens.domains/${ensName}`;
 
 export const DATA_ADAPTER =
-  (process.env.NEXT_PUBLIC_DATA_ADAPTER as "mock" | "supabase" | undefined) ?? "mock";
+  (process.env.NEXT_PUBLIC_DATA_ADAPTER as "mock" | "supabase" | "live" | undefined) ??
+  "mock";
+
+// Base URL of the live WARD agent (its SSE / recent-events / healthz feed).
+// Used by the "live" data adapter (NEXT_PUBLIC_DATA_ADAPTER=live).
+export const AGENT_URL = process.env.NEXT_PUBLIC_AGENT_URL ?? "http://localhost:8091";
 
 // Human-readable labels for job states (uppercase micro-labels stay uppercase).
 export const JOB_STATE_LABEL: Record<JobState, string> = {

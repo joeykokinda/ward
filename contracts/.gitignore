@@ -6,6 +6,6 @@ broadcast/
 # Vendored dependencies (re-install via: forge install / forge soldeer install)
 lib/
 
-# Deployment ABIs + addresses are generated; keep deployments/<chainId>.json and
-# deployments/abis/ committed so frontend/agent can read them without a rebuild.
-!deployments/
+# Deployments moved to the repo-root /deployments/ (single canonical location
+# read by the agent + frontend). Deploy.s.sol / export-abis.sh write there now;
+# nothing under contracts/ to keep. See /deployments/.

@@ -110,6 +110,9 @@ class ChainClient:
         self._deployment: dict[str, Any] = {}
         self._abis: dict[str, Any] = {}
         self._contracts: dict[str, Any] = {}
+        # Worker address -> web3 account, for signing the field-tech's on-chain
+        # accept/markWorkDone in the local end-to-end run (WARD_WORKER_KEYS).
+        self._worker_accounts: dict[str, Any] = {}
 
         # DRY-mode in-memory job ledger.
         self._next_job_id = 1
@@ -138,6 +141,7 @@ class ChainClient:
                 return
             self._w3 = w3
             self._account = w3.eth.account.from_key(self.cfg.agent_private_key)
+            self._load_worker_keys(w3)
             self._load_deployment(int(w3.eth.chain_id))
             self._wire_contracts()
             self.dry = False
@@ -174,6 +178,25 @@ class ChainClient:
             if os.path.exists(abi_path):
                 with open(abi_path) as fh:
                     self._abis[name] = json.load(fh)
+
+    def _load_worker_keys(self, w3: Any) -> None:
+        """Load WARD_WORKER_KEYS (address -> privkey) so the agent can sign the
+        worker-side accept/markWorkDone in the local end-to-end run."""
+        if not self.cfg.worker_keys_json:
+            return
+        try:
+            mapping = json.loads(self.cfg.worker_keys_json)
+        except Exception:
+            logger.warning("invalid WARD_WORKER_KEYS json; worker signing disabled")
+            return
+        from web3 import Web3
+
+        for addr, key in mapping.items():
+            try:
+                acct = w3.eth.account.from_key(key)
+                self._worker_accounts[Web3.to_checksum_address(addr)] = acct
+            except Exception:
+                logger.warning("WARD_WORKER_KEYS: bad key for %s; skipping", addr)
 
     def _wire_contracts(self) -> None:
         assert self._w3 is not None
@@ -214,6 +237,23 @@ class ChainClient:
             }
         )
         signed = self._account.sign_transaction(tx)
+        tx_hash = self._w3.eth.send_raw_transaction(signed.raw_transaction)
+        self._w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+        return tx_hash.hex()
+
+    def _send_as(self, account: Any, contract_name: str, fn_name: str, *args: Any) -> str:
+        """Build, sign, and send a tx from an arbitrary account (e.g. a worker
+        wallet for accept/markWorkDone). Live only."""
+        assert self._w3 is not None
+        contract = self._contracts[contract_name]
+        fn = getattr(contract.functions, fn_name)(*args)
+        tx = fn.build_transaction(
+            {
+                "from": account.address,
+                "nonce": self._w3.eth.get_transaction_count(account.address),
+            }
+        )
+        signed = account.sign_transaction(tx)
         tx_hash = self._w3.eth.send_raw_transaction(signed.raw_transaction)
         self._w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
         return tx_hash.hex()
@@ -324,9 +364,13 @@ class ChainClient:
         pid = _bytes32_from_id(property_id)
         did = _bytes32_from_id(device_id)
         deadline = int(time.time()) + deadline_secs
-        # NOTE: a real flow approves USDC to the escrow first; assumed pre-approved
-        # or handled by the escrow's pull pattern per the contract's createJob.
-        tx_hash = self._send("JobEscrow", "createJob", pid, did, amount_units, deadline)
+        # The escrow pulls USDC from the caller (agent) via transferFrom, so the
+        # agent must have approved the escrow first (the dev stack / Seed grants a
+        # max approval). createJob's 5th arg is the owner-approval flag, required
+        # true only when amount > ownerApprovalThreshold; below threshold it's false.
+        tx_hash = self._send(
+            "JobEscrow", "createJob", pid, did, amount_units, deadline, bool(owner_approved)
+        )
         # Recover jobId from the JobCreated event.
         job_id = self._read_latest_job_id(tx_hash)
         self._jobs[job_id] = JobView(
@@ -364,7 +408,15 @@ class ChainClient:
                 job.worker = worker_address
             logger.info("[DRY] acceptJob(%s) by %s tx %s", job_id, worker_address, tx_hash)
             return tx_hash
-        return self._send("JobEscrow", "acceptJob", job_id)
+        # Live: acceptJob must be signed by an active (registered+staked) worker,
+        # not the agent. Use the worker's key from WARD_WORKER_KEYS.
+        acct = self._worker_account_for(worker_address)
+        tx_hash = self._send_as(acct, "JobEscrow", "acceptJob", job_id)
+        job = self._jobs.get(job_id)
+        if job:
+            job.state = "ACCEPTED"
+            job.worker = worker_address
+        return tx_hash
 
     def mark_work_done(self, job_id: int) -> str:
         if self.dry:
@@ -374,20 +426,56 @@ class ChainClient:
                 job.state = "WORK_DONE"
             logger.info("[DRY] markWorkDone(%s) tx %s", job_id, tx_hash)
             return tx_hash
-        return self._send("JobEscrow", "markWorkDone", job_id)
+        # Live: markWorkDone must be signed by the assigned worker.
+        job = self._jobs.get(job_id)
+        worker_address = job.worker if job else None
+        acct = self._worker_account_for(worker_address)
+        tx_hash = self._send_as(acct, "JobEscrow", "markWorkDone", job_id)
+        if job:
+            job.state = "WORK_DONE"
+        return tx_hash
+
+    def _worker_account_for(self, worker_address: str | None) -> Any:
+        """Resolve the signing account for a worker address (WARD_WORKER_KEYS).
+        Raises if no key is configured, so the live run fails loudly rather than
+        silently sending from the wrong account."""
+        from web3 import Web3
+
+        if not worker_address:
+            raise RuntimeError("no worker address to sign worker-side tx")
+        acct = self._worker_accounts.get(Web3.to_checksum_address(worker_address))
+        if acct is None:
+            raise RuntimeError(
+                f"no worker signing key for {worker_address} (set WARD_WORKER_KEYS)"
+            )
+        return acct
+
+    # JobEscrow.JobState enum -> agent lifecycle string.
+    _ONCHAIN_STATE = {
+        0: None,        # None
+        1: "OPEN",      # Open
+        2: "ACCEPTED",  # Accepted
+        3: "WORK_DONE", # WorkDone
+        4: "SETTLED",   # Settled
+        5: "REFUNDED",  # Refunded
+    }
 
     def get_job_state(self, job_id: int) -> str | None:
         job = self._jobs.get(job_id)
+        if not self.dry and "JobEscrow" in self._contracts:
+            # On-chain state is the source of truth in live mode so the agent's
+            # _await_worker observes the worker's accept/markWorkDone.
+            try:
+                code = int(self._contracts["JobEscrow"].functions.jobState(job_id).call())
+                onchain = self._ONCHAIN_STATE.get(code)
+                if onchain is not None:
+                    if job is not None:
+                        job.state = onchain
+                    return onchain
+            except Exception as exc:  # pragma: no cover
+                logger.warning("could not read on-chain jobState(%s): %s", job_id, exc)
         if job is None:
             return None
-        if not self.dry and "JobEscrow" in self._contracts:
-            try:
-                onchain = self._contracts["JobEscrow"].functions.jobs(job_id).call()
-                # The contract's job tuple includes a state field; mapping is
-                # contract-specific. We keep the locally-tracked state as the
-                # canonical lifecycle marker for the agent.
-            except Exception:
-                pass
         return job.state
 
     # ------------------------------------------------------ CRE attestation seam
