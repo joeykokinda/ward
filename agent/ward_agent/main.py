@@ -235,6 +235,22 @@ class WardAgent:
         dev = device.deviceId
         amount = self.cfg.job_amount_units
 
+        # --- one-open-job-per-property guard -------------------------------
+        # While a device stays unhealthy, every poll re-runs the incident. Only
+        # one unsettled job per property should exist; skip if one is already
+        # open/accepted/work_done/attesting (the registry excludes terminals).
+        existing = self.jobs.active_for_property(prop)
+        if existing is not None:
+            await self._emit(
+                "MONITOR",
+                f"{prop} already has open job #{existing.job_id} "
+                f"(state={existing.state.value}); not creating a duplicate.",
+                jobId=existing.job_id,
+                propertyId=prop,
+                device_id=dev,
+            )
+            return existing
+
         # --- spending policy gate ------------------------------------------
         owner_required = amount >= self.cfg.owner_approval_threshold_units
         if amount > self.cfg.per_job_cap_units:
@@ -333,6 +349,14 @@ class WardAgent:
             device_id=dev,
         )
 
+        # --- autonomous worker completion (demo) ----------------------------
+        # When auto-complete is on and the agent holds the dispatched worker's
+        # signing key, drive the worker side itself: accept -> markWorkDone ->
+        # physically repair the device so telemetry recovers. With it off, the
+        # worker accepts via the UI and an external trigger advances the chain.
+        if self.cfg.auto_complete and self.chain.has_worker_key(worker.address):
+            await self._auto_complete_worker(job, device)
+
         # --- wait for accept + work-done -----------------------------------
         await self._await_worker(job, device)
         if job.state not in (JobState.WORK_DONE,):
@@ -349,6 +373,34 @@ class WardAgent:
         # --- CRE attestation seam + settle ---------------------------------
         await self._attest_and_settle(job, device)
         return job
+
+    async def _auto_complete_worker(self, job: Job, device: DeviceStatus) -> None:
+        """Drive the worker side autonomously (the field-tech half) when the
+        agent holds the worker's key and WARD_AUTO_COMPLETE is on.
+
+        Performs only the on-chain (or DRY) effects here — accept, markWorkDone,
+        and the physical repair so telemetry recovers. The DISPATCH events and
+        the Job state transitions are emitted by _await_worker observing the
+        chain view, keeping a single owner of transitions (no race). The
+        subsequent _attest_and_settle then emits RESULT/RESOLVED.
+        """
+        job_id = job.job_id
+        dev = job.device_id
+        # Worker accepts and marks the job done on-chain.
+        self.worker_accept(job_id)
+        self.worker_mark_done(job_id)
+        # Field tech does the physical repair so the device reports healthy and
+        # the CRE attestation can confirm it before settle.
+        try:
+            await self.sim.repair(dev)
+        except Exception as exc:  # pragma: no cover - sim transient failure
+            await self._emit(
+                "RESULT",
+                f"Auto-complete repair call failed for {dev}: {exc}",
+                jobId=job_id,
+                propertyId=job.property_id,
+                device_id=dev,
+            )
 
     async def _await_worker(self, job: Job, device: DeviceStatus) -> None:
         """Wait for the worker to accept and mark work done.
@@ -379,7 +431,17 @@ class WardAgent:
                 )
             elif chain_state == "WORK_DONE" and job.state in (JobState.OPEN, JobState.ACCEPTED):
                 if job.state == JobState.OPEN:
+                    # Worker accepted + marked done between polls (e.g. the
+                    # autonomous auto-complete path); surface the accept too so
+                    # the stream still shows OPEN -> ACCEPTED -> WORK_DONE.
                     job.transition(JobState.ACCEPTED)
+                    await self._emit(
+                        "DISPATCH",
+                        f"Worker {job.worker_ens} accepted job #{job_id}.",
+                        jobId=job_id,
+                        propertyId=job.property_id,
+                        device_id=job.device_id,
+                    )
                 job.transition(JobState.WORK_DONE)
                 await self._emit(
                     "DISPATCH",

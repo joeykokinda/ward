@@ -11,8 +11,10 @@ Forces chain DRY mode and works with or without ANTHROPIC_API_KEY (the agent
 falls back to rules-based diagnosis when the key is unset).
 
 Usage:
-    python verify_dry_run.py            # hard fault -> full L3 cycle
+    python verify_dry_run.py            # hard fault -> full autonomous L3 cycle
     python verify_dry_run.py soft       # soft fault -> resolves at L1
+    python verify_dry_run.py persist    # persistent hard fault over several
+                                        #   poll cycles -> only ONE job created
 """
 
 from __future__ import annotations
@@ -66,6 +68,7 @@ async def run(mode: str) -> int:
     print(f"  llm:        {'Anthropic API' if cfg.llm_enabled else 'rules-based fallback (no key)'}")
     print(f"  job amount: {usdc(cfg.job_amount_units)} USDC   threshold: {usdc(cfg.owner_approval_threshold_units)} USDC")
     print(f"  fault mode: {mode}")
+    print(f"  auto-complete:       WARD_AUTO_COMPLETE={cfg.auto_complete}")
     print(f"  USDC balance (pre):  {usdc(agent.chain.usdc_balance_units())}")
     print("-" * 78)
 
@@ -73,36 +76,27 @@ async def run(mode: str) -> int:
     fleet = await agent.sim.fleet()
     target = next((d for d in fleet if d.propertyId == "prop-2"), fleet[0])
 
-    # Inject the fault.
-    await agent.sim.fail(target.deviceId, mode=mode)
+    # Inject the fault. "persist" exercises the dedup guard with a hard fault.
+    fault_mode = "hard" if mode in ("hard", "persist") else "soft"
+    await agent.sim.fail(target.deviceId, mode=fault_mode)
 
-    # Kick off the worker side concurrently for the hard-fault path so the
-    # full cycle settles (mirrors POST /incident/simulate autoComplete).
-    async def worker_side() -> None:
-        job = None
-        waited = 0.0
-        while waited < 15.0 and job is None:
-            job = agent.jobs.active_for_property(target.propertyId)
-            if job and job.job_id >= 0:
-                break
-            job = None
-            await asyncio.sleep(0.2)
-            waited += 0.2
-        if job is None:
-            return
-        await asyncio.sleep(0.5)
-        await agent.sim.repair(target.deviceId)  # field tech fixes hardware
-        agent.worker_accept(job.job_id)
-        await asyncio.sleep(0.3)
-        agent.worker_mark_done(job.job_id)
-
-    tasks = [asyncio.create_task(agent.handle_incident(target))]
-    if mode == "hard":
-        tasks.append(asyncio.create_task(worker_side()))
-
-    job_result = await tasks[0]
-    if len(tasks) > 1:
-        await tasks[1]
+    if mode == "persist":
+        # Persistent hard fault: re-run the incident several times WITHOUT ever
+        # repairing the device (the device stays unhealthy across poll cycles),
+        # to prove the one-open-job-per-property guard prevents duplicate escrow
+        # jobs. Auto-complete repairs the device, so disable it here; and keep
+        # the no-worker wait short so each incident returns quickly (the worker
+        # never acts, so the job stays OPEN — exactly the duplicate-trigger
+        # condition the guard must catch).
+        agent.cfg.auto_complete = False
+        agent.cfg.attestation_timeout_secs = 0.4
+        for _ in range(3):
+            await agent.handle_incident(target)
+        job_result = agent.jobs.active_for_property(target.propertyId)
+    else:
+        # Hard / soft: let the agent drive ONE incident fully on its own. No
+        # external worker driver — the agent auto-completes the worker side.
+        job_result = await agent.handle_incident(target)
 
     # Print the full emitted event stream.
     events = get_event_bus().recent(500)
@@ -121,9 +115,17 @@ async def run(mode: str) -> int:
         ok = all(t in seen_types for t in required)
         settled = job_result is not None and job_result.state.value == "SETTLED"
         print(f"  required event types present: {ok}  ({[t for t in required if t in seen_types]})")
-        print(f"  job reached SETTLED:          {settled}"
+        print(f"  job reached SETTLED autonomously: {settled}"
               + (f"  (job #{job_result.job_id})" if job_result else ""))
         verdict = ok and settled
+    elif mode == "persist":
+        created = sum(1 for e in events if e["type"] == "ESCROW" and "OPEN" in e["message"])
+        deduped = sum(1 for e in events if "already has open job" in e["message"])
+        all_jobs = len(agent.jobs.all())
+        print(f"  ESCROW 'OPEN' jobs created:   {created}  (expected exactly 1)")
+        print(f"  duplicate attempts skipped:   {deduped}")
+        print(f"  total jobs in registry:       {all_jobs}")
+        verdict = created == 1 and all_jobs == 1 and deduped >= 1
     else:
         ok = "RESOLVED" in seen_types and "ESCROW" not in seen_types
         print("  resolved at Level 1 with no escrow:", ok)

@@ -365,9 +365,11 @@ class ChainClient:
         did = _bytes32_from_id(device_id)
         deadline = int(time.time()) + deadline_secs
         # The escrow pulls USDC from the caller (agent) via transferFrom, so the
-        # agent must have approved the escrow first (the dev stack / Seed grants a
-        # max approval). createJob's 5th arg is the owner-approval flag, required
-        # true only when amount > ownerApprovalThreshold; below threshold it's false.
+        # agent must have approved the escrow first. Ensure a sufficient allowance
+        # before createJob so escrow is self-sufficient (no manual pre-approval).
+        self._ensure_escrow_allowance(amount_units)
+        # createJob's 5th arg is the owner-approval flag, required true only when
+        # amount > ownerApprovalThreshold; below threshold it's false.
         tx_hash = self._send(
             "JobEscrow", "createJob", pid, did, amount_units, deadline, bool(owner_approved)
         )
@@ -382,6 +384,36 @@ class ChainClient:
             tx_create=tx_hash,
         )
         return job_id, tx_hash
+
+    # A large one-time approval so repeated createJob calls don't each need an
+    # approve tx. 2^256 - 1 (max uint256), the standard "infinite approval".
+    _MAX_UINT256 = (1 << 256) - 1
+
+    def _ensure_escrow_allowance(self, amount_units: int) -> None:
+        """Approve JobEscrow to pull USDC from the agent if the current allowance
+        is below the job amount. Sends a large (max) approve once so subsequent
+        jobs reuse the same allowance. Live only; no-op if contracts missing."""
+        from web3 import Web3
+
+        usdc_c = self._contracts.get("MockUSDC")
+        escrow = self._deployment.get("JobEscrow")
+        if usdc_c is None or not escrow:
+            return
+        spender = Web3.to_checksum_address(escrow)
+        try:
+            allowance = int(
+                usdc_c.functions.allowance(self._account.address, spender).call()
+            )
+        except Exception as exc:  # pragma: no cover - read failure
+            logger.warning("could not read USDC allowance (%s); attempting approve", exc)
+            allowance = 0
+        if allowance >= amount_units:
+            return
+        logger.info(
+            "USDC allowance %s < job amount %s; approving JobEscrow for max",
+            allowance, amount_units,
+        )
+        self._send("MockUSDC", "approve", spender, self._MAX_UINT256)
 
     def _read_latest_job_id(self, tx_hash: str) -> int:
         try:
@@ -434,6 +466,21 @@ class ChainClient:
         if job:
             job.state = "WORK_DONE"
         return tx_hash
+
+    def has_worker_key(self, worker_address: str | None) -> bool:
+        """True if the agent holds the signing key for this worker (so it can
+        autonomously drive the worker-side accept/markWorkDone). In DRY mode the
+        worker side is simulated in-memory, so always True."""
+        if self.dry:
+            return True
+        if not worker_address:
+            return False
+        try:
+            from web3 import Web3
+
+            return Web3.to_checksum_address(worker_address) in self._worker_accounts
+        except Exception:
+            return False
 
     def _worker_account_for(self, worker_address: str | None) -> Any:
         """Resolve the signing account for a worker address (WARD_WORKER_KEYS).

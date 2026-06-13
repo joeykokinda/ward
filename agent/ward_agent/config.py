@@ -39,6 +39,13 @@ def _env_float(name: str, default: float) -> float:
         return default
 
 
+def _env_bool(name: str, default: bool) -> bool:
+    raw = _env(name)
+    if raw is None:
+        return default
+    return raw.lower() in ("1", "true", "yes", "on")
+
+
 # USDC has 6 decimals (INTERFACES.md).
 USDC_DECIMALS = 6
 
@@ -125,6 +132,14 @@ class Config:
     # tech's wallet). Unused in DRY mode and in production (real workers sign on
     # their own phones). Keys are read from env; nothing is hardcoded.
     worker_keys_json: str | None = field(default_factory=lambda: _env("WARD_WORKER_KEYS"))
+
+    # --- Autonomous worker completion (demo) ---
+    # When True (default for the demo), after DISPATCH the agent autonomously
+    # drives the worker side end-to-end (accept -> markWorkDone -> repair the
+    # device -> attest -> settle) using the dispatched worker's key from
+    # WARD_WORKER_KEYS (DRY mode always has the synthetic worker). Set FALSE to
+    # hand off to a human "worker accepts via UI" path instead.
+    auto_complete: bool = field(default_factory=lambda: _env_bool("WARD_AUTO_COMPLETE", True))
 
     @property
     def llm_enabled(self) -> bool:

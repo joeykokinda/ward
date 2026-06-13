@@ -126,6 +126,19 @@ Policy knobs (USDC 6-decimal units): `WARD_JOB_AMOUNT` (default `75000000` =
 `WARD_DAILY_CAP`, `WARD_JOB_DEADLINE`. Loop timing: `WARD_POLL_INTERVAL`,
 `WARD_ATTEST_POLL`, `WARD_ATTEST_TIMEOUT`. Server: `WARD_HOST`, `WARD_PORT`.
 
+`WARD_AUTO_COMPLETE` (default `true`): when on, after DISPATCH the agent drives
+the worker side autonomously — signs `acceptJob` + `markWorkDone` as the
+dispatched worker (key from `WARD_WORKER_KEYS`; DRY mode simulates it), repairs
+the device so telemetry recovers, then attests + settles. The incident closes
+`OPEN→ACCEPTED→WORK_DONE→SETTLED` with no human. Set `false` to hand off to a
+"worker accepts via UI" path (the agent still escrows + dispatches, then waits).
+
+**One open job per property:** while a device stays unhealthy, the poll loop
+re-runs the incident, but the agent will not create a second escrow job for a
+property that already has an unsettled one (`OPEN/ACCEPTED/WORK_DONE/ATTESTING`);
+it logs `MONITOR  prop-N already has open job #M …` and skips. The guard clears
+when the job settles/refunds (terminal) or the device recovers.
+
 ## How it plugs into the rest of WARD
 
 - **Sim** (`sim/`): `sim_client` speaks the INTERFACES.md HTTP API; the same
@@ -149,7 +162,9 @@ Policy knobs (USDC 6-decimal units): `WARD_JOB_AMOUNT` (default `75000000` =
 ## Captured DRY-run event stream
 
 `verify_dry_run.py hard` (no `ANTHROPIC_API_KEY` — rules fallback, in-process
-fake sim, DRY chain) drives one complete incident:
+fake sim, DRY chain) drives one complete incident **fully autonomously** (no
+external worker nudge — the agent accepts, marks done, repairs, and settles on
+its own under `WARD_AUTO_COMPLETE=true`):
 
 ```
 MONITOR   Fault detected on prop-2 (prop-2-router): online=False, faultMode=hard, signal=-99dBm.

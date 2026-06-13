@@ -169,10 +169,11 @@ async def incident_simulate(req: SimulateRequest) -> dict[str, Any]:
         propertyId=after.propertyId,
     )
 
-    if req.autoComplete and mode == "hard":
-        # Drive the human side so the demo runs end-to-end. The agent loop will
-        # escrow + dispatch; once it has, the worker repairs the device and
-        # marks the job done, then the agent attests + settles.
+    if req.autoComplete and mode == "hard" and not get_config().auto_complete:
+        # Drive the human side so the demo runs end-to-end. Only needed when the
+        # agent's own autonomous completion is disabled (WARD_AUTO_COMPLETE off);
+        # otherwise the agent loop already accepts + marks done + repairs +
+        # settles on its own, and driving it again would double the worker txs.
         asyncio.create_task(_drive_worker_side(agent, device_id, after.propertyId))
 
     return {
