@@ -10,7 +10,7 @@ Running list of cross-component seams to reconcile once all agents land. Update 
 | Device simulator | `sim/` | done, curl-verified | 74443a8 |
 | Contracts | `contracts/` | done, 50 tests + anvil e2e | 9a148da |
 | Agent runtime | `agent/` | done, DRY-run verified | f818995 |
-| Frontend | `web/` | building | — |
+| Frontend | `web/` | done, build+lint clean, incident player verified | fd5c2f2 |
 | CRE + Arc spike | `cre/`, `spike/arc/` | done — GATE CLEARED (CRE→Arc=YES) | fba9535 |
 | ENS + Supabase | `packages/ens/`, `db/` | done, live-resolve + Postgres verified | 0f61d0a |
 
