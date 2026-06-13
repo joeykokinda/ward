@@ -74,18 +74,35 @@ Script: the home agent has its own identity at `ward-agent.eth`, verified per EN
 
 **(Hard gate reminder: this pitch is delivered AT THE ENS BOOTH, SUNDAY MORNING, IN PERSON. Mandatory for all ENS prizes.)**
 
+### ENS booth — the sovereign-identity expansion (deliver this when the judge is nodding)
+
+The base script proves ENS is the live registry. This expansion is the swing for the win: ENS as the **federated identity layer for an entire autonomous economy**, with no platform in the middle.
+
+"Step back and look at the architecture. We don't lock workers into a platform. Every worker owns their own ENS name with ENSIP-26 reputation records, their job history, skills, and region. When another agent network needs a plumber tomorrow, it reads that name and hires them directly: no re-signup, no rebuilding reputation, no lock-in.
+
+Same on the agent side. Every home or fleet runs its own sovereign agent. In the demo that's `ward-agent.eth`, verified per ENSIP-25; in production it's `agent.alice.eth`, `agent.helium-fleet-7.eth`. Each owns its identity, its wallet, its action history. WARD is the protocol they all speak, never the platform they're trapped in.
+
+This is what ENS unlocks that no other identity system can: portable, sovereign, on-chain reputation for both sides of the economy."
+
+**The line to land (this is the one judges remember):** "Workers own their reputation. If WARD shuts down tomorrow, their job history is still on-chain at their own ENS name, and no platform can take it away. You'd never invest in a TaskRabbit profile, because TaskRabbit owns it. You will invest in a name you own forever."
+
+**Proof to point at:** we didn't just describe this, we registered a second sovereign agent live on Sepolia: `agent.demo-home.eth`, an agent name under its owner's own domain (`demo-home.eth`), with ENSIP-26 records and an ENSIP-25 agent-registration that verifies against the same Arc WorkerRegistry as `ward-agent.eth`. Two independently-owned agents, one protocol, both resolving live. Resolve either name in the ENS app on Sepolia.
+
 ---
 
-## Judge Q&A: the three canonical objection answers
+## Judge Q&A: the canonical objection answers
 
 **Q1. "How is this different from RentAHuman / TaskRabbit / gig platforms?"**
 Those are two-sided consumer marketplaces that settle on human approval over credit-card rails: a person clicks "done," money moves, the chain adds nothing, and disputes eat the margin. WARD is a different category on two axes. First, settlement: WARD releases escrow on machine-attested telemetry via a Chainlink CRE workflow, with no human approval in the happy path. That only works for machine-verifiable tasks (leaks, outages, sensor recoveries), and that narrow scope is the design, not a limitation. Second, the demand side: WARD's buyer is software with a budget, a DePIN network, a DAO, an AI-agent treasury, not a consumer browsing a marketplace. TaskRabbit fundamentally can't onboard a buyer with no bank account. And the worker's reputation is ENS-portable, owned by the worker, not platform-locked. Different category, and complementary.
 
-**Q2. "Why crypto? Why not Stripe?"**
-For one homeowner paying a local plumber, Stripe works. That's the honest answer, and we lead with it. Crypto becomes load-bearing only when the buyer is software with no bank account: DePIN networks paying the humans who keep their hardware alive, smart-contract DAOs posting proof-gated jobs, AI-agent treasuries settling with field techs. They literally cannot open a Stripe account. The homeowner demo is theater, because every judge has felt the 2am panic, but the real customer is the autonomous network. Three places crypto is load-bearing today: trustless escrow with no platform fee, sensor-attested settlement with no human approval, and portable ENS worker reputation.
+**Q2. "Why crypto? Why not traditional payment rails?"**
+For one homeowner paying a local plumber, traditional payment rails work fine. The crypto matters when the buyer is a smart contract: a DePIN network, an autonomous DAO, an AI agent treasury. Those literally can't open a bank account. The homeowner demo is theater, because every judge has felt the 2am panic, but the real customer is the autonomous network. Three places crypto is load-bearing today: trustless escrow with no platform fee, sensor-attested settlement with no human approval, and portable ENS worker reputation.
 
 **Q3. "Your sensors are simulated."**
 The devices are simulated, yes; nobody ships hardware at a hackathon, and it's a deliberate demo convenience, not an architectural shortcut. What's real is the trust pipeline: CRE fetches the device's HTTPS API, runs consensus, attests on-chain, and the escrow releases on that attestation. In production the endpoint is Home Assistant, SmartThings, or a DePIN node's status API, and the CRE workflow is byte-for-byte identical regardless of whether the device behind that HTTPS API is mocked or real. The crypto-novel part, a contract trusting machine attestation instead of human approval, works exactly the same way either way.
+
+**Q4. "If reputation is sovereign, why are the workers subnames under `ward-agent.eth`?"**
+For the demo we mint subnames so we can stand up five workers cleanly without each of them buying their own ENS name, and every one resolves live on Sepolia with real ENSIP-26 records you can click. The architecture doesn't depend on that choice. In production a worker brings a name they already own, `mike.handyman.eth`, and the registry just stores a pointer to it; the contract reads whatever ENS name the worker controls, and the resolution code is byte-for-byte identical to the subname path. Subnames are the demo's convenience; worker-owned names are the production design. We deliberately showed the simplified version live so every name on screen actually resolves, rather than faking sovereign names that wouldn't.
 
 ---
 

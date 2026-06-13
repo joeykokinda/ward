@@ -4,7 +4,7 @@
 
 **One-liner:** An AI agent that hires humans and settles payment on machine-attested telemetry, not human approval. Machines hire humans; sensors settle the bill.
 
-**Positioning:** The homeowner is the demo because the pain is visceral (2am leak, owner asleep in Tokyo). The real customer is software with no bank account: DePIN networks, autonomous DAOs, AI-agent treasuries. For one homeowner paying a local plumber, Stripe works; crypto is load-bearing only when the buyer is software that cannot open a bank account.
+**Positioning:** The homeowner is the demo because the pain is visceral (2am leak, owner asleep in Tokyo). The real customer is software with no bank account: DePIN networks, autonomous DAOs, AI-agent treasuries. For one homeowner paying a local plumber, traditional payment rails work fine; crypto is load-bearing only when the buyer is software that cannot open a bank account.
 
 **Demo video:** (link added on submission). A 3-minute recording, explorer proof of settle on screen, honest about CRE attestation latency. Script in VIDEO-SCRIPT.md.
 
@@ -112,7 +112,7 @@ Booth script: PITCHES.md → "Arc".
 - [x] Open-source repo + live demo link on the showcase.
 - [ ] **Sunday-morning ENS booth presentation, in person** (HARD GATE above).
 
-Booth script + the three canonical objection answers (RentAHuman/TaskRabbit, why-crypto-not-Stripe, are-the-sensors-real): PITCHES.md → "ENS" + "Judge Q&A".
+Booth script + the three canonical objection answers (RentAHuman/TaskRabbit, why-crypto-not-traditional-payment-rails, are-the-sensors-real): PITCHES.md → "ENS" + "Judge Q&A".
 
 ---
 

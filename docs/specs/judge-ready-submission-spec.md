@@ -54,7 +54,7 @@ Single-scroll dark explainer that loads the judge's mental model in 30 seconds.
 Sections: hero ("your home runs itself" + one "Watch the demo" CTA + static
 floor-plan teaser); three actors (Agent / Human via ENS / Arc chain); how it
 works (Detect, Diagnose, Hire, Verify) ending with "the sensor approves the
-payment, not a human"; why crypto (honest: Stripe works for one homeowner, but
+payment, not a human"; why crypto (honest: traditional payment rails work for one homeowner, but
 DePIN networks and autonomous DAOs cannot open bank accounts); three sponsor
 integrations (CRE / Arc / ENS, one sentence each); roadmap one-liner; footer CTA
 plus links to GitHub, contracts on Arc explorer, ENS records on Sepolia, video.

@@ -7,7 +7,7 @@ rex's call: drop the dark mission-control terminal aesthetic. Make it **clean, l
 - **One accent only:** fresh lime/green (~`#84cc16` / `#65a30d`) for primary actions + key highlights; everything else neutral gray. Use color sparingly.
 - **Typography:** modern sans-serif (Inter / Geist) everywhere; confident large headings, comfortable line-height, clear hierarchy. Monospace ONLY for raw addresses/tx hashes/amounts where it helps.
 - **Layout:** spacious card-based sections, soft subtle borders (`#e5e7eb`), gentle radius (8–12px), tasteful light shadows OK. One focal area per view; demote the rest. Airy, scannable, uncluttered.
-- **Mood:** corporate-yet-approachable, polished, soothing — Stripe/Linear/Vercel-dashboard calm. Flat lucide icons, no emoji.
+- **Mood:** corporate-yet-approachable, polished, soothing — Linear/Vercel-dashboard calm. Flat lucide icons, no emoji.
 - Keep all functionality + data adapters (mock/live/supabase) and the three personas (Host/Worker/Agent). This is a reskin, not a rewrite.
 
 Avoid: dark backgrounds, rainbow log colors, harsh 1px terminal grids, dense-everything panels, decorative gradients, glow, emoji, generic AI-slop card sameness.

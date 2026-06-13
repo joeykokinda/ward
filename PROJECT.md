@@ -39,7 +39,7 @@ That one mapping unifies all three bounties: Arc is the chain the ERC-8183 Job s
 
 **Today — homeowners.** One apartment, four smart devices, one agent. The demo is a Brooklyn homeowner asleep in Tokyo while WARD handles a 2am leak. Every judge has felt that 2am panic; the pain is visceral and needs no explanation.
 
-**Roadmap — software with no bank account.** The homeowner is the demo. The customer is the autonomous network that literally cannot use Stripe: DePIN fleets paying the humans who keep their hardware alive, smart-contract DAOs posting proof-gated repair jobs, AI-agent treasuries settling with field techs on attested evidence. The same ERC-8183 contracts, the same CRE attestation pipeline, the same ENS registry — no rewrite.
+**Roadmap — software with no bank account.** The homeowner is the demo. The customer is the autonomous network that literally cannot use traditional payment rails: DePIN fleets paying the humans who keep their hardware alive, smart-contract DAOs posting proof-gated repair jobs, AI-agent treasuries settling with field techs on attested evidence. The same ERC-8183 contracts, the same CRE attestation pipeline, the same ENS registry — no rewrite.
 
 ## Positioning
 

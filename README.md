@@ -8,7 +8,7 @@ WARD watches your instrumented devices, fixes what it can in software, and when 
 
 The homeowner is the demo because the pain is visceral: it's 2am, you're asleep in a hotel in Tokyo, and the leak sensor in your Brooklyn apartment just tripped. WARD can't fix water with a reboot, so it discovers and hires Mike (`mike.ward-agent.eth`), escrows USDC on Arc, and dispatches him. Mike fixes the leak, the moisture sensor reads dry, a Chainlink CRE workflow attests it on-chain, and the escrow releases. You slept through the whole thing.
 
-The actual customer is software with no bank account: DePIN fleets paying the humans who keep their hardware alive, smart-contract DAOs posting proof-gated repair jobs, AI-agent treasuries settling with field techs on attested evidence. When a judge asks "why crypto," the honest answer is: for one homeowner paying a local plumber, Stripe works. Crypto is load-bearing only when the buyer is software that cannot open a bank account. WARD is the reference implementation of ERC-8183 those buyers need, and the homeowner is the most legible way to show it working.
+The actual customer is software with no bank account: DePIN fleets paying the humans who keep their hardware alive, smart-contract DAOs posting proof-gated repair jobs, AI-agent treasuries settling with field techs on attested evidence. When a judge asks "why crypto," the honest answer is: for one homeowner paying a local plumber, traditional payment rails like credit cards and ACH work fine. Crypto is load-bearing only when the buyer is software that cannot open a bank account. WARD is the reference implementation of ERC-8183 those buyers need, and the homeowner is the most legible way to show it working.
 
 ## Architecture
 

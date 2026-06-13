@@ -25,7 +25,7 @@ Doubles as the booth narration and the recorded backup. `[DO]` = on-screen actio
 `[SAY]` "Mike's identity is **ENS** — `mike.ward-agent.eth`. His skills and reputation live in his own ENS records, resolved live from Sepolia. He owns that reputation — it's portable, not locked to us. Any other agent network reading ENS can hire him tomorrow. So: ERC-8183 is the deal, Arc is the rail, CRE is the evaluator, ENS is the identity — one coherent system."
 
 ### 2:15 – 2:45 · Why it matters
-`[SAY]` "The homeowner is the demo because every judge has felt 2am home panic. But the real customer is software with no bank account — DePIN networks paying the humans who keep their hardware alive, DAOs, autonomous agent treasuries. They literally can't use Stripe. WARD is the rails. And it's not a slide — it's, as far as we know, the first production implementation of ERC-8183, running end-to-end on live testnet today."
+`[SAY]` "The homeowner is the demo because every judge has felt 2am home panic. But the real customer is software with no bank account — DePIN networks paying the humans who keep their hardware alive, DAOs, autonomous agent treasuries. They literally can't use traditional payment rails. WARD is the rails. And it's not a slide — it's, as far as we know, the first production implementation of ERC-8183, running end-to-end on live testnet today."
 
 ### 2:45 – 3:00 · Close
 `[DO]` Hit **Reset** → apartment calm, all green, treasury 500.
