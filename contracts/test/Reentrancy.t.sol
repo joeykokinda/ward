@@ -4,16 +4,16 @@ pragma solidity ^0.8.24;
 import {Test} from "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {WorkerRegistry} from "../src/WorkerRegistry.sol";
-import {JobEscrow} from "../src/JobEscrow.sol";
-import {MockCreVerifier} from "../src/mocks/MockCreVerifier.sol";
-import {HealthAttestation} from "../src/interfaces/ICreConsumer.sol";
+import {WardEscrow} from "../src/WardEscrow.sol";
+import {JobStatus} from "../src/interfaces/IERC8183.sol";
 
-/// @notice ERC20 that, on each transfer to the configured attacker, calls back
-///         into JobEscrow.settle to attempt a reentrant double-payout.
+/// @notice ERC20 that, on each transfer, can re-enter WardEscrow on a chosen
+///         lifecycle leg to attempt a double action. Used to prove the
+///         nonReentrant guards on fund() and complete() hold.
 contract ReentrantToken is ERC20 {
-    JobEscrow public escrow;
+    WardEscrow public escrow;
     uint256 public targetJobId;
-    bool public attacking;
+    uint8 public mode; // 0 = off, 1 = re-enter complete on payout, 2 = re-enter fund on pull
 
     constructor() ERC20("Reentrant USDC", "rUSDC") {}
 
@@ -25,23 +25,28 @@ contract ReentrantToken is ERC20 {
         _mint(to, amount);
     }
 
-    function arm(JobEscrow escrow_, uint256 jobId) external {
+    function armComplete(WardEscrow escrow_, uint256 jobId) external {
         escrow = escrow_;
         targetJobId = jobId;
-        attacking = true;
+        mode = 1;
+    }
+
+    function armFund(WardEscrow escrow_, uint256 jobId) external {
+        escrow = escrow_;
+        targetJobId = jobId;
+        mode = 2;
     }
 
     function _update(address from, address to, uint256 value) internal override {
         super._update(from, to, value);
-        // Re-enter only on the escrow's payout leg, once.
-        if (attacking && from == address(escrow)) {
-            attacking = false;
-            HealthAttestation memory att = HealthAttestation({
-                jobId: targetJobId, deviceId: bytes32("prop-1-router"), healthy: true, reportTimestamp: 0, signature: ""
-            });
-            // Expected to revert via ReentrancyGuard; swallow so the outer call
-            // can complete and we can assert no double spend.
-            try escrow.settle(targetJobId, att) {} catch {}
+        if (mode == 1 && from == address(escrow)) {
+            // re-enter complete on the payout transfer leg
+            mode = 0;
+            try escrow.complete(targetJobId, bytes32("re"), "") {} catch {}
+        } else if (mode == 2 && to == address(escrow)) {
+            // re-enter fund on the pull-in transfer leg
+            mode = 0;
+            try escrow.fund(targetJobId, "") {} catch {}
         }
     }
 }
@@ -49,26 +54,23 @@ contract ReentrantToken is ERC20 {
 contract ReentrancyTest is Test {
     ReentrantToken internal token;
     WorkerRegistry internal registry;
-    JobEscrow internal escrow;
-    MockCreVerifier internal verifier;
+    WardEscrow internal escrow;
 
     address internal owner = makeAddr("owner");
     address internal agent = makeAddr("agent");
+    address internal evaluator = makeAddr("evaluator");
     address internal worker = makeAddr("worker");
 
-    uint256 internal constant AMOUNT = 75e6;
-    bytes32 internal constant PROP = bytes32("prop-1");
+    uint256 internal constant BUDGET = 75e6;
     bytes32 internal constant DEVICE = bytes32("prop-1-router");
 
     function setUp() public {
         token = new ReentrantToken();
         registry = new WorkerRegistry(token, owner);
-        verifier = new MockCreVerifier();
-        escrow = new JobEscrow(token, registry, verifier, owner, 1000e6, 1000e6, 100e6);
+        escrow = new WardEscrow(token, registry, owner, 1000e6, 1000e6, 100e6);
         vm.prank(owner);
         registry.setJobEscrow(address(escrow));
 
-        // worker registers + stakes
         token.mint(worker, 50e6);
         vm.startPrank(worker);
         registry.register("mike", "mike.ward-agent.eth", "wifi", "NYC");
@@ -76,33 +78,43 @@ contract ReentrancyTest is Test {
         registry.stakeUSDC(50e6);
         vm.stopPrank();
 
-        // agent funds + creates job
-        token.mint(agent, AMOUNT);
-        vm.startPrank(agent);
-        token.approve(address(escrow), AMOUNT);
-        escrow.createJob(PROP, DEVICE, AMOUNT, block.timestamp + 1 days, false);
-        vm.stopPrank();
-
-        // accept + mark done
-        vm.prank(worker);
-        escrow.acceptJob(1);
-        vm.prank(worker);
-        escrow.markWorkDone(1);
+        token.mint(agent, BUDGET);
+        vm.prank(agent);
+        token.approve(address(escrow), type(uint256).max);
     }
 
-    function test_Settle_ReentrancyDoesNotDoublePay() public {
-        // The reentrant payout target is the worker; arm the token to re-enter.
-        token.arm(escrow, 1);
+    function _open() internal returns (uint256 jobId) {
+        vm.startPrank(agent);
+        jobId = escrow.createJob(worker, evaluator, block.timestamp + 1 days, "x", address(0));
+        escrow.setBudget(jobId, BUDGET, "");
+        vm.stopPrank();
+    }
 
-        HealthAttestation memory att =
-            HealthAttestation({jobId: 1, deviceId: DEVICE, healthy: true, reportTimestamp: 0, signature: ""});
+    function test_Complete_ReentrancyDoesNotDoublePay() public {
+        uint256 jobId = _open();
         vm.prank(agent);
-        escrow.settle(1, att);
+        escrow.fund(jobId, "");
+        vm.prank(worker);
+        escrow.submit(jobId, DEVICE, "");
 
-        // Worker paid exactly once; escrow drained to exactly the job amount.
-        assertEq(token.balanceOf(worker), AMOUNT, "worker paid exactly once");
+        token.armComplete(escrow, jobId);
+        vm.prank(evaluator);
+        escrow.complete(jobId, bytes32("ok"), "");
+
+        assertEq(token.balanceOf(worker), BUDGET, "provider paid exactly once");
         assertEq(token.balanceOf(address(escrow)), 0, "escrow holds no extra");
-        assertEq(uint8(escrow.jobState(1)), uint8(JobEscrow.JobState.Settled));
+        assertEq(uint8(escrow.jobStatus(jobId)), uint8(JobStatus.Completed));
         assertEq(registry.reputationOf(worker), 1, "reputation bumped once");
+    }
+
+    function test_Fund_ReentrancyDoesNotDoubleFund() public {
+        uint256 jobId = _open();
+        token.armFund(escrow, jobId);
+        vm.prank(agent);
+        escrow.fund(jobId, "");
+
+        // Funded exactly once; escrow holds exactly one budget.
+        assertEq(token.balanceOf(address(escrow)), BUDGET, "escrow holds exactly one budget");
+        assertEq(uint8(escrow.jobStatus(jobId)), uint8(JobStatus.Funded));
     }
 }

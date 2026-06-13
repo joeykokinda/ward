@@ -1,8 +1,9 @@
 {
-  "CreVerifier": "0x985e4CCEb3ff73C60b3F9FbF2044B4cF394b267A",
-  "JobEscrow": "0x5585487A2EbabbE72406b72d5278dDFc5Ed706d8",
+  "ERC8183": true,
+  "Evaluator": "0xDdd0047d0664235998791fe2163Bb9b31c2Fc038",
+  "JobEscrow": "0xe118A51B105DF46F54AE4Fb01a1EF43F6a8dE5D8",
   "MockUSDC": "0x3600000000000000000000000000000000000000",
-  "WorkerRegistry": "0xc59fabC06Cd268F826a905Cc13eD232a90A79CAc",
+  "WorkerRegistry": "0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4",
   "blockExplorer": "https://testnet.arcscan.app",
   "chainId": 5042002
 }

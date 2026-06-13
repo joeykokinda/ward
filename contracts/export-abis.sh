@@ -15,14 +15,28 @@ fi
 DEPLOY_DIR="../deployments"
 mkdir -p "$DEPLOY_DIR/abis"
 
-CONTRACTS=(MockUSDC WorkerRegistry JobEscrow AuthorizedReporterVerifier)
+# Map artifact source -> exported ABI name. WardEscrow is exported BOTH as
+# JobEscrow.json (frontend/chain.py compat: they read the "JobEscrow" key) and
+# as WardEscrow.json (its real, ERC-8183 name).
+declare -A ABI_MAP=(
+    [MockUSDC]=MockUSDC
+    [WorkerRegistry]=WorkerRegistry
+    [WardEscrow]=WardEscrow
+    [WardReputationHook]=WardReputationHook
+)
 
-for name in "${CONTRACTS[@]}"; do
-    artifact="out/${name}.sol/${name}.json"
+for src in "${!ABI_MAP[@]}"; do
+    out_name="${ABI_MAP[$src]}"
+    artifact="out/${src}.sol/${src}.json"
     if [[ ! -f "$artifact" ]]; then
         echo "error: missing artifact $artifact (run 'forge build' first)" >&2
         exit 1
     fi
-    jq '.abi' "$artifact" > "$DEPLOY_DIR/abis/${name}.json"
-    echo "wrote $DEPLOY_DIR/abis/${name}.json"
+    jq '.abi' "$artifact" > "$DEPLOY_DIR/abis/${out_name}.json"
+    echo "wrote $DEPLOY_DIR/abis/${out_name}.json"
 done
+
+# Frontend + chain.py read the "JobEscrow" deployment key; export WardEscrow's
+# ABI under that name too so existing consumers keep working unchanged.
+jq '.abi' "out/WardEscrow.sol/WardEscrow.json" > "$DEPLOY_DIR/abis/JobEscrow.json"
+echo "wrote $DEPLOY_DIR/abis/JobEscrow.json (= WardEscrow / ERC-8183)"
