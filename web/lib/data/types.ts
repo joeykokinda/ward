@@ -34,6 +34,14 @@ export type PropertyStatus = Property & {
   device: DeviceStatus;
 };
 
+// A past job in a worker's history, for the registry profile.
+export type WorkerJob = {
+  device: string; // "Leak sensor"
+  whenIso: string;
+  amountUsdc: string; // 6dp
+  outcome: "settled";
+};
+
 export type Worker = {
   handle: string;
   ensName: string; // <handle>.ward-agent.eth
@@ -44,6 +52,11 @@ export type Worker = {
   staked: boolean;
   stakeUsdc: string; // 6dp string, e.g. "100000000"
   completedJobs: number;
+  // Registry profile fields (optional so the live/supabase adapters still type).
+  title?: string; // "Licensed plumber"
+  etaMin?: number; // minutes from the home (proximity)
+  rating?: number; // 0-5, one decimal
+  jobHistory?: WorkerJob[];
 };
 
 // Canonical ERC-8183 job lifecycle. The escrow is an ERC-8183 Job: the agent

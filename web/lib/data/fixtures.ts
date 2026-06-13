@@ -12,6 +12,7 @@ import type {
   Job,
   PropertyStatus,
   Worker,
+  WorkerJob,
 } from "./types";
 
 // The single home everything lives in (apartment dweller).
@@ -118,28 +119,59 @@ export function buildProperties(): PropertyStatus[] {
 // sensibly. mike is the highest-reputation PLUMBER -> picked for the HERO leak
 // incident (the avatar shows "M").
 export function buildWorkers(): Worker[] {
+  const job = (device: string, daysAgo: number, amt: number): WorkerJob => ({
+    device,
+    whenIso: isoHoursAgo(daysAgo * 24),
+    amountUsdc: usdc(amt),
+    outcome: "settled",
+  });
   const mk = (
     handle: string,
+    title: string,
     skills: string[],
+    region: string,
+    etaMin: number,
     reputation: number,
     completedJobs: number,
+    jobHistory: WorkerJob[],
   ): Worker => ({
     handle,
     ensName: `${handle}.${AGENT_ENS}`,
     address: fakeAddress(`worker-${handle}`),
     skills,
-    region: HOME_REGION,
+    region,
     reputation,
     staked: true,
     stakeUsdc: usdc(100),
     completedJobs,
+    title,
+    etaMin,
+    rating: Math.round((reputation / 20) * 10) / 10, // ~4.9 for rep 98
+    jobHistory,
   });
   return [
-    mk("mike", ["plumber", "leak", "pipefitting"], 98, 41),
-    mk("sara", ["network", "router", "isp"], 91, 33),
-    mk("deon", ["hvac", "thermostat"], 87, 28),
-    mk("lena", ["plumber", "leak", "sensor"], 84, 22),
-    mk("raj", ["network", "general", "locksmith"], 79, 17),
+    mk("mike", "Licensed plumber", ["plumber", "leak", "pipefitting"], "Brooklyn, NY", 14, 98, 41, [
+      job("Leak sensor", 2, 150),
+      job("Burst pipe", 9, 120),
+      job("Leak sensor", 18, 90),
+    ]),
+    mk("sara", "Network technician", ["network", "router", "isp"], "Brooklyn, NY", 18, 91, 33, [
+      job("WiFi router", 1, 75),
+      job("WiFi router", 12, 75),
+      job("Router line", 25, 60),
+    ]),
+    mk("deon", "HVAC technician", ["hvac", "thermostat"], "Brooklyn, NY", 22, 87, 28, [
+      job("Thermostat", 3, 90),
+      job("Zone valve", 14, 110),
+    ]),
+    mk("lena", "Plumber, leak specialist", ["plumber", "leak", "sensor"], "Queens, NY", 26, 84, 22, [
+      job("Leak sensor", 5, 75),
+      job("Sump pump", 20, 95),
+    ]),
+    mk("raj", "Locksmith, network", ["network", "general", "locksmith"], "Jersey City, NJ", 34, 79, 17, [
+      job("Front-door lock", 6, 80),
+      job("WiFi router", 22, 70),
+    ]),
   ];
 }
 
