@@ -54,13 +54,23 @@ export function DemoFooter() {
           </a>
         ))}
       </div>
-      <Link
-        href="/workers"
-        className="inline-flex items-center gap-1.5 text-[12px] font-medium text-accent-ink transition-colors hover:text-accent"
-      >
-        See the worker registry: how WARD discovers + ranks techs via ENS
-        <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
-      </Link>
+      <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5">
+        <Link
+          href="/live"
+          className="inline-flex items-center gap-1.5 text-[12px] font-semibold text-success-ink transition-colors hover:text-success"
+        >
+          <span className="dot bg-success ward-live-dot" aria-hidden />
+          Run it live: the real agent on Arc (not scripted)
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
+        </Link>
+        <Link
+          href="/workers"
+          className="inline-flex items-center gap-1.5 text-[12px] font-medium text-accent-ink transition-colors hover:text-accent"
+        >
+          Worker registry: discovery + ranking via ENS
+          <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
+        </Link>
+      </div>
     </div>
   );
 }
