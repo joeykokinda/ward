@@ -16,48 +16,61 @@ So "the Evaluator confirms the work" literally becomes **sensor-settled escrow**
 
 **Product one-liner:** *WARD is the autonomous agent for your home — it watches everything, fixes what it can, hires someone when it can't, and tells you what happened. You stop being on-call for your own house.*
 
-**Demo:** one home — an apartment dweller with smart devices. Hero incident: your WiFi just died at 2am. WARD detects it, tries to self-fix, can't, and posts an ERC-8183 Job to hire a human — all while you're asleep.
+**Demo (the leak):** You're in Tokyo, it's 2am back home. The leak sensor in your Brooklyn apartment triggers. WARD can't self-fix a physical leak, so it discovers and hires Mike (mike.ward-agent.eth, 4.9★, 8 min away), escrows ~150 USDC as an ERC-8183 Job on Arc, and dispatches him. Mike fixes the leak; the moisture sensor reads dry; a Chainlink CRE workflow attests it onchain; the USDC releases. You slept through the whole thing.
 
 ---
 
-Same demo, three framings. Each 60-90 seconds. Walk the actual ERC-8183 Job on the Arc explorer at the Chainlink and Arc booths.
+Same leak demo, three framings. Each 60-90 seconds. **Each booth leads with its own sponsor's hook**, with ERC-8183 woven in as the connective tissue. Walk the actual ERC-8183 Job on the Arc explorer at the Chainlink and Arc booths.
 
-## Chainlink booth — CRE is the ERC-8183 Evaluator
+## Chainlink booth — lead with the CRE attestation pipeline
 
-**Opening line:** "ERC-8183 says one role — the Evaluator — releases the escrow. We made the Evaluator a Chainlink CRE workflow, so this is a payment that no human approved: a workflow verified the physical world and released it."
+**Opening line:** "Watch how this payment settles: a Chainlink CRE workflow fetches the leak sensor's API, sees the moisture reading is dry, attests that onchain, and calls `complete()` to release the escrow. The contract trusts the attestation — not a human clicking approve."
 
-Script: WARD is the agent that runs your home. Your WiFi dies at 2am; remote reboot fails; WARD opens an ERC-8183 Job and escrows USDC to hire a human. The interesting part is who confirms completion. In the standard that's the Evaluator, and we don't make it a person clicking approve — a CRE workflow fetches the router's telemetry endpoint, verifies the fault is cleared, and calls `complete()` on the Job, which releases escrow on Arc. CRE *is* the Evaluator. Without it, ERC-8183 still needs a human in the loop and this is just another agent with a wallet.
+Script: WARD is the agent that runs your home. The leak sensor fires at 2am; WARD can't fix a physical leak, so it escrows ~150 USDC and dispatches Mike. The interesting part is who confirms the work is done. We don't make it a person — a CRE workflow polls the moisture sensor's telemetry endpoint, verifies the leak is cleared, writes an attestation onchain, and calls `complete()` on the Job, which releases the escrow on Arc. In ERC-8183 terms, **CRE is the Evaluator** — the one role the standard lets release funds. Without CRE, ERC-8183 still needs a human in the loop and this is just another agent with a wallet.
 
-**Demo trigger:** simulate WiFi failure → fast-forward to the CRE workflow firing → show the attestation written onchain and the `complete()` / escrow-release tx.
+**Demo trigger:** simulate leak sensor trigger → fast-forward to the CRE workflow firing → show the attestation written onchain and the `complete()` / escrow-release tx.
 
-**Closing line:** "Every gig platform settles on human approval. We made the standard's Evaluator settle on the physical world itself."
+**Closing line:** "Every gig platform settles on human approval. We made the standard's Evaluator settle on the physical world itself, with a CRE workflow."
 
-## Arc booth — where the ERC-8183 Job lives and settles
+## Arc booth — lead with conditional USDC escrow on Arc
 
-**Opening line:** "Your bounty lists conditional escrow with automatic release as example #1 — this is it: a live ERC-8183 Job, escrowed and settled on Arc, with a real human getting paid."
+**Opening line:** "Here's a live, conditional USDC escrow on Arc: it holds the ~150 USDC dispatch fee and releases automatically the instant the sensor attestation lands. Real USDC, verified contracts, here on the explorer."
 
-Script: when WARD hires someone, the ERC-8183 Job's budget is escrowed on Arc, and the contract auto-releases when the Evaluator confirms via telemetry. Arc is the only place this works economically: stablecoin-native, gas predictable in sub-cent terms, settlement fast enough that the tech watches the money land while still standing in your hallway. Show the Job on the Arc explorer: Open → Funded → Submitted → Completed, plus our policy layer in the contract — per-job caps, daily caps, owner-approval threshold, deadline auto-refund (that's the standard's Expired state). The policy is in the contract, not middleware.
+Script: when WARD hires Mike for the leak, the ERC-8183 Job's budget is escrowed on Arc, and the contract auto-releases when the Evaluator attests via telemetry. **This is the only chain where machine-to-human nanopayments work economically** — gas-free USDC, sub-cent fees, settlement fast enough that Mike watches the money land while still standing in your hallway. A ~$150 dispatch would be eaten alive by mainnet gas; on Arc it's negligible. Show the Job on the Arc explorer: Open → Funded → Submitted → Completed, plus our policy layer in the contract — per-job caps, daily caps, owner-approval threshold, deadline auto-refund (the standard's Expired state). The policy is in the contract, not middleware. In ERC-8183 terms, **Arc is where the Job settles.**
 
-**Demo trigger:** click into the Job contract on the explorer → walk creation and `fund()` → show the state transitions from a finished Job → run the live flow if time allows.
+**Demo trigger:** click into the Job contract on the explorer → walk creation and `fund()` → show the state transitions and real USDC release on a finished Job → run the live flow if time allows.
 
-**Closing line:** "Machines hiring humans is a payments problem. ERC-8183 is the shape of the deal; Arc is the rail it settles on."
+**Closing line:** "Machines hiring humans is a payments problem. ERC-8183 is the shape of the deal; Arc is the only rail where sub-cent, gas-free USDC makes it economical."
 
-## ENS booth — identity for the Client and the Provider
+## ENS booth — lead with identity & discovery
 
-**Opening line:** "ERC-8183 has a Client and a Provider. Click this one — mike.ward-agent.eth — that's the Provider, and everything WARD knows about him lives in ENS."
+**Opening line:** "Click this name — mike.ward-agent.eth. That's the plumber WARD hired, and everything the agent knew about him — his skills, his region, his reputation — it read straight out of ENS. No private database."
 
-Script: in our ERC-8183 Jobs, the Client is the home agent at ward-agent.eth, verified per ENSIP-25. Every Provider in the registry is a subname with ENSIP-26 text records: skills, region, reputation pointer. When a Job needs a Provider, the agent discovers and ranks workers through ENS resolution — ENS is the registry, not a label on top of one. We chose ENS text records over ERC-8004 on purpose: one name resolves for the agent, the human, and the UI. Names render everywhere in the product; nothing is hardcoded.
+Script: the home agent has its own identity at ward-agent.eth, verified per ENSIP-25. Every worker in the registry is a subname carrying ENSIP-26 text records: skills, region, and a reputation pointer. When the leak Job needs a Provider, the agent **discovers and ranks workers through ENS resolution** — ENS is the registry, not a label on top of one. The reputation is portable and ENS-owned: it travels with Mike's name, it isn't locked inside our platform. We chose ENS text records over ERC-8004 on purpose — one name resolves for the agent, the human, and the UI; names render everywhere in the product and nothing is hardcoded. In ERC-8183 terms, **ENS is Client and Provider identity.**
 
-**Demo trigger:** click a Provider's subname → show the live text records resolving → show the agent's dispatch decision (selecting the Provider for the Job) referencing them.
+**Demo trigger:** click a worker's subname → show the live ENSIP-26 text records resolving → show the agent's dispatch decision (selecting Mike for the leak Job) referencing them.
 
-**Closing line:** "Agents need to be found and trusted. That's not a new database — that's ENS, doing double duty as ERC-8183 identity."
+**Closing line:** "Agents need to be found and trusted. That's not a new database — it's ENS, and the reputation belongs to the worker, not to us."
 
-(Hard gate reminder: this pitch is delivered AT THE ENS BOOTH SUNDAY MORNING, in person, mandatory for all ENS prizes.)
+**(Hard gate reminder: this pitch is delivered AT THE ENS BOOTH, SUNDAY MORNING, IN PERSON — mandatory for all ENS prizes.)**
+
+## Judge Q&A — canonical answers
+
+**Q1 — "Isn't this just RentAHuman with crypto?"**
+RentAHuman settles on human approval over credit-card rails — it's a generalist, Fiverr-with-an-API. WARD settles on **machine attestation via CRE**, which only works for machine-verifiable tasks (leaks, outages, sensor recoveries) — that narrow scope is the design, not a limitation. And our buyer is *software with no bank account* — DePIN networks, DAOs, autonomous treasuries — which RentAHuman fundamentally can't onboard. Worker reputation is ENS-portable, not platform-locked. Different category, and complementary.
+
+**Q2 — "Why crypto for a homeowner paying a local plumber?"**
+For one homeowner, Stripe works — that's true. Crypto matters when the buyer is **software with no bank account**: DePIN networks, smart-contract DAOs, AI-agent treasuries. The homeowner demo is theater — every judge has felt the 2am panic — but the customer is the autonomous network that literally cannot use Stripe. Three places crypto is load-bearing today: trustless escrow with no platform fee, sensor-attested settlement with no human approval, and portable ENS worker reputation.
+
+**Q3 — "Are the sensors real?"**
+The devices are simulated — nobody ships hardware at a hackathon. What's real is the **trust pipeline**: CRE fetches the device API, attests onchain, and the escrow releases on that attestation. In production the endpoint is Home Assistant, SmartThings, or a DePIN node's status API — the CRE workflow is identical regardless. The crypto-novel part — contracts trusting machine attestation instead of human approval — works exactly the same whether the device is mocked or real.
 
 ## Why this matters / roadmap
 
-ERC-8183 is days old and almost everyone reading it pictures a human Evaluator approving an AI's work. WARD inverts it: the agent is the Client, the human is the Provider, and a sensor is the Evaluator. That's a reference implementation of Agentic Commerce running on live testnet today — real Jobs, real escrow on Arc, CRE attesting completion — not a slide.
+**The homeowner is the demo because the pain is visceral — every judge has felt the 2am leak panic. The customer is software with no bank account: the only place crypto rails are unambiguously load-bearing.**
 
-It starts with homeowners: stop being on-call for your own house. The same protocol scales without a rewrite — tomorrow it's property managers running fleets and DePIN operators keeping hardware alive, all posting the same ERC-8183 Jobs to the same contracts. The agent is just the first Client of the rails. Any treasury, DAO, or script can post proof-gated Jobs the same way.
+ERC-8183 is days old and almost everyone reading it pictures a human Evaluator approving an AI's work. WARD inverts it: the agent is the Client, the human is the Provider, and a sensor is the Evaluator. That's a reference implementation of Agentic Commerce running on live testnet today — real Jobs, real USDC escrow on Arc, CRE attesting completion — not a slide.
+
+It starts with homeowners: stop being on-call for your own house. The same protocol scales without a rewrite — tomorrow it's property managers running fleets and DePIN operators keeping hardware alive, all posting the same ERC-8183 Jobs to the same contracts. The autonomous network is the real customer: a DePIN treasury or a DAO can post proof-gated Jobs to pay the humans who keep its hardware alive, settled by the sensors, with no bank account and no human in the loop.
 
 **Close line:** "DePIN pays machines for verified physical work. WARD uses Ethereum's new commerce standard to pay the humans who keep those machines alive — settled by the sensors, not by anyone's approval."
