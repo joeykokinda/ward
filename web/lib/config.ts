@@ -49,6 +49,10 @@ export const deployment = readDeployment();
 export const ENS_ROOT = "ward-agent.eth";
 export const AGENT_ENS = "ward-agent.eth";
 
+// Public source links used by sponsor badges + the demo proof footer.
+export const REPO_URL = "https://github.com/joeykokinda/ward";
+export const CRE_WORKFLOW_URL = `${REPO_URL}/tree/main/cre`;
+
 export const explorerTxUrl = (txHash: string) =>
   `${deployment.blockExplorer.replace(/\/$/, "")}/tx/${txHash}`;
 

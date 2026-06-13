@@ -1,9 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { ArrowUpRight, FileCheck2, Lock, ShieldCheck } from "lucide-react";
 import type { Activity, Job, WardSnapshot } from "@/lib/data/types";
 import { deployment, explorerAddressUrl, explorerTxUrl } from "@/lib/config";
 import { formatUsdc, shortHash, timeAgo } from "@/lib/format";
+import { SponsorBadge } from "./SponsorBadge";
 
 // On-chain proof: the focal job's escrow-created + settled transactions, each a
 // real verifiable Arc tx, next to a link to the source-verified WardEscrow
@@ -48,6 +50,13 @@ export function OnChainStrip({
             label="Escrow created"
             sub={`${formatUsdc(job.amount)} USDC locked${job.worker ? ` for ${job.worker}` : ""}`}
             tx={job.txCreate}
+            badge={
+              <SponsorBadge
+                sponsor="Arc"
+                label="conditional USDC escrow · contract verified"
+                href={explorerAddressUrl(deployment.JobEscrow)}
+              />
+            }
           />
           <ProofRow
             Icon={FileCheck2}
@@ -103,44 +112,45 @@ function ProofRow({
   label,
   sub,
   tx,
+  chain = "Arc",
+  badge,
 }: {
   Icon: typeof Lock;
   tone: "accent" | "success" | "muted";
   label: string;
   sub: string;
   tx: string | null;
+  chain?: string;
+  badge?: ReactNode;
 }) {
   const ink =
     tone === "accent" ? "text-accent-ink" : tone === "success" ? "text-success-ink" : "text-faint";
-  const inner = (
+  return (
     <div className="flex items-start gap-3 bg-surface px-4 py-3.5">
       <span className={`mt-0.5 flex h-8 w-8 flex-none items-center justify-center rounded-sm bg-subtle ${ink}`}>
         <Icon className="h-4 w-4" strokeWidth={2} />
       </span>
       <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
           <span className={`text-[12px] font-semibold ${ink}`}>{label}</span>
           {tx && (
-            <span className="mono inline-flex items-center gap-1 text-[11px] text-faint">
+            <a
+              href={explorerTxUrl(tx)}
+              target="_blank"
+              rel="noreferrer"
+              title="Verified on arcscan · click to open"
+              className="mono inline-flex items-center gap-1 text-[11px] text-faint transition-colors hover:text-muted"
+            >
               {shortHash(tx)}
+              <span className="text-faint">· {chain}</span>
               <ArrowUpRight className="h-3 w-3" strokeWidth={2} />
-            </span>
+            </a>
           )}
         </div>
         <p className="mt-0.5 text-[12px] leading-snug text-muted">{sub}</p>
+        {badge && <div className="mt-2">{badge}</div>}
       </div>
     </div>
-  );
-  if (!tx) return inner;
-  return (
-    <a
-      href={explorerTxUrl(tx)}
-      target="_blank"
-      rel="noreferrer"
-      className="block transition-colors hover:bg-subtle [&>div]:hover:bg-transparent"
-    >
-      {inner}
-    </a>
   );
 }
 

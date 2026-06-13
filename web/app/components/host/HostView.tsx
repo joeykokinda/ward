@@ -5,6 +5,7 @@ import type { Worker, WardSnapshot } from "@/lib/data/types";
 import { Modal } from "../Modal";
 import { ActorStrip } from "./ActorStrip";
 import { AgentReasoning } from "./AgentReasoning";
+import { DemoFooter } from "./DemoFooter";
 import { DeviceModal } from "./DeviceModal";
 import { FloorPlan } from "./FloorPlan";
 import { IntroOverlay } from "./IntroOverlay";
@@ -131,9 +132,12 @@ export function HostView({
         </div>
 
         {/* on-chain proof: escrow created + settled, verified on Arc */}
-        <div className="mt-5 pb-2">
+        <div className="mt-5">
           <OnChainStrip snapshot={snapshot} now={now} mounted={mounted} />
         </div>
+
+        {/* persistent sponsor legend + one-click proof links */}
+        <DemoFooter />
       </div>
 
       {/* device modal: status + kill */}

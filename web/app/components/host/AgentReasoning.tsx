@@ -13,9 +13,11 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { AgentEvent, LogType } from "@/lib/data/types";
+import { CRE_WORKFLOW_URL, ENS_ROOT, ensProfileUrl } from "@/lib/config";
 import { clock } from "@/lib/format";
 import { isKeyEvent, logTone, toneText } from "../primitives";
 import { TxLink } from "../links";
+import { SponsorBadge } from "./SponsorBadge";
 
 const EVENT_ICON: Record<LogType, LucideIcon> = {
   MONITOR: ActivityIcon,
@@ -78,6 +80,9 @@ function Row({
   const key = isKeyEvent(ev.type);
   const tone = logTone(ev.type);
   const Icon = EVENT_ICON[ev.type];
+  // Sponsor attribution: surface which sponsor's tech is firing on this line.
+  const showEns = /\bENS\b|WorkerRegistry|Ranked .* tech/i.test(ev.message);
+  const showCre = /Chainlink CRE|Evaluator/i.test(ev.message);
   return (
     <li className={`relative flex gap-3 pb-4 ${isLast ? "ward-row-in" : ""}`}>
       {!isLast && (
@@ -116,9 +121,28 @@ function Row({
         >
           {ev.message}
         </p>
-        {ev.txHash && (
-          <div className="mt-1">
-            <TxLink hash={ev.txHash} />
+        {(showEns || showCre || ev.txHash) && (
+          <div className="mt-1.5 flex flex-wrap items-center gap-2">
+            {showEns && (
+              <SponsorBadge
+                sponsor="ENS"
+                label="ward-agent.eth subnames · ENSIP-26 records"
+                href={ensProfileUrl(ENS_ROOT)}
+              />
+            )}
+            {showCre && (
+              <SponsorBadge
+                sponsor="Chainlink"
+                label="CRE attested fix · WriteReport to Arc"
+                href={CRE_WORKFLOW_URL}
+              />
+            )}
+            {ev.txHash && (
+              <span className="mono inline-flex items-center gap-1 text-[11px] text-faint">
+                Arc
+                <TxLink hash={ev.txHash} />
+              </span>
+            )}
           </div>
         )}
       </div>
