@@ -1,16 +1,17 @@
-# CRE workflow settings (per-target). Mirrors cre-sdk-typescript example layout.
-# `local-simulation` is the target used by `cre workflow simulate`.
-local-simulation:
+# CRE workflow settings (per-target). Section names MUST match project.yaml
+# and the value passed to `--target`. `local-simulation-settings` is the
+# target used by `cre workflow simulate ./workflow --target local-simulation-settings`.
+local-simulation-settings:
   user-workflow:
     workflow-name: "ward-attest"
   workflow-artifacts:
     workflow-path: "./index.ts"
     config-path: "./config.json"
 
-# Used by `cre workflow deploy --target production-testnet` once you have a
+# Used by `cre workflow deploy --target production-settings` once you have a
 # logged-in CRE account + a funded workflow owner. workflow-owner-address is the
 # wallet/MSIG that owns the workflow and whose key encrypts secrets.
-production-testnet:
+production-settings:
   user-workflow:
     workflow-owner-address: "<YOUR_WORKFLOW_OWNER_ADDRESS>"
     workflow-name: "ward-attest"
