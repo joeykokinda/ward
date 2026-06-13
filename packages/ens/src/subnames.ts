@@ -86,6 +86,16 @@ const RESOLVER_ABI = [
     ],
     outputs: [],
   },
+  {
+    type: "function",
+    name: "setAddr",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "node", type: "bytes32" },
+      { name: "a", type: "address" },
+    ],
+    outputs: [],
+  },
 ] as const;
 
 // NameWrapper fuse constants (subset). For a worker subname we keep it simple:
@@ -125,7 +135,9 @@ export type MintPlan = {
 // Pure / offline: this is what --dry-run prints, and what live mode executes.
 export function buildMintPlan(params: {
   handle: string;
-  ownerAddress: Address; // the worker's own wallet (subname owner)
+  ownerAddress: Address; // the worker's wallet — what the subname RESOLVES to
+  // (addr record) and the reputation subject. Defaults to also owning the
+  // subname unless subnameOwner is given.
   skills: string[];
   region: string;
   // For the reputation pointer (WorkerRegistry on Arc).
@@ -133,6 +145,11 @@ export function buildMintPlan(params: {
   reputationRegistry: string;
   webBaseUrl?: string; // e.g. https://ward.example/worker — handle appended
   resolver?: Address;
+  // Who holds the subname NFT. WARD keeps the fleet under the controller (the
+  // agent that hires workers) so it can set/curate every worker's records,
+  // while the addr record still points at the worker's wallet. If omitted the
+  // worker owns its own subname (then only the worker can edit its records).
+  subnameOwner?: Address;
 }): MintPlan {
   const handle = normalize(params.handle);
   const parentName = WARD_ENS_ROOT;
@@ -140,6 +157,7 @@ export function buildMintPlan(params: {
   const parentNode = namehash(parentName);
   const childNode = namehash(subname);
   const resolver = params.resolver ?? SEPOLIA_ENS.publicResolver;
+  const subnameOwner = params.subnameOwner ?? params.ownerAddress;
 
   const record: WorkerRecord = {
     ensName: subname,
@@ -157,11 +175,11 @@ export function buildMintPlan(params: {
 
   const calls: PlannedCall[] = [];
 
-  // Step 1 — create the subname, owned by the worker, resolver pre-set.
+  // Step 1 — create the subname (owner = subnameOwner), resolver pre-set.
   const mintArgs = [
     parentNode,
     handle,
-    params.ownerAddress,
+    subnameOwner,
     resolver,
     BigInt(0), // ttl
     NO_FUSES,
@@ -169,7 +187,7 @@ export function buildMintPlan(params: {
   ];
   calls.push({
     step: 1,
-    description: `Create subname ${subname} via NameWrapper.setSubnodeRecord (owner=${params.ownerAddress}, resolver=${resolver})`,
+    description: `Create subname ${subname} via NameWrapper.setSubnodeRecord (owner=${subnameOwner}, addr→${params.ownerAddress}, resolver=${resolver})`,
     to: SEPOLIA_ENS.nameWrapper,
     contract: "NameWrapper",
     functionName: "setSubnodeRecord",
@@ -181,8 +199,25 @@ export function buildMintPlan(params: {
     }),
   });
 
-  // Steps 2..N — one setText per record on the child node.
-  let step = 2;
+  // Step 2 — set the forward addr record (worker wallet) on the child node so
+  // <handle>.ward-agent.eth resolves to the worker's address.
+  const setAddrArgs = [childNode, params.ownerAddress];
+  calls.push({
+    step: 2,
+    description: `Set addr record -> ${params.ownerAddress} on ${subname}`,
+    to: resolver,
+    contract: "PublicResolver",
+    functionName: "setAddr",
+    args: setAddrArgs,
+    data: encodeFunctionData({
+      abi: RESOLVER_ABI,
+      functionName: "setAddr",
+      args: setAddrArgs as never,
+    }),
+  });
+
+  // Steps 3..N — one setText per record on the child node.
+  let step = 3;
   for (const { key, value } of workerTextRecords(record)) {
     const args = [childNode, key, value];
     calls.push({
@@ -207,7 +242,7 @@ export function buildMintPlan(params: {
     parentName,
     parentNode,
     childNode,
-    owner: params.ownerAddress,
+    owner: subnameOwner,
     resolver,
     record,
     calls,

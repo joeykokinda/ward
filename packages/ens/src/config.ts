@@ -49,10 +49,27 @@ export type EnsContracts = {
 
 export const SEPOLIA_ENS: EnsContracts = {
   registry: env("ENS_REGISTRY", "0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e") as Address,
-  publicResolver: env("ENS_PUBLIC_RESOLVER", "0xE99638b40E4Fff0129D56f03b55b6bbC4BBE49b5") as Address,
+  // Current Sepolia PublicResolver (the one live names like nick.eth use and
+  // that the live UniversalResolver reads). The older 0xE996…49b5 resolver is
+  // not the one resolution routes to on the current testnet generation.
+  // Source: ENS testnet deployment thread (discuss.ens.domains/t/…/18667).
+  publicResolver: env("ENS_PUBLIC_RESOLVER", "0x8FADE66B79cC9f707aB26799354482EB93a5B7dD") as Address,
   nameWrapper: env("ENS_NAME_WRAPPER", "0x0635513f179D50A207757E05759CbD106d7dFcE8") as Address,
-  ethRegistrarController: env("ENS_ETH_CONTROLLER", "0xfb3cE5D01e0f33f41DbB39035dB9745962F1f968") as Address,
-  universalResolver: env("ENS_UNIVERSAL_RESOLVER", "0xeEeEEEeE14D718C2B47D9923Deab1335E144EeEe") as Address,
+  // NOTE: the historically-documented controller 0xfb3cE5…F968 is no longer an
+  // authorized controller on the Sepolia BaseRegistrar (its register() reverts
+  // in BaseRegistrar.register via onlyController). As of the current testnet
+  // migration the only authorized .eth registrar is the
+  // TestnetV1PremigrationRegistrar 0xdf60…7078 — a no-commit, free register()
+  // that takes the same Registration struct. We register through it, then wrap
+  // via the standard NameWrapper ourselves. Override with ENS_ETH_CONTROLLER.
+  ethRegistrarController: env("ENS_ETH_CONTROLLER", "0xdf60C561Ca35AD3C89D24BbA854654b1c3477078") as Address,
+  // Current Sepolia UniversalResolver. The historically-documented 0xeEeE…EeEe
+  // routes to per-name resolver clones that don't reflect records set on the
+  // registry's PublicResolver on this testnet generation; 0xBaBC76…09725 is the
+  // live UR that honours the registry resolver. We call its 2-arg resolve()
+  // directly (resolve.ts) since viem's bundled UR ABI assumes a newer variant.
+  // Source: ENS testnet deployment thread (discuss.ens.domains/t/…/18667).
+  universalResolver: env("ENS_UNIVERSAL_RESOLVER", "0xBaBC7678D7A63104f1658c11D6AE9A21cdA09725") as Address,
   reverseRegistrar: env("ENS_REVERSE_REGISTRAR", "0xA0a1AbcDAe1a2a4A2EF8e9113Ff0e02DD81DC0C6") as Address,
 };
 

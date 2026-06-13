@@ -12,3 +12,4 @@ export * from "./records.js";
 export * from "./verify.js";
 export * from "./subnames.js";
 export * from "./discover.js";
+export * from "./derive.js";

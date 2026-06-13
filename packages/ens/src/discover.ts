@@ -18,7 +18,7 @@
 // seam for that. Everything ABOUT each worker still comes from live ENS reads,
 // so this satisfies "zero hardcoded values" for the records themselves.
 
-import { getAddress } from "viem";
+import { createPublicClient, getAddress, http, type PublicClient } from "viem";
 import { getClient, WARD_ENS_ROOT } from "./config.js";
 import { parseReputationPointer, readWorkerRecord, type WorkerRecord } from "./records.js";
 import { resolveAddress, type Chain } from "./resolve.js";
@@ -54,14 +54,32 @@ function candidateHandles(): string[] {
   return ["mike", "sara", "deon", "lena", "raj"];
 }
 
-// Read the live onchain reputation a worker's ENS pointer references.
-async function readReputation(record: WorkerRecord, address: string | null): Promise<number> {
+// Build a read client for the chain a reputation pointer names. The pointer is
+// CAIP-10 (eip155:<chainId>:…); the WorkerRegistry lives on Arc, so when the
+// pointer's chainId isn't the ENS chain we read from ARC_RPC_URL. This is the
+// "ENS stores the pointer, the chain stores the score" path — no stale cache.
+const arcClients = new Map<number, PublicClient>();
+function clientForChain(chainId: number): PublicClient | null {
+  // Sepolia: reuse the ENS client.
+  if (chainId === 11155111) return getClient("sepolia");
+  const rpc = process.env.REPUTATION_RPC_URL ?? process.env.ARC_RPC_URL;
+  if (!rpc) return null;
+  let client = arcClients.get(chainId);
+  if (!client) {
+    client = createPublicClient({ transport: http(rpc) });
+    arcClients.set(chainId, client);
+  }
+  return client;
+}
+
+// Read the live onchain reputation a worker's ENS pointer references, from the
+// chain the pointer names (Arc in production).
+async function readReputation(record: WorkerRecord): Promise<number> {
   const pointer = parseReputationPointer(record.reputationPointer);
-  if (!pointer || !address) return -1;
+  if (!pointer) return -1;
+  const client = clientForChain(pointer.chainId);
+  if (!client) return -1;
   try {
-    const client = getClient("sepolia"); // pointer.chainId is informational; the
-    // registry lives on Arc in production. For the live ENS demo on Sepolia we
-    // read from the pointer's named registry only if it's on the ENS chain.
     const value = await client.readContract({
       address: getAddress(pointer.registry),
       abi: REGISTRY_ABI,
@@ -83,7 +101,7 @@ export async function loadWorker(
   const record = await readWorkerRecord(ensName, chain);
   if (!record) return null;
   const address = await resolveAddress(ensName, chain);
-  const reputation = await readReputation(record, address);
+  const reputation = await readReputation(record);
   return {
     handle,
     ensName,

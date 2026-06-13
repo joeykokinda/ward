@@ -175,16 +175,40 @@ const ranked = await discoverWorkers({ skill: "router", region: "Greenwich" });
 const verified = (await verifyWardAgent()).verified;
 ```
 
-## What's needed to go live
+## Live on Sepolia
 
-1. **Register `ward-agent.eth` on Sepolia** from a funded controller wallet
-   (Sepolia ETH for gas), wrapped via NameWrapper so subnames can be minted.
-2. Set the ENSIP-25 record on it once the agent is in a real onchain agent
-   registry: `agent-registration[<erc7930 registry>][<agentId>] = "1"`. Set
-   `WARD_AGENT_REGISTRY` / `WARD_AGENT_REGISTRY_CHAIN_ID` / `WARD_AGENT_ID`.
-3. Set the agent's own `agent-context` + `agent-endpoint[*]` records.
-4. For each worker: `pnpm mint-subname <handle> --execute` with
-   `CONTROLLER_PRIVATE_KEY` set (per-worker owner = the worker's wallet).
-5. Point the reputation pointer at the deployed `WorkerRegistry`
-   (`--rep-registry`, `--rep-chain`).
+`ward-agent.eth` is **registered, wrapped, and resolving live on Sepolia**, with
+5 worker subnames carrying ENSIP-26 + WARD records. `src/register.ts`
+(`pnpm register`) performs the one-time bootstrap: register the 2LD → wrap via
+NameWrapper → set the agent's own records (addr, `agent-context`,
+`agent-endpoint[web]`, ENSIP-25 `agent-registration[…] = "1"`) → set the
+controller's primary name. Workers are minted with `pnpm mint-subname <handle>
+--execute` (subname held by the controller/fleet manager via `--subname-owner`,
+addr record → the worker's wallet).
+
+| name | resolves to |
+|---|---|
+| `ward-agent.eth` | controller `0xDCe5…bAea4` (primary-name round-trips) |
+| `mike.ward-agent.eth` | Arc worker `0x6d7B…f033` (router/networking, rep=1) |
+| `sara/deon/lena/raj.ward-agent.eth` | synthetic fleet (distinct addrs) |
+
+Reputation is read **live from Arc** (chain 5042002) via the CAIP-10 pointer in
+ENS — set `ARC_RPC_URL` (or `REPUTATION_RPC_URL`) so `discover` ranks by the
+on-chain score.
+
+### Sepolia deployment-address corrections (current testnet generation)
+
+The ENS docs/wiki table for Sepolia is mid-migration and partly stale. The
+addresses this package actually uses (env-overridable in `config.ts`):
+
+- **ETH registrar**: `0xdf60C561Ca35AD3C89D24BbA854654b1c3477078`
+  (TestnetV1PremigrationRegistrar — the only authorized controller on the
+  BaseRegistrar; free, single-tx `register`, no commit/reveal). The documented
+  `0xfb3c…F968` is no longer authorized (its `register` reverts in BaseRegistrar).
+- **PublicResolver**: `0x8FADE66B79cC9f707aB26799354482EB93a5B7dD` (the resolver
+  live names use; the older `0xE996…49b5` isn't what resolution routes to).
+- **UniversalResolver**: `0xBaBC7678D7A63104f1658c11D6AE9A21cdA09725`. We call
+  its 2-arg `resolve(bytes,bytes)` directly (`resolve.ts`) because viem's bundled
+  UR ABI assumes a newer variant than the one deployed.
+- **NameWrapper** `0x0635…dCE8`, **Registry** `0x0000…2e1e`: unchanged.
 ```

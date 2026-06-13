@@ -122,9 +122,18 @@ async function cmdMint(handle: string, flags: Record<string, string | boolean>):
     process.exitCode = 1;
     return;
   }
+  // The subname NFT is held by the WARD controller (fleet manager) so it can set
+  // every worker's records; the addr record still points at the worker (--owner).
+  const subnameOwner = flags["subname-owner"] ?? process.env.WARD_SUBNAME_OWNER;
+  if (subnameOwner !== undefined && !isAddress(String(subnameOwner))) {
+    console.error(`  invalid --subname-owner address: ${subnameOwner}`);
+    process.exitCode = 1;
+    return;
+  }
   const plan = buildMintPlan({
     handle,
     ownerAddress: owner as Address,
+    subnameOwner: subnameOwner ? (String(subnameOwner) as Address) : undefined,
     skills: String(flags.skills ?? "router,network").split(",").map((s) => s.trim()).filter(Boolean),
     region: String(flags.region ?? "Greenwich, CT"),
     reputationChainId: Number(flags["rep-chain"] ?? process.env.ARC_CHAIN_ID ?? "8008"),
