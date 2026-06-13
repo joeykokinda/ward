@@ -90,6 +90,7 @@ async def healthz() -> dict[str, Any]:
         "status": "ok",
         "mode": {
             "chain": "DRY" if (chain is None or chain.dry) else "LIVE",
+            "evaluator": "ready" if (chain and chain.evaluator_ready) else "missing-key",
             "llm": "on" if cfg.llm_enabled else "rules-fallback",
             "supabase": "on" if cfg.supabase_enabled else "off",
             "sim": getattr(agent.sim, "base_url", "unknown") if agent else "unknown",
@@ -186,8 +187,9 @@ async def incident_simulate(req: SimulateRequest) -> dict[str, Any]:
 
 async def _drive_worker_side(agent: WardAgent, device_id: str, property_id: str) -> None:
     """Wait for the agent to escrow + dispatch a job for this property, then
-    perform the worker actions (physical repair + accept + mark-done). This is
-    the field-tech half of the demo; the agent half runs on its own loop."""
+    perform the worker action (physical repair + submit the deliverable). This
+    is the field-tech half of the demo; the agent half (and the evaluator-signed
+    complete that releases payment) runs on its own loop."""
     cfg = get_config()
     # Wait for a job to be created for this property.
     job = None
@@ -205,10 +207,11 @@ async def _drive_worker_side(agent: WardAgent, device_id: str, property_id: str)
     # Field tech does the physical repair (clears the hard fault).
     await asyncio.sleep(1.0)
     await agent.sim.repair(device_id)
-    # Worker accepts and marks the job complete via the chain client.
-    agent.worker_accept(job.job_id)
+    # Provider (worker) submits the deliverable via the chain client; the
+    # evaluator complete() that releases payment is driven by the agent loop
+    # once telemetry confirms healthy.
     await asyncio.sleep(0.5)
-    agent.worker_mark_done(job.job_id)
+    agent.worker_submit(job.job_id)
 
 
 def run() -> None:

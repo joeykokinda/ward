@@ -1,25 +1,36 @@
-"""web3.py wrapper for the WARD on-chain rails, with a DRY fallback.
+"""web3.py wrapper for the WARD on-chain rails (ERC-8183 / WardEscrow), with a
+DRY fallback.
 
 Reads contract addresses + ABIs from /deployments/<chainId>.json and
-/deployments/abis/ (INTERFACES.md export format). Exposes the surface the
-agent needs against JobEscrow + WorkerRegistry + USDC:
+/deployments/abis/. The escrow is now ERC-8183 (the deployment's `JobEscrow`
+key points at the WardEscrow contract). Exposes the lifecycle the agent drives:
 
-  - create_job(...)           -> JobEscrow.createJob
-  - accept_job / mark_work_done (used by the worker; here for end-to-end DRY demo)
-  - watch JobAccepted / WorkMarkedDone (poll-based)
-  - request_attestation(...)  -> the clean CRE seam (settle-trigger)
-  - settle(...)               -> JobEscrow.settle
-  - balances + worker reads
+  - create_job(...)  -> WardEscrow.createJob(provider, evaluator, expiredAt,
+                        description, hook)        signed by AGENT (client)
+  - set_budget(...)  -> WardEscrow.setBudget(jobId, amount, "")  signed by AGENT
+  - fund(...)        -> WardEscrow.fund(jobId, optParams)        signed by AGENT
+  - submit(...)      -> WardEscrow.submit(jobId, deliverable, "") signed by WORKER
+  - complete(...)    -> WardEscrow.complete(jobId, reason, "")    signed by the
+                        EVALUATOR key — the sensor-settled release (evaluator
+                        only): transfers the budget to the provider + bumps
+                        reputation. Called after telemetry is healthy again,
+                        representing the CRE attestation.
+  - claim_refund(...)-> WardEscrow.claimRefund(jobId)            (expiry path)
+  - jobStatus / getJob reads, balances, worker reads.
 
-If no RPC / key is configured (or web3 / deployments are missing), the wrapper
-runs in DRY mode: it logs the txs it WOULD send, returns synthetic tx hashes,
-and simulates the job lifecycle in memory so the loop is demoable offline.
-Never hard-crashes on missing config (INTERFACES.md).
+Roles: client = the agent (AGENT_PRIVATE_KEY); provider = the dispatched worker
+(WARD_WORKER_KEYS); evaluator = the CRE oracle (EVALUATOR_PRIVATE_KEY /
+EVALUATOR_ADDRESS).
 
-CRE trigger seam: `request_attestation(job_id, device_id)` is intentionally
-isolated so the verification mechanism (CRE -> Arc directly vs an authorized
-reporter, per SPIKES.md) can be swapped without touching job logic. In DRY
-mode it simulates the attestation once the device reports healthy.
+If no RPC / agent key is configured (or web3 / deployments are missing), the
+wrapper runs in DRY mode: it logs the txs it WOULD send, returns synthetic tx
+hashes, and simulates the ERC-8183 lifecycle in memory so the loop is demoable
+offline. Never hard-crashes on missing config.
+
+The evaluator-signed complete() is the seam representing the CRE attestation:
+the agent repairs the sim device, confirms /status healthy, then the evaluator
+key completes the job. If the evaluator key is missing in live mode, complete()
+is skipped (logged) and the job stays SUBMITTED.
 """
 
 from __future__ import annotations
@@ -77,10 +88,14 @@ class JobView:
     property_id: str
     device_id: str
     amount_units: int
-    state: str  # OPEN | ACCEPTED | WORK_DONE | ATTESTING | SETTLED | EXPIRED | REFUNDED
-    worker: str | None = None
+    # ERC-8183 lifecycle: OPEN | FUNDED | SUBMITTED | COMPLETED | REJECTED |
+    # EXPIRED | REFUNDED.
+    state: str
+    provider: str | None = None
+    evaluator: str | None = None
+    description: str | None = None
     tx_create: str | None = None
-    tx_settle: str | None = None
+    tx_complete: str | None = None
 
 
 # Default worker roster used when no registry is on-chain / in DRY mode.
@@ -111,8 +126,10 @@ class ChainClient:
         self._abis: dict[str, Any] = {}
         self._contracts: dict[str, Any] = {}
         # Worker address -> web3 account, for signing the field-tech's on-chain
-        # accept/markWorkDone in the local end-to-end run (WARD_WORKER_KEYS).
+        # submit() in the local end-to-end run (WARD_WORKER_KEYS).
         self._worker_accounts: dict[str, Any] = {}
+        # The ERC-8183 evaluator account (the CRE oracle) that signs complete().
+        self._evaluator_account: Any | None = None
 
         # DRY-mode in-memory job ledger.
         self._next_job_id = 1
@@ -142,11 +159,15 @@ class ChainClient:
             self._w3 = w3
             self._account = w3.eth.account.from_key(self.cfg.agent_private_key)
             self._load_worker_keys(w3)
+            self._load_evaluator_key(w3)
             self._load_deployment(int(w3.eth.chain_id))
             self._wire_contracts()
             self.dry = False
             logger.info(
-                "chain: LIVE on chainId=%s as %s", w3.eth.chain_id, self._account.address
+                "chain: LIVE on chainId=%s as %s (evaluator %s)",
+                w3.eth.chain_id,
+                self._account.address,
+                self._evaluator_account.address if self._evaluator_account else "MISSING",
             )
         except ImportError:
             logger.warning("chain: web3 not installed -> DRY mode")
@@ -181,7 +202,7 @@ class ChainClient:
 
     def _load_worker_keys(self, w3: Any) -> None:
         """Load WARD_WORKER_KEYS (address -> privkey) so the agent can sign the
-        worker-side accept/markWorkDone in the local end-to-end run."""
+        provider-side submit() in the local end-to-end run."""
         if not self.cfg.worker_keys_json:
             return
         try:
@@ -197,6 +218,24 @@ class ChainClient:
                 self._worker_accounts[Web3.to_checksum_address(addr)] = acct
             except Exception:
                 logger.warning("WARD_WORKER_KEYS: bad key for %s; skipping", addr)
+
+    def _load_evaluator_key(self, w3: Any) -> None:
+        """Load EVALUATOR_PRIVATE_KEY so the agent can sign the ERC-8183
+        evaluator-only complete() (the sensor-settled release). Optional: if
+        unset, complete() degrades to a logged skip in live mode."""
+        if not self.cfg.evaluator_private_key:
+            logger.warning(
+                "chain: EVALUATOR_PRIVATE_KEY unset; live complete() will be "
+                "skipped (job stays SUBMITTED until the evaluator runs)"
+            )
+            return
+        try:
+            self._evaluator_account = w3.eth.account.from_key(
+                self.cfg.evaluator_private_key
+            )
+        except Exception:
+            logger.warning("EVALUATOR_PRIVATE_KEY invalid; evaluator signing disabled")
+            self._evaluator_account = None
 
     def _wire_contracts(self) -> None:
         assert self._w3 is not None
@@ -243,7 +282,7 @@ class ChainClient:
 
     def _send_as(self, account: Any, contract_name: str, fn_name: str, *args: Any) -> str:
         """Build, sign, and send a tx from an arbitrary account (e.g. a worker
-        wallet for accept/markWorkDone). Live only."""
+        wallet for submit(), or the evaluator wallet for complete()). Live only."""
         assert self._w3 is not None
         contract = self._contracts[contract_name]
         fn = getattr(contract.functions, fn_name)(*args)
@@ -262,11 +301,12 @@ class ChainClient:
     def usdc_balance_units(self, address: str | None = None) -> int:
         address = address or self.agent_address
         if self.dry or "MockUSDC" not in self._contracts:
-            # In DRY mode, report the demo-funded 500 USDC less escrowed jobs.
+            # In DRY mode, report the demo-funded 500 USDC less funded-but-unreleased
+            # jobs. USDC is only pulled into escrow at fund(), so OPEN doesn't count.
             escrowed = sum(
                 j.amount_units
                 for j in self._jobs.values()
-                if j.state in ("OPEN", "ACCEPTED", "WORK_DONE", "ATTESTING")
+                if j.state in ("FUNDED", "SUBMITTED")
             )
             return max(0, 500_000000 - escrowed)
         return int(self._contracts["MockUSDC"].functions.balanceOf(address).call())
@@ -327,7 +367,7 @@ class ChainClient:
             return None
         return max(workers, key=lambda w: w.reputation)
 
-    # ------------------------------------------------------------- jobs
+    # ------------------------------------------------------------- jobs (ERC-8183)
     def create_job(
         self,
         property_id: str,
@@ -335,12 +375,17 @@ class ChainClient:
         amount_units: int,
         deadline_secs: int,
         owner_approved: bool,
+        provider_address: str,
+        description: str,
     ) -> tuple[int, str]:
-        """JobEscrow.createJob. Returns (job_id, tx_hash).
+        """WardEscrow.createJob(provider, evaluator, expiredAt, description,
+        hook), signed by the AGENT (client). Returns (job_id, tx_hash).
 
-        Enforces the policy caps client-side too, but the contract is the
-        source of truth on-chain. owner_approved must be True when amount is
-        at/above the owner-approval threshold.
+        provider = the dispatched worker; evaluator = the configured CRE oracle
+        (EVALUATOR_ADDRESS); hook = address(0); expiredAt = now + deadline_secs;
+        description = homeowner-voiced summary. owner_approved is recorded on the
+        local JobView only (the contract gates funding above its threshold via
+        setOwnerApproved; below threshold no approval is needed).
         """
         if self.dry:
             job_id = self._next_job_id
@@ -352,28 +397,31 @@ class ChainClient:
                 device_id=device_id,
                 amount_units=amount_units,
                 state="OPEN",
+                provider=provider_address,
+                evaluator=self.cfg.evaluator_address,
+                description=description,
                 tx_create=tx_hash,
             )
             logger.info(
-                "[DRY] createJob(prop=%s, dev=%s, amount=%s USDC, ownerApproved=%s) -> job %s tx %s",
-                property_id, device_id, usdc(amount_units), owner_approved, job_id, tx_hash,
+                "[DRY] createJob(provider=%s, evaluator=%s, amount=%s USDC, desc=%r) "
+                "-> job %s tx %s",
+                provider_address, self.cfg.evaluator_address, usdc(amount_units),
+                description, job_id, tx_hash,
             )
             return job_id, tx_hash
 
-        # Live path.
-        pid = _bytes32_from_id(property_id)
-        did = _bytes32_from_id(device_id)
-        deadline = int(time.time()) + deadline_secs
-        # The escrow pulls USDC from the caller (agent) via transferFrom, so the
-        # agent must have approved the escrow first. Ensure a sufficient allowance
-        # before createJob so escrow is self-sufficient (no manual pre-approval).
-        self._ensure_escrow_allowance(amount_units)
-        # createJob's 5th arg is the owner-approval flag, required true only when
-        # amount > ownerApprovalThreshold; below threshold it's false.
-        tx_hash = self._send(
-            "JobEscrow", "createJob", pid, did, amount_units, deadline, bool(owner_approved)
+        # Live path. createJob takes provider, evaluator, expiredAt, description, hook.
+        from web3 import Web3
+
+        provider = Web3.to_checksum_address(provider_address)
+        evaluator = Web3.to_checksum_address(
+            self.cfg.evaluator_address or self._evaluator_account.address
         )
-        # Recover jobId from the JobCreated event.
+        hook = "0x" + "00" * 20  # address(0)
+        expired_at = int(time.time()) + deadline_secs
+        tx_hash = self._send(
+            "JobEscrow", "createJob", provider, evaluator, expired_at, description, hook
+        )
         job_id = self._read_latest_job_id(tx_hash)
         self._jobs[job_id] = JobView(
             job_id=job_id,
@@ -381,16 +429,151 @@ class ChainClient:
             device_id=device_id,
             amount_units=amount_units,
             state="OPEN",
+            provider=provider,
+            evaluator=evaluator,
+            description=description,
             tx_create=tx_hash,
         )
         return job_id, tx_hash
 
-    # A large one-time approval so repeated createJob calls don't each need an
+    def set_budget(self, job_id: int, amount_units: int) -> str:
+        """WardEscrow.setBudget(jobId, amount, b""), signed by the AGENT."""
+        if self.dry:
+            tx_hash = self._synthetic_tx_hash("setBudget", job_id, amount_units)
+            logger.info("[DRY] setBudget(%s, %s USDC) tx %s", job_id, usdc(amount_units), tx_hash)
+            return tx_hash
+        return self._send("JobEscrow", "setBudget", job_id, amount_units, b"")
+
+    def fund(self, job_id: int, amount_units: int) -> str:
+        """WardEscrow.fund(jobId, optParams), signed by the AGENT — pulls USDC
+        into escrow (allowance must already be set; ensured here for live).
+
+        optParams = b"" below the contract's owner-approval threshold; for the
+        demo amount (1 USDC < 100 USDC) that's always the case. If a future
+        amount exceeds the threshold, encode the approval flag as
+        eth_abi.encode(['bool'], [True]).
+        """
+        if self.dry:
+            tx_hash = self._synthetic_tx_hash("fund", job_id)
+            job = self._jobs.get(job_id)
+            if job:
+                job.state = "FUNDED"
+            logger.info("[DRY] fund(%s) -> tx %s (USDC pulled into escrow)", job_id, tx_hash)
+            return tx_hash
+
+        self._ensure_escrow_allowance(amount_units)
+        opt_params = self._fund_opt_params(amount_units)
+        tx_hash = self._send("JobEscrow", "fund", job_id, opt_params)
+        job = self._jobs.get(job_id)
+        if job:
+            job.state = "FUNDED"
+        return tx_hash
+
+    def _fund_opt_params(self, amount_units: int) -> bytes:
+        """b"" when below the owner-approval threshold; the abi-encoded approval
+        flag when at/above it (the contract requires owner approval there)."""
+        if amount_units < self.cfg.owner_approval_threshold_units:
+            return b""
+        try:
+            from eth_abi import encode
+
+            return encode(["bool"], [True])
+        except Exception as exc:  # pragma: no cover - eth_abi always present with web3
+            logger.warning("could not abi-encode fund optParams (%s); sending empty", exc)
+            return b""
+
+    def submit(self, job_id: int, device_id: str) -> str:
+        """WardEscrow.submit(jobId, deliverable, b""), signed by the WORKER
+        (provider). deliverable = right-padded bytes32 of the device id."""
+        deliverable = _bytes32_from_id(device_id)
+        if self.dry:
+            tx_hash = self._synthetic_tx_hash("submit", job_id, device_id)
+            job = self._jobs.get(job_id)
+            if job:
+                job.state = "SUBMITTED"
+            logger.info("[DRY] submit(%s, deliverable=%s) tx %s", job_id, device_id, tx_hash)
+            return tx_hash
+        job = self._jobs.get(job_id)
+        provider = job.provider if job else None
+        acct = self._worker_account_for(provider)
+        tx_hash = self._send_as(acct, "JobEscrow", "submit", job_id, deliverable, b"")
+        if job:
+            job.state = "SUBMITTED"
+        return tx_hash
+
+    def complete(self, job_id: int, reason: str = "healthy") -> str:
+        """WardEscrow.complete(jobId, reason, b""), signed by the EVALUATOR key.
+
+        This is the sensor-settled release (evaluator-only): it transfers the
+        budget to the provider and bumps reputation, representing the CRE
+        attestation that telemetry is healthy again. Caller must confirm the
+        device is healthy first. In live mode, requires the evaluator key.
+        """
+        reason_b32 = _bytes32_from_id(reason)
+        if self.dry:
+            tx_hash = self._synthetic_tx_hash("complete", job_id, reason)
+            job = self._jobs.get(job_id)
+            if job:
+                job.state = "COMPLETED"
+                job.tx_complete = tx_hash
+            logger.info(
+                "[DRY] complete(%s, reason=%r) -> tx %s (evaluator-signed; budget "
+                "released to provider, reputation bumped)",
+                job_id, reason, tx_hash,
+            )
+            return tx_hash
+
+        if self._evaluator_account is None:
+            raise RuntimeError(
+                "no evaluator signing key for complete() (set EVALUATOR_PRIVATE_KEY)"
+            )
+        tx_hash = self._send_as(
+            self._evaluator_account, "JobEscrow", "complete", job_id, reason_b32, b""
+        )
+        job = self._jobs.get(job_id)
+        if job:
+            job.state = "COMPLETED"
+            job.tx_complete = tx_hash
+        return tx_hash
+
+    def claim_refund(self, job_id: int) -> str:
+        """WardEscrow.claimRefund(jobId), signed by the AGENT (client) — the
+        expiry path; returns the budget once the job is past expiredAt."""
+        if self.dry:
+            tx_hash = self._synthetic_tx_hash("claimRefund", job_id)
+            job = self._jobs.get(job_id)
+            if job:
+                job.state = "REFUNDED"
+            logger.info("[DRY] claimRefund(%s) -> tx %s", job_id, tx_hash)
+            return tx_hash
+        tx_hash = self._send("JobEscrow", "claimRefund", job_id)
+        job = self._jobs.get(job_id)
+        if job:
+            job.state = "REFUNDED"
+        return tx_hash
+
+    @property
+    def evaluator_ready(self) -> bool:
+        """True if complete() can be signed: DRY mode always, else the evaluator
+        key must be loaded."""
+        return self.dry or self._evaluator_account is not None
+
+    @property
+    def evaluator_label(self) -> str:
+        """A short label for the configured evaluator address (for event text)."""
+        addr = self.cfg.evaluator_address
+        if self._evaluator_account is not None:
+            addr = self._evaluator_account.address
+        if not addr:
+            return "DRY-SIMULATED-CRE"
+        return f"{addr[:6]}…{addr[-4:]}"
+
+    # A large one-time approval so repeated fund() calls don't each need an
     # approve tx. 2^256 - 1 (max uint256), the standard "infinite approval".
     _MAX_UINT256 = (1 << 256) - 1
 
     def _ensure_escrow_allowance(self, amount_units: int) -> None:
-        """Approve JobEscrow to pull USDC from the agent if the current allowance
+        """Approve the escrow to pull USDC from the agent if the current allowance
         is below the job amount. Sends a large (max) approve once so subsequent
         jobs reuse the same allowance. Live only; no-op if contracts missing."""
         from web3 import Web3
@@ -410,7 +593,7 @@ class ChainClient:
         if allowance >= amount_units:
             return
         logger.info(
-            "USDC allowance %s < job amount %s; approving JobEscrow for max",
+            "USDC allowance %s < job amount %s; approving escrow for max",
             allowance, amount_units,
         )
         self._send("MockUSDC", "approve", spender, self._MAX_UINT256)
@@ -421,6 +604,7 @@ class ChainClient:
             escrow = self._contracts["JobEscrow"]
             logs = escrow.events.JobCreated().process_receipt(receipt)
             if logs:
+                # jobId is the indexed topic1 of JobCreated.
                 return int(logs[0]["args"]["jobId"])
         except Exception as exc:  # pragma: no cover
             logger.warning("could not read JobCreated event (%s)", exc)
@@ -429,48 +613,10 @@ class ChainClient:
         self._next_job_id += 1
         return jid
 
-    def accept_job(self, job_id: int, worker_address: str) -> str:
-        """Worker accepts. Live: the worker signs this; here we model it for the
-        end-to-end DRY demo (and as a manual nudge in tests)."""
-        if self.dry:
-            tx_hash = self._synthetic_tx_hash("acceptJob", job_id, worker_address)
-            job = self._jobs.get(job_id)
-            if job:
-                job.state = "ACCEPTED"
-                job.worker = worker_address
-            logger.info("[DRY] acceptJob(%s) by %s tx %s", job_id, worker_address, tx_hash)
-            return tx_hash
-        # Live: acceptJob must be signed by an active (registered+staked) worker,
-        # not the agent. Use the worker's key from WARD_WORKER_KEYS.
-        acct = self._worker_account_for(worker_address)
-        tx_hash = self._send_as(acct, "JobEscrow", "acceptJob", job_id)
-        job = self._jobs.get(job_id)
-        if job:
-            job.state = "ACCEPTED"
-            job.worker = worker_address
-        return tx_hash
-
-    def mark_work_done(self, job_id: int) -> str:
-        if self.dry:
-            tx_hash = self._synthetic_tx_hash("markWorkDone", job_id)
-            job = self._jobs.get(job_id)
-            if job:
-                job.state = "WORK_DONE"
-            logger.info("[DRY] markWorkDone(%s) tx %s", job_id, tx_hash)
-            return tx_hash
-        # Live: markWorkDone must be signed by the assigned worker.
-        job = self._jobs.get(job_id)
-        worker_address = job.worker if job else None
-        acct = self._worker_account_for(worker_address)
-        tx_hash = self._send_as(acct, "JobEscrow", "markWorkDone", job_id)
-        if job:
-            job.state = "WORK_DONE"
-        return tx_hash
-
     def has_worker_key(self, worker_address: str | None) -> bool:
         """True if the agent holds the signing key for this worker (so it can
-        autonomously drive the worker-side accept/markWorkDone). In DRY mode the
-        worker side is simulated in-memory, so always True."""
+        autonomously drive the worker-side submit()). In DRY mode the worker
+        side is simulated in-memory, so always True."""
         if self.dry:
             return True
         if not worker_address:
@@ -489,7 +635,7 @@ class ChainClient:
         from web3 import Web3
 
         if not worker_address:
-            raise RuntimeError("no worker address to sign worker-side tx")
+            raise RuntimeError("no worker address to sign provider-side tx")
         acct = self._worker_accounts.get(Web3.to_checksum_address(worker_address))
         if acct is None:
             raise RuntimeError(
@@ -497,92 +643,33 @@ class ChainClient:
             )
         return acct
 
-    # JobEscrow.JobState enum -> agent lifecycle string.
+    # WardEscrow JobStatus enum -> agent lifecycle string.
     _ONCHAIN_STATE = {
-        0: None,        # None
-        1: "OPEN",      # Open
-        2: "ACCEPTED",  # Accepted
-        3: "WORK_DONE", # WorkDone
-        4: "SETTLED",   # Settled
-        5: "REFUNDED",  # Refunded
+        0: "OPEN",       # Open
+        1: "FUNDED",     # Funded
+        2: "SUBMITTED",  # Submitted
+        3: "COMPLETED",  # Completed
+        4: "REJECTED",   # Rejected
+        5: "EXPIRED",    # Expired
     }
 
     def get_job_state(self, job_id: int) -> str | None:
         job = self._jobs.get(job_id)
         if not self.dry and "JobEscrow" in self._contracts:
-            # On-chain state is the source of truth in live mode so the agent's
-            # _await_worker observes the worker's accept/markWorkDone.
+            # On-chain status is the source of truth in live mode so the agent
+            # observes the worker's submit() and the evaluator's complete().
             try:
-                code = int(self._contracts["JobEscrow"].functions.jobState(job_id).call())
+                code = int(self._contracts["JobEscrow"].functions.jobStatus(job_id).call())
                 onchain = self._ONCHAIN_STATE.get(code)
                 if onchain is not None:
                     if job is not None:
                         job.state = onchain
                     return onchain
             except Exception as exc:  # pragma: no cover
-                logger.warning("could not read on-chain jobState(%s): %s", job_id, exc)
+                logger.warning("could not read on-chain jobStatus(%s): %s", job_id, exc)
         if job is None:
             return None
         return job.state
-
-    # ------------------------------------------------------ CRE attestation seam
-    def request_attestation(self, job_id: int, device_id: str) -> dict[str, Any]:
-        """The clean CRE trigger seam (settle-trigger).
-
-        Whether CRE writes to Arc directly or via an authorized-reporter
-        fallback is still being decided by a separate spike (SPIKES.md /
-        ICreConsumer). This function is the only place the agent touches that
-        mechanism. In DRY mode it produces a simulated HealthAttestation once
-        the device reports healthy (the caller is responsible for checking the
-        device first). Returns the attestation envelope; the actual settle()
-        call is made via settle().
-        """
-        job = self._jobs.get(job_id)
-        if job:
-            job.state = "ATTESTING"
-        attestation = {
-            "jobId": job_id,
-            "deviceId": device_id,
-            "healthy": True,
-            "reportTimestamp": int(time.time()),
-            "signature": "0x" + ("00" * 65),  # placeholder; real CRE/reporter fills this
-            "mechanism": "DRY-SIMULATED-CRE" if self.dry else "CRE",
-        }
-        logger.info(
-            "[%s] request_attestation(job=%s, dev=%s) -> healthy=True",
-            "DRY" if self.dry else "LIVE", job_id, device_id,
-        )
-        return attestation
-
-    def settle(self, job_id: int, attestation: dict[str, Any]) -> str:
-        """JobEscrow.settle — verifies the CRE attestation and releases USDC.
-
-        In DRY mode, returns a synthetic tx hash and marks the job SETTLED.
-        Live: passes the attestation through the ICreConsumer-gated settle().
-        """
-        if self.dry:
-            tx_hash = self._synthetic_tx_hash("settle", job_id)
-            job = self._jobs.get(job_id)
-            if job:
-                job.state = "SETTLED"
-                job.tx_settle = tx_hash
-            logger.info("[DRY] settle(%s) -> tx %s (USDC released, reputation bumped)", job_id, tx_hash)
-            return tx_hash
-
-        # Live: shape the HealthAttestation struct for ICreConsumer-gated settle.
-        struct = (
-            attestation["jobId"],
-            _bytes32_from_id(attestation["deviceId"]),
-            bool(attestation["healthy"]),
-            int(attestation["reportTimestamp"]),
-            bytes.fromhex(attestation["signature"][2:]),
-        )
-        tx_hash = self._send("JobEscrow", "settle", job_id, struct)
-        job = self._jobs.get(job_id)
-        if job:
-            job.state = "SETTLED"
-            job.tx_settle = tx_hash
-        return tx_hash
 
     # ------------------------------------------------------------- explorer
     def explorer_tx_url(self, tx_hash: str) -> str:

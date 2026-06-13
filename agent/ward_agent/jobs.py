@@ -1,9 +1,13 @@
 """Job lifecycle orchestration.
 
-Models the canonical state machine from INTERFACES.md:
+Models the ERC-8183 (WardEscrow) on-chain lifecycle:
 
-    OPEN -> ACCEPTED -> WORK_DONE -> ATTESTING -> SETTLED
-    (off-happy-path: EXPIRED / REFUNDED)
+    OPEN -> FUNDED -> SUBMITTED -> COMPLETED
+    (off-happy-path: REJECTED / EXPIRED / REFUNDED)
+
+These map 1:1 onto the contract's JobStatus enum
+{0 Open, 1 Funded, 2 Submitted, 3 Completed, 4 Rejected, 5 Expired}; the agent
+adds REFUNDED locally to mark a claimRefund() against an expired job.
 
 This module is a thin, transport-agnostic state holder + transition guard. The
 agent loop (main.py) drives transitions; chain.py performs the on-chain (or
@@ -20,27 +24,27 @@ from typing import Any
 
 
 class JobState(str, Enum):
-    OPEN = "OPEN"
-    ACCEPTED = "ACCEPTED"
-    WORK_DONE = "WORK_DONE"
-    ATTESTING = "ATTESTING"
-    SETTLED = "SETTLED"
-    EXPIRED = "EXPIRED"
-    REFUNDED = "REFUNDED"
+    OPEN = "OPEN"            # createJob done; budget may or may not be set yet
+    FUNDED = "FUNDED"        # fund() pulled USDC into escrow
+    SUBMITTED = "SUBMITTED"  # provider (worker) submit()ed the deliverable
+    COMPLETED = "COMPLETED"  # evaluator complete()d -> payment released
+    REJECTED = "REJECTED"    # evaluator/client reject()ed
+    EXPIRED = "EXPIRED"      # past expiredAt, awaiting refund
+    REFUNDED = "REFUNDED"    # claimRefund() returned the budget to the client
 
 
 # Legal forward transitions (plus the off-happy-path terminals).
 _LEGAL: dict[JobState, set[JobState]] = {
-    JobState.OPEN: {JobState.ACCEPTED, JobState.EXPIRED, JobState.REFUNDED},
-    JobState.ACCEPTED: {JobState.WORK_DONE, JobState.EXPIRED, JobState.REFUNDED},
-    JobState.WORK_DONE: {JobState.ATTESTING, JobState.EXPIRED, JobState.REFUNDED},
-    JobState.ATTESTING: {JobState.SETTLED, JobState.EXPIRED, JobState.REFUNDED},
-    JobState.SETTLED: set(),
+    JobState.OPEN: {JobState.FUNDED, JobState.REJECTED, JobState.EXPIRED, JobState.REFUNDED},
+    JobState.FUNDED: {JobState.SUBMITTED, JobState.REJECTED, JobState.EXPIRED, JobState.REFUNDED},
+    JobState.SUBMITTED: {JobState.COMPLETED, JobState.REJECTED, JobState.EXPIRED, JobState.REFUNDED},
+    JobState.COMPLETED: set(),
+    JobState.REJECTED: set(),
     JobState.EXPIRED: {JobState.REFUNDED},
     JobState.REFUNDED: set(),
 }
 
-TERMINAL_STATES = {JobState.SETTLED, JobState.REFUNDED}
+TERMINAL_STATES = {JobState.COMPLETED, JobState.REJECTED, JobState.REFUNDED}
 
 
 class IllegalTransition(Exception):
@@ -62,9 +66,10 @@ class Job:
     owner_approval_required: bool = False
     owner_approved: bool = False
     tx_create: str | None = None
-    tx_accept: str | None = None
-    tx_work_done: str | None = None
-    tx_settle: str | None = None
+    tx_budget: str | None = None
+    tx_fund: str | None = None
+    tx_submit: str | None = None
+    tx_complete: str | None = None
     created_at: float = field(default_factory=time.time)
     history: list[tuple[float, str]] = field(default_factory=list)
 
@@ -96,9 +101,10 @@ class Job:
             "owner_approval_required": self.owner_approval_required,
             "owner_approved": self.owner_approved,
             "tx_create": self.tx_create,
-            "tx_accept": self.tx_accept,
-            "tx_work_done": self.tx_work_done,
-            "tx_settle": self.tx_settle,
+            "tx_budget": self.tx_budget,
+            "tx_fund": self.tx_fund,
+            "tx_submit": self.tx_submit,
+            "tx_complete": self.tx_complete,
         }
 
 

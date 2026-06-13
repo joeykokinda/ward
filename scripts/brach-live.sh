@@ -14,7 +14,7 @@ REPO="$(cd "$(dirname "$0")/.." && pwd)"; cd "$REPO"
 [ -f spike/arc/.env ] || { echo "ERR: missing spike/arc/.env — scp it from your dev box (step 2)"; exit 1; }
 set -a; . spike/arc/.env; set +a
 fail=0
-for v in DEPLOYER_PRIVATE_KEY ANTHROPIC_API_KEY WORKER_ADDRESS WORKER_PRIVATE_KEY; do
+for v in DEPLOYER_PRIVATE_KEY ANTHROPIC_API_KEY WORKER_ADDRESS WORKER_PRIVATE_KEY EVALUATOR_ADDRESS EVALUATOR_PRIVATE_KEY; do
   if [ -z "${!v:-}" ]; then echo "ERR: $v is empty in spike/arc/.env"; fail=1; fi
 done
 [ "$fail" = 0 ] || { echo "Fix spike/arc/.env (re-scp from dev box) and re-run."; exit 1; }
@@ -34,11 +34,13 @@ WARD_DEPLOYMENTS_DIR=$REPO/deployments
 WARD_JOB_AMOUNT=1000000
 AGENT_PRIVATE_KEY=$DEPLOYER_PRIVATE_KEY
 ANTHROPIC_API_KEY=$ANTHROPIC_API_KEY
+EVALUATOR_ADDRESS=$EVALUATOR_ADDRESS
+EVALUATOR_PRIVATE_KEY=$EVALUATOR_PRIVATE_KEY
 WARD_WORKER_KEYS={"$WORKER_ADDRESS":"$WORKER_PRIVATE_KEY"}
-WARD_WORKER_ROSTER=[{"address":"$WORKER_ADDRESS","handle":"mike","ensName":"mike.ward-agent.eth","skills":"networking,router","region":"Greenwich CT","reputation":1}]
+WARD_WORKER_ROSTER=[{"address":"$WORKER_ADDRESS","handle":"mike","ensName":"mike.ward-agent.eth","skills":"plumbing,networking,hardware","region":"Brooklyn NY","reputation":1}]
 EOF
-echo "wrote LIVE block to agent/.env; restarting ward-agent…"
-systemctl --user restart ward-agent
+echo "wrote LIVE block to agent/.env; restarting ward-sim + ward-agent…"
+systemctl --user restart ward-sim ward-agent
 sleep 4
 echo "agent mode now:"; curl -s http://127.0.0.1:8091/healthz; echo
 echo

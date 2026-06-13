@@ -7,11 +7,17 @@ Flow (per INTERFACES.md / PROJECT.md escalation ladder):
        -> if level 1: ACTION (remote restart) -> RESULT
             -> healed? log RESOLVED, stop
        -> if still down: conclude hardware fault
-            -> ESCROW (createJob)   [respect spending caps + 100 USDC owner threshold]
-            -> DISPATCH (highest-reputation registered worker)
-            -> wait for accept + work-done
-            -> request CRE attestation (chain.py seam)
-            -> on healthy attestation: confirm SETTLED + RESOLVED
+            -> ESCROW   createJob(provider, evaluator) -> setBudget -> fund
+                        [respect spending caps + 100 USDC owner threshold]
+            -> DISPATCH highest-reputation worker submits (provider key)
+            -> repair the sim device + confirm telemetry healthy
+            -> RESULT   evaluator complete() -> budget released to provider
+            -> RESOLVED incident closed
+
+The ERC-8183 (WardEscrow) lifecycle the agent drives:
+OPEN -> FUNDED -> SUBMITTED -> COMPLETED. The evaluator-signed complete() is the
+sensor-settled release representing the CRE attestation (agent repairs the
+device, confirms healthy, then the evaluator key completes).
 
 Spending policy: below the owner-approval threshold the agent acts
 autonomously; at/above it the job is marked pending owner approval and not
@@ -238,7 +244,7 @@ class WardAgent:
         # --- one-open-job-per-property guard -------------------------------
         # While a device stays unhealthy, every poll re-runs the incident. Only
         # one unsettled job per property should exist; skip if one is already
-        # open/accepted/work_done/attesting (the registry excludes terminals).
+        # open/funded/submitted (the registry excludes terminals).
         existing = self.jobs.active_for_property(prop)
         if existing is not None:
             await self._emit(
@@ -310,12 +316,18 @@ class WardAgent:
             self.jobs.add(job)
             return job
 
-        # --- ESCROW: createJob ---------------------------------------------
+        # --- ESCROW: createJob -> setBudget -> fund ------------------------
+        # Homeowner-voiced job description recorded on-chain.
+        description = (
+            f"{prop} WiFi router hardware fault confirmed (faultMode="
+            f"{device.faultMode}) — dispatch field tech to replace."
+        )
         await self._emit(
             "ESCROW",
-            f"Hardware fault confirmed. Escrowing {usdc(amount)} USDC on Arc for {prop} "
-            f"({usdc(amount)} < {usdc(self.cfg.owner_approval_threshold_units)} threshold "
-            "-> autonomous, no owner sign-off needed).",
+            f"Hardware fault confirmed. Opening an escrowed job on Arc for {prop} "
+            f"({usdc(amount)} USDC < {usdc(self.cfg.owner_approval_threshold_units)} "
+            "threshold -> autonomous, no owner sign-off needed). "
+            f"Evaluator (CRE oracle) = {self.chain.evaluator_label}.",
             propertyId=prop,
             device_id=dev,
         )
@@ -325,16 +337,23 @@ class WardAgent:
             amount_units=amount,
             deadline_secs=self.cfg.job_deadline_secs,
             owner_approved=job.owner_approved,
+            provider_address=worker.address,
+            description=description,
         )
         job.job_id = job_id
         job.tx_create = tx_create
         self.jobs.add(job)
         self._daily_spent_units += amount
+
+        # Set the budget, then fund (pull USDC into escrow).
+        job.tx_budget = self.chain.set_budget(job_id, amount)
+        job.tx_fund = self.chain.fund(job_id, amount)
+        job.transition(JobState.FUNDED)
         await self._emit(
             "ESCROW",
-            f"USDC locked in JobEscrow. Job #{job_id} OPEN.",
+            f"{usdc(amount)} USDC funded into WardEscrow. Job #{job_id} FUNDED.",
             jobId=job_id,
-            txHash=self.chain.explorer_tx_url(tx_create),
+            txHash=self.chain.explorer_tx_url(job.tx_fund),
             propertyId=prop,
             device_id=dev,
         )
@@ -351,46 +370,45 @@ class WardAgent:
 
         # --- autonomous worker completion (demo) ----------------------------
         # When auto-complete is on and the agent holds the dispatched worker's
-        # signing key, drive the worker side itself: accept -> markWorkDone ->
-        # physically repair the device so telemetry recovers. With it off, the
-        # worker accepts via the UI and an external trigger advances the chain.
+        # signing key, drive the provider side itself: submit() the deliverable,
+        # then physically repair the device so telemetry recovers. With it off,
+        # the worker submits via the UI and an external trigger advances chain.
         if self.cfg.auto_complete and self.chain.has_worker_key(worker.address):
             await self._auto_complete_worker(job, device)
 
-        # --- wait for accept + work-done -----------------------------------
+        # --- wait for the provider's submit() ------------------------------
         await self._await_worker(job, device)
-        if job.state not in (JobState.WORK_DONE,):
+        if job.state != JobState.SUBMITTED:
             await self._emit(
                 "RESULT",
-                f"Job #{job_id} did not reach WORK_DONE (state={job.state.value}). "
-                "Refund will occur after deadline.",
+                f"Job #{job_id} did not reach SUBMITTED (state={job.state.value}). "
+                "Refund can be claimed after the deadline.",
                 jobId=job_id,
                 propertyId=prop,
                 device_id=dev,
             )
             return job
 
-        # --- CRE attestation seam + settle ---------------------------------
-        await self._attest_and_settle(job, device)
+        # --- evaluator-settled completion (the CRE seam) -------------------
+        await self._complete_on_healthy(job, device)
         return job
 
     async def _auto_complete_worker(self, job: Job, device: DeviceStatus) -> None:
-        """Drive the worker side autonomously (the field-tech half) when the
+        """Drive the provider side autonomously (the field-tech half) when the
         agent holds the worker's key and WARD_AUTO_COMPLETE is on.
 
-        Performs only the on-chain (or DRY) effects here — accept, markWorkDone,
-        and the physical repair so telemetry recovers. The DISPATCH events and
-        the Job state transitions are emitted by _await_worker observing the
-        chain view, keeping a single owner of transitions (no race). The
-        subsequent _attest_and_settle then emits RESULT/RESOLVED.
+        Performs only the on-chain (or DRY) effects here — submit() and the
+        physical repair so telemetry recovers. The DISPATCH event and the Job
+        state transition are emitted by _await_worker observing the chain view,
+        keeping a single owner of transitions (no race). The subsequent
+        _complete_on_healthy then emits RESULT/RESOLVED via the evaluator.
         """
         job_id = job.job_id
         dev = job.device_id
-        # Worker accepts and marks the job done on-chain.
-        self.worker_accept(job_id)
-        self.worker_mark_done(job_id)
+        # Provider submits the deliverable on-chain.
+        self.worker_submit(job_id)
         # Field tech does the physical repair so the device reports healthy and
-        # the CRE attestation can confirm it before settle.
+        # the evaluator (CRE) can confirm it before complete().
         try:
             await self.sim.repair(dev)
         except Exception as exc:  # pragma: no cover - sim transient failure
@@ -403,49 +421,26 @@ class WardAgent:
             )
 
     async def _await_worker(self, job: Job, device: DeviceStatus) -> None:
-        """Wait for the worker to accept and mark work done.
+        """Wait for the provider (worker) to submit() the deliverable.
 
         In a live demo the worker uses the mobile UI; in DRY/offline mode we
         let an external trigger (POST /incident/simulate worker steps, or the
-        verification harness) advance it. Here we poll the chain client's
-        view and the device until WORK_DONE + device healthy, or timeout.
+        verification harness) advance it. Here we poll the chain client's view
+        until SUBMITTED, or timeout.
         """
         job_id = job.job_id
         deadline = self.cfg.attestation_timeout_secs
         waited = 0.0
         interval = self.cfg.attestation_poll_secs
 
-        # If nothing external drives the worker within the grace window, the
-        # verification/demo path will have injected accept+work-done already.
-        while waited < deadline and job.state not in (JobState.WORK_DONE,):
+        while waited < deadline and job.state != JobState.SUBMITTED:
             chain_state = self.chain.get_job_state(job_id)
-            if chain_state == "ACCEPTED" and job.state == JobState.OPEN:
-                job.transition(JobState.ACCEPTED)
-                job.worker_address = job.worker_address
+            if chain_state == "SUBMITTED" and job.state == JobState.FUNDED:
+                job.transition(JobState.SUBMITTED)
                 await self._emit(
                     "DISPATCH",
-                    f"Worker {job.worker_ens} accepted job #{job_id}.",
-                    jobId=job_id,
-                    propertyId=job.property_id,
-                    device_id=job.device_id,
-                )
-            elif chain_state == "WORK_DONE" and job.state in (JobState.OPEN, JobState.ACCEPTED):
-                if job.state == JobState.OPEN:
-                    # Worker accepted + marked done between polls (e.g. the
-                    # autonomous auto-complete path); surface the accept too so
-                    # the stream still shows OPEN -> ACCEPTED -> WORK_DONE.
-                    job.transition(JobState.ACCEPTED)
-                    await self._emit(
-                        "DISPATCH",
-                        f"Worker {job.worker_ens} accepted job #{job_id}.",
-                        jobId=job_id,
-                        propertyId=job.property_id,
-                        device_id=job.device_id,
-                    )
-                job.transition(JobState.WORK_DONE)
-                await self._emit(
-                    "DISPATCH",
-                    f"Worker {job.worker_ens} marked work done on job #{job_id}.",
+                    f"Worker {job.worker_ens} submitted the repair deliverable on "
+                    f"job #{job_id}.",
                     jobId=job_id,
                     propertyId=job.property_id,
                     device_id=job.device_id,
@@ -454,18 +449,22 @@ class WardAgent:
             await asyncio.sleep(interval)
             waited += interval
 
-    async def _attest_and_settle(self, job: Job, device: DeviceStatus) -> None:
+    async def _complete_on_healthy(self, job: Job, device: DeviceStatus) -> None:
+        """Confirm telemetry recovered, then have the EVALUATOR complete() the
+        job (the sensor-settled release that pays the provider). This is the CRE
+        attestation seam: the evaluator key signs complete() only after /status
+        reports healthy."""
         job_id = job.job_id
         dev = job.device_id
         prop = job.property_id
 
-        # Confirm telemetry recovered before triggering the CRE attestation.
+        # Confirm telemetry recovered before the evaluator completes.
         status = await self.sim.status(dev)
         if not status.healthy:
             await self._emit(
                 "RESULT",
                 f"Device {dev} not yet healthy (online={status.online}, "
-                f"faultMode={status.faultMode}); waiting before attestation.",
+                f"faultMode={status.faultMode}); waiting before evaluator settles.",
                 jobId=job_id,
                 propertyId=prop,
                 device_id=dev,
@@ -478,54 +477,46 @@ class WardAgent:
             if not status.healthy:
                 await self._emit(
                     "RESULT",
-                    f"Device {dev} did not recover within attestation window. "
-                    "Not settling; escrow will refund after deadline.",
+                    f"Device {dev} did not recover within the settle window. "
+                    "Not completing; refund can be claimed after the deadline.",
                     jobId=job_id,
                     propertyId=prop,
                     device_id=dev,
                 )
                 return
 
-        # --- request CRE attestation (the seam) ----------------------------
-        job.transition(JobState.ATTESTING)
-        await self._emit(
-            "RESULT",
-            f"Telemetry recovered for {dev}. Requesting CRE attestation that the "
-            "device is healthy.",
-            jobId=job_id,
-            propertyId=prop,
-            device_id=dev,
-        )
-        attestation = self.chain.request_attestation(job_id, dev)
-        await self._emit(
-            "RESULT",
-            f"CRE attestation received (mechanism: {attestation['mechanism']}, "
-            f"healthy={attestation['healthy']}).",
-            jobId=job_id,
-            propertyId=prop,
-            device_id=dev,
-        )
-
-        if not attestation.get("healthy"):
+        # Evaluator availability check (degrade gracefully in live mode).
+        if not self.chain.evaluator_ready:
             await self._emit(
                 "RESULT",
-                "Attestation reports device unhealthy; not settling.",
+                f"Telemetry recovered for {dev}, but no evaluator key is configured "
+                "(EVALUATOR_PRIVATE_KEY). Holding; the CRE evaluator must complete "
+                f"job #{job_id} to release payment.",
                 jobId=job_id,
                 propertyId=prop,
                 device_id=dev,
             )
             return
 
-        # --- settle ---------------------------------------------------------
-        tx_settle = self.chain.settle(job_id, attestation)
-        job.tx_settle = tx_settle
-        job.transition(JobState.SETTLED)
         await self._emit(
             "RESULT",
-            f"JobEscrow released {usdc(job.amount_units)} USDC to {job.worker_ens}; "
+            f"Telemetry recovered for {dev}. CRE evaluator attesting the device is "
+            "healthy and settling the job.",
+            jobId=job_id,
+            propertyId=prop,
+            device_id=dev,
+        )
+
+        # --- evaluator complete() (the sensor-settled release) -------------
+        tx_complete = self.chain.complete(job_id, reason="healthy")
+        job.tx_complete = tx_complete
+        job.transition(JobState.COMPLETED)
+        await self._emit(
+            "RESULT",
+            f"Evaluator released {usdc(job.amount_units)} USDC to {job.worker_ens}; "
             "reputation incremented.",
             jobId=job_id,
-            txHash=self.chain.explorer_tx_url(tx_settle),
+            txHash=self.chain.explorer_tx_url(tx_complete),
             propertyId=prop,
             device_id=dev,
         )
@@ -539,25 +530,16 @@ class WardAgent:
         )
 
     # ----------------------------------------------- worker-side advance hooks
-    # These model the field tech's chain actions (accept / mark-done). They do
-    # the on-chain (or DRY) effect ONLY — the agent's own Job state machine is
-    # advanced exclusively by _await_worker observing the chain view, so there
-    # is a single owner of transitions and DISPATCH events (no race).
-    def worker_accept(self, job_id: int) -> None:
+    # These model the field tech's chain action (submit). It does the on-chain
+    # (or DRY) effect ONLY — the agent's own Job state machine is advanced
+    # exclusively by _await_worker observing the chain view, so there is a single
+    # owner of transitions and DISPATCH events (no race).
+    def worker_submit(self, job_id: int) -> None:
         job = self.jobs.get(job_id)
         if job is None:
             return
-        tx = self.chain.accept_job(job_id, job.worker_address or "")
-        job.tx_accept = tx
-
-    def worker_mark_done(self, job_id: int) -> None:
-        job = self.jobs.get(job_id)
-        if job is None:
-            return
-        if self.chain.get_job_state(job_id) == "OPEN":
-            self.worker_accept(job_id)
-        tx = self.chain.mark_work_done(job_id)
-        job.tx_work_done = tx
+        tx = self.chain.submit(job_id, job.device_id)
+        job.tx_submit = tx
 
     # --------------------------------------------------------------- run loop
     async def run_forever(self) -> None:

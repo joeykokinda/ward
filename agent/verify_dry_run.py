@@ -1,10 +1,11 @@
 """End-to-end DRY-mode verification harness.
 
 Drives ONE complete incident through the real agent loop and prints the
-emitted reasoning event stream:
+emitted reasoning event stream (ERC-8183 / WardEscrow lifecycle):
 
-    fault -> failed restart -> escrow -> dispatch -> accept -> work-done
-          -> CRE attestation -> settle -> resolved
+    fault -> failed restart -> escrow (createJob/setBudget/fund) -> dispatch
+          -> worker submit -> repair + healthy -> evaluator complete -> resolved
+    (OPEN -> FUNDED -> SUBMITTED -> COMPLETED)
 
 Runs against the LOCAL SIM if reachable, otherwise the built-in FakeSim.
 Forces chain DRY mode and works with or without ANTHROPIC_API_KEY (the agent
@@ -113,16 +114,16 @@ async def run(mode: str) -> int:
     if mode == "hard":
         required = ["MONITOR", "DIAGNOSE", "ACTION", "ESCROW", "DISPATCH", "RESULT", "RESOLVED"]
         ok = all(t in seen_types for t in required)
-        settled = job_result is not None and job_result.state.value == "SETTLED"
+        completed = job_result is not None and job_result.state.value == "COMPLETED"
         print(f"  required event types present: {ok}  ({[t for t in required if t in seen_types]})")
-        print(f"  job reached SETTLED autonomously: {settled}"
+        print(f"  job reached COMPLETED autonomously: {completed}"
               + (f"  (job #{job_result.job_id})" if job_result else ""))
-        verdict = ok and settled
+        verdict = ok and completed
     elif mode == "persist":
-        created = sum(1 for e in events if e["type"] == "ESCROW" and "OPEN" in e["message"])
+        created = sum(1 for e in events if e["type"] == "ESCROW" and "FUNDED" in e["message"])
         deduped = sum(1 for e in events if "already has open job" in e["message"])
         all_jobs = len(agent.jobs.all())
-        print(f"  ESCROW 'OPEN' jobs created:   {created}  (expected exactly 1)")
+        print(f"  ESCROW jobs funded:           {created}  (expected exactly 1)")
         print(f"  duplicate attempts skipped:   {deduped}")
         print(f"  total jobs in registry:       {all_jobs}")
         verdict = created == 1 and all_jobs == 1 and deduped >= 1

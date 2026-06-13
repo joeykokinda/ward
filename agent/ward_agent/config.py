@@ -81,6 +81,14 @@ class Config:
     arc_chain_id: int = field(default_factory=lambda: _env_int("ARC_CHAIN_ID", 0))
     agent_private_key: str | None = field(default_factory=lambda: _env("AGENT_PRIVATE_KEY"))
     usdc_address: str | None = field(default_factory=lambda: _env("USDC_ADDRESS"))
+    # ERC-8183 evaluator role (the CRE oracle). The evaluator key signs the
+    # sensor-settled complete() that releases the budget to the provider. Live
+    # complete() needs this key; if missing, the agent logs and skips complete()
+    # (the job stays SUBMITTED until the evaluator runs). DRY mode simulates it.
+    evaluator_private_key: str | None = field(
+        default_factory=lambda: _env("EVALUATOR_PRIVATE_KEY")
+    )
+    evaluator_address: str | None = field(default_factory=lambda: _env("EVALUATOR_ADDRESS"))
     # Where deployments/<chainId>.json + abis/ live. Default: repo-root /deployments.
     deployments_dir: str = field(
         default_factory=lambda: _env(
@@ -128,17 +136,17 @@ class Config:
 
     # --- Worker signing keys (LIVE end-to-end only) ---
     # JSON map { "0xWorkerAddr": "0xprivkey", ... } so the agent can sign the
-    # worker-side accept/markWorkDone txs in the local end-to-end run (the field
-    # tech's wallet). Unused in DRY mode and in production (real workers sign on
-    # their own phones). Keys are read from env; nothing is hardcoded.
+    # provider-side submit() tx in the local end-to-end run (the field tech's
+    # wallet). Unused in DRY mode and in production (real workers sign on their
+    # own phones). Keys are read from env; nothing is hardcoded.
     worker_keys_json: str | None = field(default_factory=lambda: _env("WARD_WORKER_KEYS"))
 
     # --- Autonomous worker completion (demo) ---
     # When True (default for the demo), after DISPATCH the agent autonomously
-    # drives the worker side end-to-end (accept -> markWorkDone -> repair the
-    # device -> attest -> settle) using the dispatched worker's key from
-    # WARD_WORKER_KEYS (DRY mode always has the synthetic worker). Set FALSE to
-    # hand off to a human "worker accepts via UI" path instead.
+    # drives the provider side end-to-end (submit -> repair the device) using the
+    # dispatched worker's key from WARD_WORKER_KEYS (DRY mode always has the
+    # synthetic worker), then the evaluator key completes the job. Set FALSE to
+    # hand off to a human "worker submits via UI" path instead.
     auto_complete: bool = field(default_factory=lambda: _env_bool("WARD_AUTO_COMPLETE", True))
 
     @property
@@ -147,8 +155,14 @@ class Config:
 
     @property
     def chain_live(self) -> bool:
-        """Chain runs live only if we have an RPC, a key, and a USDC address."""
+        """Chain runs live only if we have an RPC and the agent (client) key."""
         return bool(self.arc_rpc_url and self.agent_private_key)
+
+    @property
+    def evaluator_ready(self) -> bool:
+        """True if the evaluator key is configured so the agent can sign the
+        ERC-8183 evaluator-only complete() (the sensor-settled release)."""
+        return bool(self.evaluator_private_key)
 
     @property
     def supabase_enabled(self) -> bool:
