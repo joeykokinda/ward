@@ -75,7 +75,7 @@ function rowToJob(r: SupabaseRow): Job {
     worker: (r.worker as string) ?? null,
     workerAddress: (r.worker_address as string) ?? null,
     amount: String(r.amount ?? "0"),
-    state: String(r.state ?? "OPEN") as JobState,
+    state: String(r.state ?? "Open") as JobState,
     txCreate: (r.tx_create as string) ?? null,
     txAccept: (r.tx_accept as string) ?? null,
     txSettle: (r.tx_settle as string) ?? null,
@@ -151,7 +151,7 @@ class SupabaseAdapter implements WardAdapter {
       const activeJob =
         nextJobs.find(
           (j) =>
-            j.state !== "SETTLED" && j.state !== "EXPIRED" && j.state !== "REFUNDED",
+            j.state !== "Completed" && j.state !== "Rejected" && j.state !== "Expired",
         ) ?? null;
 
       this.snapshot = {

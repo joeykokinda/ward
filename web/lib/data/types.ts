@@ -46,21 +46,24 @@ export type Worker = {
   completedJobs: number;
 };
 
-// Canonical job lifecycle from INTERFACES.md.
+// Canonical ERC-8183 job lifecycle. The escrow is an ERC-8183 Job: the agent
+// opens + funds the escrow (Open → Funded), the field tech submits the fix
+// (Submitted), and the Evaluator (the sensor/CRE) confirms it, releasing
+// payment (Completed) or rejecting it (Rejected). Expired covers a job that
+// passed its deadline with funds refunded.
 export type JobState =
-  | "OPEN"
-  | "ACCEPTED"
-  | "WORK_DONE"
-  | "ATTESTING"
-  | "SETTLED"
-  | "EXPIRED"
-  | "REFUNDED";
+  | "Open"
+  | "Funded"
+  | "Submitted"
+  | "Completed"
+  | "Rejected"
+  | "Expired";
 
 export type Job = {
   jobId: number;
   propertyId: string;
   deviceId: string;
-  worker: string | null; // ENS name once assigned
+  worker: string | null; // ENS name once assigned (the ERC-8183 provider)
   workerAddress: string | null;
   amount: string; // USDC 6dp string, e.g. "75000000"
   state: JobState;

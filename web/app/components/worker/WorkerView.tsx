@@ -24,7 +24,7 @@ export function WorkerView({
 }) {
   const defaultWorker = useMemo(() => {
     const dispatched = snapshot.jobs.find(
-      (j) => j.state !== "SETTLED" && j.worker,
+      (j) => j.state !== "Completed" && j.worker,
     )?.worker;
     if (dispatched) {
       const w = snapshot.workers.find((x) => x.ensName === dispatched);
@@ -39,13 +39,13 @@ export function WorkerView({
 
   const myJobs = snapshot.jobs.filter(
     (j) =>
-      (j.worker === me.ensName || j.state === "OPEN") &&
-      j.state !== "SETTLED" &&
-      j.state !== "EXPIRED" &&
-      j.state !== "REFUNDED",
+      (j.worker === me.ensName || j.state === "Open") &&
+      j.state !== "Completed" &&
+      j.state !== "Rejected" &&
+      j.state !== "Expired",
   );
   const settled = snapshot.jobs
-    .filter((j) => j.worker === me.ensName && j.state === "SETTLED")
+    .filter((j) => j.worker === me.ensName && j.state === "Completed")
     .slice(0, 4);
 
   return (
@@ -228,9 +228,11 @@ function WorkerJobCard({
 }) {
   const tone = jobStateTone(job.state);
   const elapsed = mounted ? formatDuration(secondsSince(job.createdAtIso, now)) : "0s";
-  const canAccept = job.state === "OPEN";
-  const canComplete = job.state === "ACCEPTED" && job.worker === me.ensName;
-  const inProgress = job.state === "WORK_DONE" || job.state === "ATTESTING";
+  // ERC-8183: a funded Job is claimed (en route) then has its fix submitted.
+  const canAccept = job.state === "Funded" && !job.txAccept;
+  const canComplete =
+    job.state === "Funded" && !!job.txAccept && job.worker === me.ensName;
+  const inProgress = job.state === "Submitted";
   const title = deviceKind ? JOB_TITLE[deviceKind] : "Repair at a home nearby";
   const desc = deviceKind
     ? JOB_DESC[deviceKind]
@@ -275,13 +277,13 @@ function WorkerJobCard({
               className="flex w-full items-center justify-center gap-2 rounded-xl bg-accent py-3.5 text-[15px] font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover active:scale-[0.99]"
             >
               <CheckCircle2 className="h-5 w-5" strokeWidth={2.2} />
-              Mark complete
+              Submit fix
             </button>
           )}
           {inProgress && (
             <div className="flex w-full items-center justify-center gap-2 rounded-xl bg-subtle py-3.5 text-[13px] font-medium text-muted">
               <Loader2 className="h-4 w-4 animate-spin" strokeWidth={2} />
-              CRE verifying fix · escrow releases on attestation
+              Evaluator verifying fix · escrow releases on confirmation
             </div>
           )}
         </div>

@@ -67,13 +67,12 @@ export const DATA_ADAPTER =
 // Used by the "live" data adapter (NEXT_PUBLIC_DATA_ADAPTER=live).
 export const AGENT_URL = process.env.NEXT_PUBLIC_AGENT_URL ?? "http://localhost:8091";
 
-// Human-readable labels for job states (uppercase micro-labels stay uppercase).
+// Human-readable labels for the ERC-8183 job states (uppercase micro-labels).
 export const JOB_STATE_LABEL: Record<JobState, string> = {
-  OPEN: "OPEN",
-  ACCEPTED: "ACCEPTED",
-  WORK_DONE: "WORK DONE",
-  ATTESTING: "ATTESTING",
-  SETTLED: "SETTLED",
-  EXPIRED: "EXPIRED",
-  REFUNDED: "REFUNDED",
+  Open: "OPEN",
+  Funded: "FUNDED",
+  Submitted: "SUBMITTED",
+  Completed: "COMPLETED",
+  Rejected: "REJECTED",
+  Expired: "EXPIRED",
 };

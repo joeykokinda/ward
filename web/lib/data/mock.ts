@@ -107,9 +107,9 @@ function upsertJob(s: MutableState, job: Job) {
     ? s.snapshot.jobs.map((j) => (j.jobId === job.jobId ? job : j))
     : [job, ...s.snapshot.jobs];
   const active =
-    job.state === "SETTLED" ||
-    job.state === "EXPIRED" ||
-    job.state === "REFUNDED"
+    job.state === "Completed" ||
+    job.state === "Rejected" ||
+    job.state === "Expired"
       ? null
       : job;
   s.snapshot = { ...s.snapshot, jobs, activeJob: active };
@@ -149,7 +149,9 @@ function bumpReputation(s: MutableState, ensName: string): { from: number; to: n
 }
 
 // The scripted WiFi-outage hero incident: your home WiFi dies at 2am.
-// detect → reboot → fails → hire networking tech → escrow → dispatch.
+// detect → reboot → fails → hire networking tech → open + fund ERC-8183 Job
+// → dispatch. The field tech then submits the fix and the Evaluator confirms
+// it (Open → Funded → Submitted → Completed).
 function wifiOutageBeats(): Beat[] {
   const createTx = fakeTxHash(`job-${DEMO_JOB_ID}-create-${Date.now()}`);
   const acceptHintTx = fakeTxHash(`job-${DEMO_JOB_ID}-accepthint`);
@@ -238,14 +240,14 @@ function wifiOutageBeats(): Beat[] {
         );
       },
     },
-    // 5. escrow 75 USDC on Arc
+    // 5. open + fund the ERC-8183 Job (75 USDC escrow on Arc)
     {
       at: 9200,
       run: (s) => {
         pushEvent(
           s,
           "ACTION",
-          "75.00 USDC < 100.00 owner-approval threshold · proceeding autonomously",
+          "75.00 USDC < 100.00 owner-approval threshold · opening + funding ERC-8183 Job autonomously",
         );
       },
     },
@@ -254,6 +256,8 @@ function wifiOutageBeats(): Beat[] {
       run: (s) => {
         const top = topWorker(s);
         const now = new Date();
+        // ERC-8183: the agent opens the Job and funds the escrow in one
+        // autonomous action -> the Job lands in the Funded state.
         const job: Job = {
           jobId: DEMO_JOB_ID,
           propertyId: DEMO_PROPERTY,
@@ -261,7 +265,7 @@ function wifiOutageBeats(): Beat[] {
           worker: top.ensName,
           workerAddress: top.address,
           amount: DEMO_AMOUNT,
-          state: "OPEN",
+          state: "Funded",
           txCreate: createTx,
           txAccept: null,
           txSettle: null,
@@ -274,12 +278,12 @@ function wifiOutageBeats(): Beat[] {
         pushEvent(
           s,
           "ESCROW",
-          `Escrow LOCKED · 75.00 USDC held on Arc · Job #${DEMO_JOB_ID} created · dispatched to ${top.ensName}`,
+          `Opened ERC-8183 Job #${DEMO_JOB_ID} and funded escrow · 75.00 USDC held on Arc · provider ${top.ensName}`,
           { jobId: DEMO_JOB_ID, txHash: createTx, propertyId: DEMO_PROPERTY },
         );
         pushActivity(s, {
           kind: "JOB_CREATED",
-          label: `Escrow opened · #${DEMO_JOB_ID}`,
+          label: `Job opened + funded · #${DEMO_JOB_ID}`,
           txHash: createTx,
           amountUsdc: DEMO_AMOUNT,
           jobId: DEMO_JOB_ID,
@@ -287,7 +291,7 @@ function wifiOutageBeats(): Beat[] {
         });
       },
     },
-    // 6. dispatched, waiting on worker — this is where the judge's phone takes over.
+    // 6. funded, waiting on the field tech — this is where the judge's phone takes over.
     {
       at: 11600,
       run: (s) => {
@@ -295,7 +299,7 @@ function wifiOutageBeats(): Beat[] {
         pushEvent(
           s,
           "DISPATCH",
-          `Job #${DEMO_JOB_ID} broadcast to ${top.ensName} · awaiting on-site acceptance (Worker view)`,
+          `Job #${DEMO_JOB_ID} dispatched to ${top.ensName} · escrow funded · awaiting on-site fix + submission (Worker view)`,
           { jobId: DEMO_JOB_ID, txHash: acceptHintTx },
         );
       },
@@ -355,17 +359,17 @@ class MockAdapter implements WardAdapter {
       }, beat.at);
       this.timers.push(t);
     }
-    // After the last scripted beat, the flow waits for the worker to accept +
-    // mark complete (from the Worker persona). If nobody touches it, an
-    // auto-pilot finishes the cycle so the unattended Vercel demo self-recovers.
+    // After the last scripted beat, the flow waits for the field tech to submit
+    // the fix (from the Worker persona). If nobody touches it, an auto-pilot
+    // finishes the cycle so the unattended Vercel demo self-recovers.
     const lastAt = beats[beats.length - 1].at;
     const autopilot = setTimeout(() => {
       const job = findJob(this.state, DEMO_JOB_ID);
-      if (job && job.state === "OPEN") {
+      if (job && job.state === "Funded") {
         this.acceptJob(DEMO_JOB_ID, job.workerAddress ?? "");
         const done = setTimeout(() => {
           const j = findJob(this.state, DEMO_JOB_ID);
-          if (j && j.state === "ACCEPTED") this.markJobComplete(DEMO_JOB_ID);
+          if (j && j.state === "Funded") this.markJobComplete(DEMO_JOB_ID);
         }, 4000);
         this.timers.push(done);
       }
@@ -374,9 +378,12 @@ class MockAdapter implements WardAdapter {
     this.emit();
   }
 
+  // ERC-8183 has no separate accept gate; a funded Job is claimed by its
+  // provider. This records the field tech engaging (en route) while the Job
+  // stays Funded, awaiting their on-site submission.
   acceptJob(jobId: number, workerAddress: string): void {
     const job = findJob(this.state, jobId);
-    if (!job || job.state !== "OPEN") return;
+    if (!job || job.state !== "Funded" || job.txAccept) return;
     const worker =
       this.state.snapshot.workers.find((w) => w.address === workerAddress) ??
       this.state.snapshot.workers.find((w) => w.ensName === job.worker);
@@ -386,18 +393,18 @@ class MockAdapter implements WardAdapter {
       ...job,
       worker: ensName,
       workerAddress: worker?.address ?? job.workerAddress,
-      state: "ACCEPTED",
+      state: "Funded",
       txAccept: acceptTx,
     });
     pushEvent(
       this.state,
       "DISPATCH",
-      `${ensName} ACCEPTED Job #${jobId} · en route to the home`,
+      `${ensName} claimed funded Job #${jobId} · en route to the home`,
       { jobId, txHash: acceptTx, propertyId: job.propertyId },
     );
     pushActivity(this.state, {
       kind: "JOB_ACCEPTED",
-      label: `Job accepted · #${jobId}`,
+      label: `Provider en route · #${jobId}`,
       txHash: acceptTx,
       ensName,
       jobId,
@@ -407,20 +414,22 @@ class MockAdapter implements WardAdapter {
 
   markJobComplete(jobId: number): void {
     const job = findJob(this.state, jobId);
-    if (!job || job.state !== "ACCEPTED") return;
-    // worker reports done -> device repaired -> CRE attests -> settle.
-    const workDoneTx = fakeTxHash(`job-${jobId}-workdone-${Date.now()}`);
-    upsertJob(this.state, { ...job, state: "WORK_DONE", txAccept: job.txAccept });
+    if (!job || job.state !== "Funded") return;
+    // ERC-8183: the field tech SUBMITS the fix (Funded -> Submitted). The device
+    // recovers, then the Evaluator (the sensor/CRE) confirms it and the escrow
+    // releases payment (Submitted -> Completed).
+    const submitTx = fakeTxHash(`job-${jobId}-submit-${Date.now()}`);
+    upsertJob(this.state, { ...job, state: "Submitted", txAccept: job.txAccept });
     pushEvent(
       this.state,
       "RESULT",
-      `${job.worker} marked WORK DONE on Job #${jobId} · router line replaced + firmware reflashed`,
-      { jobId, txHash: workDoneTx, propertyId: job.propertyId },
+      `${job.worker} SUBMITTED the fix on Job #${jobId} · router line replaced + firmware reflashed`,
+      { jobId, txHash: submitTx, propertyId: job.propertyId },
     );
     pushActivity(this.state, {
       kind: "WORK_DONE",
-      label: `Work marked done · #${jobId}`,
-      txHash: workDoneTx,
+      label: `Fix submitted · #${jobId}`,
+      txHash: submitTx,
       ensName: job.worker ?? undefined,
       jobId,
     });
@@ -434,8 +443,6 @@ class MockAdapter implements WardAdapter {
         signalDbm: -57,
         uptimeSec: 30,
       });
-      const cur = findJob(this.state, jobId);
-      if (cur) upsertJob(this.state, { ...cur, state: "ATTESTING" });
       pushEvent(
         this.state,
         "MONITOR",
@@ -446,18 +453,18 @@ class MockAdapter implements WardAdapter {
     }, 1500);
     this.timers.push(onlineTimer);
 
-    // CRE attests the physical-world fact
+    // the Evaluator (sensor/CRE) confirms the physical-world fact
     const attestTimer = setTimeout(() => {
       const attestTx = fakeTxHash(`job-${jobId}-attest-${Date.now()}`);
       pushEvent(
         this.state,
         "DIAGNOSE",
-        "Chainlink CRE workflow fetched device endpoint · online === true · faultMode === none · attesting",
+        "Evaluator (Chainlink CRE) read the device endpoint · online === true · faultMode === none · confirming submission",
         { jobId, txHash: attestTx, propertyId: job.propertyId },
       );
       pushActivity(this.state, {
         kind: "ATTESTED",
-        label: `CRE attestation written · #${jobId}`,
+        label: `Evaluator confirmed · #${jobId}`,
         txHash: attestTx,
         jobId,
       });
@@ -465,7 +472,7 @@ class MockAdapter implements WardAdapter {
     }, 3500);
     this.timers.push(attestTimer);
 
-    // contract auto-releases escrow + reputation bump -> healthy
+    // Evaluator confirmation marks the Job Completed -> escrow releases payment.
     const settleTimer = setTimeout(() => {
       const cur = findJob(this.state, jobId);
       if (!cur) return;
@@ -474,19 +481,19 @@ class MockAdapter implements WardAdapter {
       const rep = bumpReputation(this.state, ensName);
       upsertJob(this.state, {
         ...cur,
-        state: "SETTLED",
+        state: "Completed",
         txSettle: settleTx,
         settledAtIso: new Date().toISOString(),
       });
       pushEvent(
         this.state,
         "ESCROW",
-        `Attestation verified onchain · escrow RELEASED · 75.00 USDC → ${ensName}`,
+        `Evaluator confirmed onchain · Job #${jobId} COMPLETED · escrow released · 75.00 USDC → ${ensName}`,
         { jobId, txHash: settleTx, propertyId: cur.propertyId },
       );
       pushActivity(this.state, {
         kind: "JOB_SETTLED",
-        label: `Settled to worker · #${jobId}`,
+        label: `Payment released · #${jobId}`,
         txHash: settleTx,
         amountUsdc: cur.amount,
         ensName,
@@ -502,7 +509,7 @@ class MockAdapter implements WardAdapter {
       pushEvent(
         this.state,
         "RESOLVED",
-        `Job #${jobId} SETTLED · ${ensName} paid 75.00 USDC · reputation ${rep.from} → ${rep.to} · home WiFi HEALTHY`,
+        `Job #${jobId} COMPLETED · ${ensName} paid 75.00 USDC · reputation ${rep.from} → ${rep.to} · home WiFi HEALTHY`,
         { jobId, txHash: settleTx, propertyId: cur.propertyId },
       );
       this.running = false;

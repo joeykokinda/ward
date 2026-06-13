@@ -38,7 +38,12 @@ export function ActiveJobBar({
             </div>
           </div>
         </div>
-        <Chip tone={tone}>{JOB_STATE_LABEL[job.state]}</Chip>
+        <div className="flex items-center gap-2">
+          <span className="rounded-full bg-subtle px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-faint">
+            ERC-8183
+          </span>
+          <Chip tone={tone}>{JOB_STATE_LABEL[job.state]}</Chip>
+        </div>
       </div>
 
       <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">

@@ -76,19 +76,18 @@ export function isKeyEvent(type: LogType): boolean {
   return type === "ESCROW" || type === "DISPATCH" || type === "RESOLVED";
 }
 
-// --- Job state -> tone (paired with text, never color-only). ---
+// --- ERC-8183 job state -> tone (paired with text, never color-only). ---
 export function jobStateTone(state: JobState): Tone {
   switch (state) {
-    case "SETTLED":
+    case "Completed":
       return "accent";
-    case "EXPIRED":
-    case "REFUNDED":
+    case "Rejected":
+    case "Expired":
       return "danger";
-    case "OPEN":
-    case "ACCEPTED":
-    case "WORK_DONE":
-    case "ATTESTING":
+    case "Funded":
+    case "Submitted":
       return "warn";
+    case "Open":
     default:
       return "muted";
   }

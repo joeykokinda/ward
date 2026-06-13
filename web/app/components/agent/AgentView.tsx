@@ -155,7 +155,7 @@ export function AgentView({
           <Panel title="Decision history">
             <div className="divide-y divide-border">
               {decisions.map((j) => {
-                const settled = j.state === "SETTLED";
+                const completed = j.state === "Completed";
                 return (
                   <div key={j.jobId} className="px-5 py-3.5">
                     <div className="flex items-center justify-between gap-2">
@@ -177,8 +177,8 @@ export function AgentView({
                           <span className="text-muted">unassigned</span>
                         )}
                       </span>
-                      <Chip tone={settled ? "accent" : "warn"}>
-                        {settled ? "Settled" : "In flight"}
+                      <Chip tone={completed ? "accent" : "warn"}>
+                        {completed ? "Completed" : "In flight"}
                       </Chip>
                     </div>
                     {(j.txCreate || j.txSettle) && (

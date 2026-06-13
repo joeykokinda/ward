@@ -26,6 +26,8 @@ import {
 } from "./fixtures";
 import type {
   AgentEvent,
+  Job,
+  JobState,
   ScenarioId,
   WardAdapter,
   WardSnapshot,
@@ -33,6 +35,37 @@ import type {
 import { usdc } from "../format";
 
 const POLL_MS = 2000;
+
+// Normalize whatever the live agent reports for a job's state into the
+// ERC-8183 enum. Accepts the canonical spelling, an uppercased variant, and
+// the legacy OPEN/ACCEPTED/WORK_DONE/ATTESTING/SETTLED/REFUNDED names so an
+// older agent feed still renders correctly.
+function mapJobState(raw: string | null | undefined): JobState {
+  switch (String(raw ?? "").toUpperCase()) {
+    case "FUNDED":
+    case "ACCEPTED":
+      return "Funded";
+    case "SUBMITTED":
+    case "WORK_DONE":
+    case "ATTESTING":
+      return "Submitted";
+    case "COMPLETED":
+    case "SETTLED":
+      return "Completed";
+    case "REJECTED":
+      return "Rejected";
+    case "EXPIRED":
+    case "REFUNDED":
+      return "Expired";
+    case "OPEN":
+    default:
+      return "Open";
+  }
+}
+
+function withMappedState(job: Job): Job {
+  return { ...job, state: mapJobState(job.state) };
+}
 
 type RecentEvent = {
   ts: string;
@@ -79,7 +112,7 @@ class LiveAdapter implements WardAdapter {
       agent: buildAgent(),
       properties: buildProperties(),
       workers: buildWorkers(),
-      jobs: buildJobs(),
+      jobs: buildJobs().map(withMappedState),
       events: buildEvents(),
       activity: buildActivity(),
       activeJob: null,
