@@ -17,14 +17,15 @@
 // Arc contracts; this player is just one implementation.
 
 import { usdc } from "../format";
+import { NARRATIVE_TOTAL, phaseIndex, phaseMeta } from "../narrative";
 import {
+  ARC_TX,
   buildActivity,
   buildAgent,
   buildEvents,
   buildJobs,
   buildProperties,
   buildWorkers,
-  fakeTxHash,
 } from "./fixtures";
 import type {
   Activity,
@@ -32,6 +33,7 @@ import type {
   DeviceKind,
   Job,
   LogType,
+  NarrativePhaseId,
   ScenarioId,
   WardAdapter,
   WardSnapshot,
@@ -59,6 +61,9 @@ type IncidentSpec = {
   fixSubmitted: string; // RESULT: tech submitted fix
   recoverMonitor: string; // MONITOR: telemetry recovering
   evaluatorConfirm: string; // DIAGNOSE: evaluator read endpoint
+  // Plain-language "what + why" caption shown big on the phase stepper, one per
+  // narrative act, so a first-time viewer can follow the story.
+  captions: Record<NarrativePhaseId, string>;
 };
 
 const INCIDENTS: Record<string, IncidentSpec> = {
@@ -89,6 +94,18 @@ const INCIDENTS: Record<string, IncidentSpec> = {
       "Device telemetry recovering · home-leak reads DRY · sensor re-armed",
     evaluatorConfirm:
       "Evaluator (Chainlink CRE) read the sensor endpoint · wet === false · faultMode === none · confirming submission",
+    captions: {
+      detect:
+        "2:11 AM. A pipe lets go in the Brooklyn apartment while the owner sleeps in Tokyo. WARD's leak sensor trips and the agent wakes up.",
+      diagnose:
+        "WARD reads the live sensor: water is actively rising, not a one-off splash. This one needs hands on a valve.",
+      remote:
+        "WARD always tries the free fix first, but the burst is upstream of the smart shutoff valve. Software can't stop this leak.",
+      hire:
+        "WARD looks up verified plumbers via ENS, picks the highest-rated one, and locks 150 USDC in an escrow on Arc, autonomously, owner still asleep.",
+      verify:
+        "Mike fixes the leak and submits proof. A Chainlink oracle reads the sensor, confirms it's dry, and the escrow releases the 150 USDC to Mike, no invoice, no human.",
+    },
   },
   // ── WiFi router ───────────────────────────────────────────────────────────
   "home-wifi": {
@@ -114,6 +131,18 @@ const INCIDENTS: Record<string, IncidentSpec> = {
     recoverMonitor: "Device telemetry recovering · home-wifi back online · signal -57dBm",
     evaluatorConfirm:
       "Evaluator (Chainlink CRE) read the device endpoint · online === true · faultMode === none · confirming submission",
+    captions: {
+      detect:
+        "WARD's routine sweep finds the WiFi router dark, three missed heartbeats in a row.",
+      diagnose:
+        "Telemetry shows the link down with no DHCP lease. WARD classifies a power or firmware hang.",
+      remote:
+        "WARD issues a remote reboot, the cheapest fix, but the router stays down after three tries. The fault is hardware.",
+      hire:
+        "WARD ranks network techs by reputation via ENS and locks 75 USDC in an Arc escrow for the top one, no human in the loop.",
+      verify:
+        "The tech replaces the line and submits proof. A Chainlink oracle confirms the router is back online and the escrow releases the 75 USDC.",
+    },
   },
   // ── Smart thermostat ────────────────────────────────────────────────────
   "home-thermostat": {
@@ -140,6 +169,18 @@ const INCIDENTS: Record<string, IncidentSpec> = {
       "Device telemetry recovering · home-thermostat holding 21°C · heat call satisfied",
     evaluatorConfirm:
       "Evaluator (Chainlink CRE) read the thermostat endpoint · ambient === setpoint · faultMode === none · confirming submission",
+    captions: {
+      detect:
+        "WARD notices the apartment drifting cold, 11°C against a 21°C setpoint. The boiler isn't firing.",
+      diagnose:
+        "Ambient is still falling and the relay won't engage the boiler. WARD flags an HVAC fault.",
+      remote:
+        "WARD cycles the relay remotely, the free fix, but the boiler still won't fire. It's the zone valve.",
+      hire:
+        "WARD finds HVAC techs via ENS and locks 90 USDC in an Arc escrow for the best-rated one, on its own.",
+      verify:
+        "The tech swaps the zone valve and submits proof. A Chainlink oracle confirms the room is back to setpoint and the escrow releases the 90 USDC.",
+    },
   },
   // ── Front-door smart lock ─────────────────────────────────────────────────
   "home-lock": {
@@ -166,6 +207,18 @@ const INCIDENTS: Record<string, IncidentSpec> = {
       "Device telemetry recovering · home-lock reports LOCKED · bolt position confirmed",
     evaluatorConfirm:
       "Evaluator (Chainlink CRE) read the lock endpoint · bolt === locked · faultMode === none · confirming submission",
+    captions: {
+      detect:
+        "WARD loses contact with the front-door lock, bolt position unknown. It can't confirm the door is secured.",
+      diagnose:
+        "The lock's heartbeat is gone and the bolt state is unreadable. WARD can't verify the home is locked.",
+      remote:
+        "WARD tries a remote re-pair, the free fix, but the bolt still reports unknown. A locksmith is needed.",
+      hire:
+        "WARD looks up locksmiths via ENS and locks 80 USDC in an Arc escrow for the top-rated tech, autonomously.",
+      verify:
+        "The locksmith reseats the module and submits proof. A Chainlink oracle confirms the door is locked and the escrow releases the 80 USDC.",
+    },
   },
 };
 
@@ -200,6 +253,30 @@ function freshSnapshot(): WardSnapshot {
     events: buildEvents(),
     activity: buildActivity(),
     activeJob: null,
+    narrative: null,
+  };
+}
+
+// Set the current narrative act, with the human-readable caption from the
+// incident spec. `done` marks the whole incident resolved + paid.
+function setNarrative(
+  s: MutableState,
+  spec: IncidentSpec,
+  id: NarrativePhaseId,
+  done = false,
+) {
+  const meta = phaseMeta(id);
+  s.snapshot = {
+    ...s.snapshot,
+    narrative: {
+      id,
+      index: phaseIndex(id),
+      total: NARRATIVE_TOTAL,
+      title: meta.title,
+      caption: spec.captions[id],
+      onChain: meta.onChain,
+      done,
+    },
   };
 }
 
@@ -296,19 +373,30 @@ function dispatchCandidates(s: MutableState, skill: string): Worker[] {
     .sort((a, b) => b.reputation - a.reputation);
 }
 
-// The scripted hero incident, parameterized per device. detect -> diagnose ->
-// attempt remote fix -> remote fix fails -> query registry -> select tech ->
-// open + fund the ERC-8183 escrow -> dispatch. The field tech then submits the
-// fix and the Evaluator confirms it (Open -> Funded -> Submitted -> Completed).
+// The scripted hero incident, parameterized per device. Grouped into the five
+// narrative acts the stepper shows, with a deliberate hold between acts so a
+// first-time viewer can read each caption: detect -> diagnose -> try the free
+// remote fix -> (it fails) -> hire a human + fund the ERC-8183 escrow on Arc ->
+// dispatch. The field tech then submits the fix and the Evaluator confirms it
+// (Open -> Funded -> Submitted -> Completed), driven from markJobComplete.
+//
+// Timings are spaced ~1.2s within an act and ~2.5s between acts (a hold on the
+// caption). The last beat lands at ~16.2s; the worker's walk + fix + settle
+// follow from the autopilot in startIncident.
 function incidentBeats(spec: IncidentSpec): Beat[] {
-  const createTx = fakeTxHash(`job-${spec.jobId}-create-${Date.now()}`);
-  const acceptHintTx = fakeTxHash(`job-${spec.jobId}-accepthint`);
+  // Real Arc testnet hashes from the canonical ERC-8183 WardEscrow lifecycle
+  // (fixtures ARC_TX / DEMO-EVIDENCE.md) so every clickable tx in the cinematic
+  // opens a REAL on-chain WardEscrow txn on arcscan instead of a dead link. The
+  // narrated amount is the story; the link proves the flow is real on Arc.
+  const createTx = ARC_TX.fund; // escrow funded (the "lock")
+  const acceptHintTx = ARC_TX.createJob; // job opened on-chain
   const amount = usdc(spec.amountWhole);
 
   return [
-    // 1. detect — device goes hard-down on the floor plan
+    // ── ACT 1 · DETECT (narrative set synchronously in startIncident) ────────
+    // device goes hard-down on the floor plan
     {
-      at: 200,
+      at: 250,
       run: (s) => {
         setProperty(s, spec.deviceId, {
           online: false,
@@ -319,36 +407,43 @@ function incidentBeats(spec: IncidentSpec): Beat[] {
         pushEvent(s, "MONITOR", spec.alert, { propertyId: spec.deviceId });
       },
     },
-    // 2. diagnose
+    // ── ACT 2 · DIAGNOSE ─────────────────────────────────────────────────────
     {
-      at: 1400,
-      run: (s) =>
-        pushEvent(s, "DIAGNOSE", spec.diagnose1, { propertyId: spec.deviceId }),
+      at: 2800,
+      run: (s) => {
+        setNarrative(s, spec, "diagnose");
+        pushEvent(s, "DIAGNOSE", spec.diagnose1, { propertyId: spec.deviceId });
+      },
     },
     {
-      at: 2600,
+      at: 4000,
       run: (s) =>
         pushEvent(s, "DIAGNOSE", spec.diagnose2, { propertyId: spec.deviceId }),
     },
-    // 2b. attempt the cheap remote fix
+    // ── ACT 3 · TRY THE FREE REMOTE FIX (then it fails) ──────────────────────
     {
-      at: 3800,
-      run: (s) =>
-        pushEvent(s, "ACTION", spec.remoteAction, { propertyId: spec.deviceId }),
+      at: 6600,
+      run: (s) => {
+        setNarrative(s, spec, "remote");
+        pushEvent(s, "ACTION", spec.remoteAction, { propertyId: spec.deviceId });
+      },
     },
-    // 3. remote fix FAILS (hard fault)
     {
-      at: 5400,
+      at: 8100,
       run: (s) =>
         pushEvent(s, "RESULT", spec.remoteFail, { propertyId: spec.deviceId }),
     },
-    // 4. query registry, select highest-rep worker by skill
+    // ── ACT 4 · HIRE A HUMAN, ON-CHAIN ───────────────────────────────────────
+    // query the ENS-backed registry, rank + select the highest-rep worker
     {
-      at: 6600,
-      run: (s) => pushEvent(s, "DIAGNOSE", spec.escalate),
+      at: 10700,
+      run: (s) => {
+        setNarrative(s, spec, "hire");
+        pushEvent(s, "DIAGNOSE", spec.escalate);
+      },
     },
     {
-      at: 7800,
+      at: 11900,
       run: (s) => {
         const candidates = dispatchCandidates(s, spec.skill);
         const top = candidates[0];
@@ -359,9 +454,9 @@ function incidentBeats(spec: IncidentSpec): Beat[] {
         );
       },
     },
-    // 5. open + fund the ERC-8183 Job
+    // open + fund the ERC-8183 Job
     {
-      at: 9200,
+      at: 13100,
       run: (s) => {
         const threshold = s.snapshot.agent.policy.ownerApprovalThresholdUsdc;
         const within = BigInt(amount) <= BigInt(threshold);
@@ -372,7 +467,7 @@ function incidentBeats(spec: IncidentSpec): Beat[] {
       },
     },
     {
-      at: 10200,
+      at: 14400,
       run: (s) => {
         const top = dispatchCandidates(s, spec.skill)[0];
         const now = new Date();
@@ -413,9 +508,9 @@ function incidentBeats(spec: IncidentSpec): Beat[] {
         });
       },
     },
-    // 6. funded, waiting on the field tech — the judge's phone can take over.
+    // funded, waiting on the field tech — the judge's phone can take over.
     {
-      at: 11600,
+      at: 16200,
       run: (s) => {
         const top = dispatchCandidates(s, spec.skill)[0];
         pushEvent(
@@ -477,6 +572,9 @@ class MockAdapter implements WardAdapter {
     if (prop && prop.device.faultMode !== "none") return;
 
     this.running = true;
+    // Set ACT 1 up front so the phase stepper appears immediately (no flicker
+    // back to the intro frame), then the first beat takes the device down.
+    setNarrative(this.state, spec, "detect");
     const beats = incidentBeats(spec);
     for (const beat of beats) {
       const t = setTimeout(() => {
@@ -485,22 +583,24 @@ class MockAdapter implements WardAdapter {
       }, beat.at);
       this.timers.push(t);
     }
-    // After the last scripted beat, the flow waits for the field tech to submit
-    // the fix (from the Worker persona). If nobody touches it, an auto-pilot
-    // finishes the cycle so the unattended Vercel demo self-recovers.
+    // After the last scripted beat, the field tech walks in and submits the fix.
+    // The judge can drive this from the Worker persona; if nobody touches it, an
+    // auto-pilot finishes the cycle so the unattended Vercel demo self-recovers.
+    // The accept (en route) fires ~1s after dispatch so the avatar's ~3.4s walk
+    // lands just before the fix submission.
     const lastAt = beats[beats.length - 1].at;
-    const autopilot = setTimeout(() => {
+    const enroute = setTimeout(() => {
       const job = findJob(this.state, spec.jobId);
-      if (job && job.state === "Funded") {
+      if (job && job.state === "Funded" && !job.txAccept) {
         this.acceptJob(spec.jobId, job.workerAddress ?? "");
-        const done = setTimeout(() => {
-          const j = findJob(this.state, spec.jobId);
-          if (j && j.state === "Funded") this.markJobComplete(spec.jobId);
-        }, 4000);
-        this.timers.push(done);
       }
-    }, lastAt + 9000);
-    this.timers.push(autopilot);
+    }, lastAt + 1000);
+    this.timers.push(enroute);
+    const finish = setTimeout(() => {
+      const job = findJob(this.state, spec.jobId);
+      if (job && job.state === "Funded") this.markJobComplete(spec.jobId);
+    }, lastAt + 5000);
+    this.timers.push(finish);
     this.emit();
   }
 
@@ -515,7 +615,7 @@ class MockAdapter implements WardAdapter {
       this.state.snapshot.workers.find((w) => w.address === workerAddress) ??
       this.state.snapshot.workers.find((w) => w.ensName === job.worker);
     const ensName = worker?.ensName ?? job.worker ?? "worker.ward-agent.eth";
-    const acceptTx = fakeTxHash(`job-${jobId}-accept-${Date.now()}`);
+    const acceptTx = ARC_TX.createJob; // provider engaged the opened job
     upsertJob(this.state, {
       ...job,
       worker: ensName,
@@ -543,10 +643,11 @@ class MockAdapter implements WardAdapter {
     const job = findJob(this.state, jobId);
     if (!job || job.state !== "Funded") return;
     const spec = INCIDENTS[job.deviceId];
-    // ERC-8183: the field tech SUBMITS the fix (Funded -> Submitted). The device
-    // recovers, then the Evaluator (the sensor/CRE) confirms it and the escrow
-    // releases payment (Submitted -> Completed).
-    const submitTx = fakeTxHash(`job-${jobId}-submit-${Date.now()}`);
+    // ACT 5 · VERIFY & PAY. The field tech SUBMITS the fix (Funded -> Submitted).
+    // The device recovers, then the Evaluator (the sensor/CRE) confirms it and
+    // the escrow releases payment (Submitted -> Completed).
+    if (spec) setNarrative(this.state, spec, "verify");
+    const submitTx = ARC_TX.submit; // field tech submitted the fix on-chain
     upsertJob(this.state, { ...job, state: "Submitted", txAccept: job.txAccept });
     pushEvent(
       this.state,
@@ -584,7 +685,7 @@ class MockAdapter implements WardAdapter {
 
     // the Evaluator (sensor/CRE) confirms the physical-world fact
     const attestTimer = setTimeout(() => {
-      const attestTx = fakeTxHash(`job-${jobId}-attest-${Date.now()}`);
+      const attestTx = ARC_TX.complete; // evaluator attestation drives complete()
       pushEvent(
         this.state,
         "DIAGNOSE",
@@ -606,7 +707,7 @@ class MockAdapter implements WardAdapter {
     const settleTimer = setTimeout(() => {
       const cur = findJob(this.state, jobId);
       if (!cur) return;
-      const settleTx = fakeTxHash(`job-${jobId}-settle-${Date.now()}`);
+      const settleTx = ARC_TX.complete; // escrow released on complete()
       const ensName = cur.worker ?? "worker.ward-agent.eth";
       const rep = bumpReputation(this.state, ensName);
       const amountWhole = Number(BigInt(cur.amount) / 1_000_000n);
@@ -638,7 +739,7 @@ class MockAdapter implements WardAdapter {
       pushActivity(this.state, {
         kind: "REPUTATION_BUMP",
         label: `Reputation ${rep.from} → ${rep.to} · ${ensName}`,
-        txHash: fakeTxHash(`job-${jobId}-rep-${Date.now()}`),
+        txHash: ARC_TX.complete,
         ensName,
         jobId,
       });
@@ -648,6 +749,9 @@ class MockAdapter implements WardAdapter {
         `Job #${jobId} COMPLETED · ${ensName} paid ${amountWhole}.00 USDC · reputation ${rep.from} → ${rep.to} · device HEALTHY`,
         { jobId, txHash: settleTx, propertyId: cur.propertyId },
       );
+      // Hold ACT 5 on screen, now marked resolved + paid, until the operator
+      // resets. The stepper shows all five acts complete.
+      if (spec) setNarrative(this.state, spec, "verify", true);
       this.running = false;
       this.emit();
     }, 5500);

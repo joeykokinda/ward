@@ -10,7 +10,7 @@ import {
   Wrench,
   type LucideIcon,
 } from "lucide-react";
-import type { DeviceKind, PropertyStatus, WardSnapshot } from "@/lib/data/types";
+import type { DeviceKind, PropertyStatus, WardSnapshot, Worker } from "@/lib/data/types";
 import {
   avatarTarget,
   deriveIncident,
@@ -77,6 +77,11 @@ export function FloorPlan({
   void onKillDevice; // kill happens inside the device modal; kept for parity
   const incident = deriveIncident(snapshot.activeJob, snapshot.properties);
   const byId = Object.fromEntries(snapshot.properties.map((p) => [p.id, p]));
+  // The human the agent dispatched — so the walking avatar can be labelled with
+  // its real ENS identity + role, not an anonymous dot.
+  const dispatchedWorker = incident.workerEns
+    ? snapshot.workers.find((w) => w.ensName === incident.workerEns)
+    : undefined;
 
   return (
     <section className="flex min-h-0 flex-col rounded-xl border border-border bg-surface card-shadow">
@@ -149,7 +154,11 @@ export function FloorPlan({
           })}
 
           {/* worker path + avatar (only while an incident worker is on site) */}
-          <WorkerLayer incident={incident} onClick={onWorkerClick} />
+          <WorkerLayer
+            incident={incident}
+            worker={dispatchedWorker}
+            onClick={onWorkerClick}
+          />
         </svg>
       </div>
     </section>
@@ -551,14 +560,19 @@ function DoorMarker() {
 
 function WorkerLayer({
   incident,
+  worker,
   onClick,
 }: {
   incident: Incident;
+  worker?: Worker;
   onClick: () => void;
 }) {
   const { visible, point, atDevice } = avatarTarget(incident);
   const initial = incident.workerEns?.[0]?.toUpperCase() ?? "W";
   const room = incident.deviceId ? roomFor(incident.deviceId) : undefined;
+  const ens = incident.workerEns ?? worker?.ensName ?? null;
+  const role = worker?.skills?.[0];
+  const rep = worker?.reputation;
 
   // Keep the avatar on screen for a short beat after it goes invisible so the
   // fade-out reads. We only ever toggle `lingering` inside a timeout callback
@@ -636,6 +650,62 @@ function WorkerLayer({
               </div>
             </foreignObject>
           </g>
+        )}
+
+        {/* ENS identity tag — this dot is a REAL, verified human the agent
+            hired, not an anonymous marker. Sits just below the avatar. */}
+        {ens && (
+          <foreignObject x={-110} y={20} width={220} height={40}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                width: 220,
+              }}
+            >
+              <div
+                style={{
+                  display: "inline-flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 1,
+                  padding: "3px 8px",
+                  borderRadius: 8,
+                  background: "#ffffff",
+                  border: `1px solid ${COLOR.puckStroke}`,
+                  boxShadow: "0 1px 2px rgb(15 23 42 / 0.06)",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono-geist)",
+                    fontSize: 11,
+                    fontWeight: 600,
+                    color: "#334155",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {ens}
+                </span>
+                {(role || rep != null) && (
+                  <span
+                    style={{
+                      fontFamily: "var(--font-inter)",
+                      fontSize: 10,
+                      color: COLOR.reading,
+                      lineHeight: 1.1,
+                    }}
+                  >
+                    {[role, "staked", rep != null ? `rep ${rep}` : null]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                )}
+              </div>
+            </div>
+          </foreignObject>
         )}
       </g>
     </g>

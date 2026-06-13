@@ -5,6 +5,7 @@ import {
   Activity as ActivityIcon,
   CheckCircle2,
   CircleDot,
+  Link2,
   Lock,
   Search,
   Send,
@@ -101,7 +102,7 @@ function TimelineRow({
         <Icon className="h-3.5 w-3.5" strokeWidth={2} />
       </span>
       <div className="min-w-0 flex-1 pt-0.5">
-        <div className="flex items-baseline gap-2">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span
             className={`text-[11px] font-semibold uppercase tracking-wide ${
               key ? "text-accent-ink" : "text-faint"
@@ -109,6 +110,14 @@ function TimelineRow({
           >
             {ev.type.toLowerCase()}
           </span>
+          {/* every event carrying a tx is a real write to Arc — make that
+              explicit so a non-crypto judge sees the blockchain at work */}
+          {ev.txHash && (
+            <span className="inline-flex items-center gap-1 rounded-full border border-accent/50 bg-accent-soft px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-wide text-accent-ink">
+              <Link2 className="h-2.5 w-2.5" strokeWidth={2.4} />
+              On-chain · Arc
+            </span>
+          )}
           <span className="mono text-[11px] text-faint">
             {mounted ? clock(ev.ts) : "--:--:--"}
           </span>

@@ -8,6 +8,7 @@ import { ActiveJobBar } from "./ActiveJobBar";
 import { ActivityFeed } from "./ActivityFeed";
 import { DeviceModal } from "./DeviceModal";
 import { FloorPlan } from "./FloorPlan";
+import { NarrativeBar } from "./NarrativeBar";
 import { ReasoningStream } from "./ReasoningStream";
 import { WorkerModal } from "./WorkerModal";
 
@@ -74,9 +75,8 @@ export function HostView({
           <div>
             <h1 className="text-2xl font-semibold tracking-tight text-fg">My home</h1>
             <p className="mt-1 max-w-2xl text-[14px] text-muted">
-              WARD watches every device, fixes what it can, hires someone when it
-              can&apos;t, and tells you what happened. Click any device to see its
-              status — or trip a fault and watch the agent work.
+              Click any device for its live status, or trip a fault and watch the
+              agent diagnose, hire, and pay.
             </p>
           </div>
           <div className="flex items-center gap-2.5">
@@ -100,6 +100,16 @@ export function HostView({
               {isRunning ? "Simulating…" : "Simulate: water leak"}
             </button>
           </div>
+        </div>
+
+        {/* narrative spine: the intro explainer when idle, the phase stepper
+            (what's happening + why, with on-chain badges) while it runs */}
+        <div className="mt-6">
+          <NarrativeBar
+            narrative={snapshot.narrative}
+            onStart={onSimulate}
+            isRunning={isRunning}
+          />
         </div>
 
         {/* active job — the focal status strip when a job is live */}

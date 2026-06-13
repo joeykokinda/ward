@@ -130,6 +130,27 @@ export type AgentIdentity = {
   policy: SpendingPolicy;
 };
 
+// The five-act narrative the scripted cinematic walks through, so a first-time
+// viewer can follow WHAT is happening and WHY. The mock player sets this as it
+// runs; the live/supabase adapters leave it undefined (the UI then just shows
+// the intro frame + their own event stream).
+export type NarrativePhaseId =
+  | "detect"
+  | "diagnose"
+  | "remote"
+  | "hire"
+  | "verify";
+
+export type NarrativePhase = {
+  id: NarrativePhaseId;
+  index: number; // 1-based position
+  total: number;
+  title: string; // big phase title
+  caption: string; // the plain-language "what + why" line
+  onChain: boolean; // is this a blockchain moment (escrow / settle)?
+  done: boolean; // the whole incident is resolved + paid
+};
+
 export type WardSnapshot = {
   agent: AgentIdentity;
   properties: PropertyStatus[];
@@ -138,6 +159,8 @@ export type WardSnapshot = {
   events: AgentEvent[];
   activity: Activity[];
   activeJob: Job | null;
+  // Present while the scripted cinematic is running (mock adapter only).
+  narrative?: NarrativePhase | null;
 };
 
 // A simulation/incident scenario the adapter can run. The HERO is the leak
