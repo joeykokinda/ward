@@ -8,7 +8,7 @@ Both anchor bounties are proven on real infra. Frontend is live (mock mode). Two
 ## Live endpoints / addresses
 | Thing | Value |
 |---|---|
-| Frontend (Vercel, mock mode) | https://web-nine-ashen-75.vercel.app |
+| Frontend (Vercel, **v2 light UI live**, mock mode) | https://web-nine-ashen-75.vercel.app |
 | Sim (brach, public) | https://brach.taild3399f.ts.net |
 | Agent SSE (brach, public, **DRY**) | https://brach.taild3399f.ts.net:8443 |
 | Arc JobEscrow | `0x5585487A2EbabbE72406b72d5278dDFc5Ed706d8` |
@@ -40,7 +40,7 @@ Both anchor bounties are proven on real infra. Frontend is live (mock mode). Two
    - b) On brach: `cd ~/EthGlobalBackend/ward && export ANTHROPIC_API_KEY=<key> && bash scripts/brach-live.sh` → expect `/healthz` shows `"chain":"LIVE"`.
    - (Anthropic key is also in this dev box's gitignored `.env` if needed.)
    - After `chain:LIVE`, Claude flips the Vercel frontend to the live adapter (next section).
-2. **ENS subnames** — provide `ward-agent.eth` owner key (`0x87Ab…8521`), OR set a controlled wallet as its manager, OR run `cd packages/ens && pnpm mint-subname mike --execute` with the owner wallet.
+2. **ENS on Sepolia (decided 2026-06-13: use a name I control).** rex's registered `ward-agent.eth` is NOT on mainnet/Sepolia L1 (verified; likely ENS v2/L2) — so we're doing the ENS bounty on **Sepolia with the deployer wallet** instead (seed not needed; seed-derived key deleted). `ward-agent.eth` is available on Sepolia → register it there + mint worker subnames + ENSIP-25/26 records. **BLOCKER: Sepolia ETH** — fund controller `0xDCe59831DbA9Ea1B097Ef3f16993667D756bAea4` (currently 0) via a Sepolia faucet (~0.05 ETH covers registration + subname mints). Then Claude registers + mints + wires live resolution.
 
 ## PENDING — UI redesign (rex feedback 2026-06-13)
 - Current frontend is "slop": too many colors + too many elements on screen, not soothing/calm. **Make it cleaner**: shrink the in-use palette (most text → fg/muted; reserve amber for money/active, green/red for status only; drop the rainbow of per-log-type colors to ~2-3), add whitespace/breathing room, reduce simultaneous dense panels, calmer hierarchy. Keep mission-control identity but restrained (Bloomberg calm, not arcade). Then redeploy to Vercel. See DESIGN.md "Restraint pass".
