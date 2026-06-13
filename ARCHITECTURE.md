@@ -2,72 +2,65 @@
 
 ```mermaid
 flowchart TB
-    subgraph offchain["Off-chain (Railway / public HTTPS)"]
+    subgraph offchain["Off-chain (brach · Tailscale Funnel · public HTTPS)"]
         SIM["Device simulator<br/>FastAPI · /status /fail /restart /repair"]
-        AGENT["WARD agent<br/>Python · asyncio · web3.py · Claude<br/>diagnose → L1 self-fix → L3 dispatch"]
+        AGENT["WARD agent (ERC-8183 Client)<br/>Python · asyncio · web3.py · Claude<br/>diagnose → L1 self-fix → L3 dispatch"]
     end
-    subgraph cre["Chainlink CRE (DON)"]
-        WF["CRE workflow<br/>cron → fetch telemetry → consensus → onReport"]
+    subgraph cre["Chainlink CRE (Evaluator)"]
+        WF["CRE workflow<br/>cron → fetch telemetry → consensus → WriteReport"]
     end
-    subgraph arc["Arc Testnet (chainId 5042002, USDC gas)"]
-        ESCROW["JobEscrow<br/>USDC held · caps · owner threshold"]
+    subgraph arc["Arc Testnet (chainId 5042002, native USDC = gas)"]
+        ESCROW["WardEscrow (ERC-8183, keyed JobEscrow)<br/>Job state machine · USDC held · caps · owner threshold<br/>Open → Funded → Submitted → Completed"]
         REG["WorkerRegistry<br/>stake · reputation"]
-        VER["WardCreConsumer<br/>(ICreConsumer)"]
     end
     subgraph ens["ENS (Sepolia)"]
-        ID["ward-agent.eth + worker subnames<br/>ENSIP-25 verify · ENSIP-26 records"]
+        ID["ward-agent.eth + 5 worker subnames<br/>ENSIP-25 verify · ENSIP-26 records · CAIP-10 rep pointers"]
     end
-    UI["Dashboard (Next.js / Vercel)<br/>Host · Worker · Agent"]
-    DB[("Supabase<br/>jobs · workers · events")]
+    UI["Dashboard (Next.js / Vercel)<br/>floor-plan hero · Host · Worker · Agent"]
 
     AGENT -->|poll + remote fix| SIM
-    AGENT -->|createJob / dispatch| ESCROW
-    AGENT -->|discover workers| ID
+    AGENT -->|createJob / setBudget / fund| ESCROW
+    AGENT -->|discover + rank workers| ID
     WF -->|fetch telemetry| SIM
-    WF -->|onReport attestation| VER
-    VER -->|verifyHealthy| ESCROW
-    ESCROW -->|release USDC + bump rep| REG
+    WF -->|complete (Evaluator-only) → release USDC| ESCROW
+    ESCROW -->|bump reputation| REG
     AGENT -->|decision feed SSE| UI
-    AGENT --> DB
-    UI -->|read state| DB
-    UI -->|read names/records| ID
-    UI -->|tx links| arc
+    UI -->|read names / records / rep| ID
+    UI -->|read job + event state| arc
 ```
 
+ERC-8183 role mapping: **Client** = the home agent (creates + funds the Job), **Provider** = the field tech (calls `submit`), **Evaluator** = the Chainlink CRE workflow. The Evaluator alone calls `complete()`, which releases escrowed USDC and bumps the worker's reputation. CRE writes directly to Arc — the entire Job lifecycle is single-chain on Arc.
+
 ```
-[Device simulator (FastAPI, public HTTPS via Railway/Fly)]
+[Device simulator (FastAPI, public HTTPS via brach/Tailscale Funnel)]
    ▲ poll + remote-fix calls          ▲ HTTP fetch (telemetry)
-[Agent (plain Python: asyncio + web3.py + Claude API)]      [Chainlink CRE workflow]
-   │ txs (createJob / dispatch)                               │ attestation → settle
-   ▼                                                          ▼
-[Arc testnet: USDC JobEscrow + WorkerRegistry + agent wallet]
+[Agent = ERC-8183 Client (plain Python: asyncio + web3.py + Claude API)]   [Chainlink CRE = Evaluator]
+   │ createJob / setBudget / fund                                          │ complete() → release USDC
+   ▼                                                                       ▼
+[Arc testnet: WardEscrow (ERC-8183) + WorkerRegistry + agent wallet, native USDC]
    ▲                                       ▲
-[Next.js frontend on Vercel — Host / Worker / Agent personas]
-[Supabase — persistent demo state (jobs, feed, reputation cache)]
-[ENS on Sepolia — ward-agent.eth + worker subnames (ENSIP-25/26)]
+[Next.js frontend on Vercel — floor-plan hero · Host / Worker / Agent personas]
+[ENS on Sepolia — ward-agent.eth + 5 worker subnames (ENSIP-25/26 + CAIP-10 rep)]
 ```
 
 ## Components
 
 | Component | Tech | Why |
 |---|---|---|
-| Escrow + registry | Solidity (Foundry) on **Arc testnet**, native USDC | Arc's bounty lists "conditional escrow with onchain automation and automatic release" as its #1 example. JobEscrow: createJob (per-job + daily caps, owner approval required above threshold), acceptJob (staked workers only), settle gated on CRE attestation, deadline auto-refund, full event trail. |
+| Escrow + registry | Solidity (Foundry) on **Arc testnet**, native USDC | Arc's bounty lists "conditional escrow with onchain automation and automatic release" as its #1 example. **WardEscrow** is a keyed ERC-8183 JobEscrow implementing the Agentic Commerce Job state machine: `createJob` (Client) → `setBudget` / `fund` (escrow USDC, per-job + daily caps, owner approval above threshold) → `submit` (Provider) → `complete` (**Evaluator-only**, releases escrow + bumps reputation). Deadline auto-refund (Expired state), full event trail. Roles: Client = home agent, Provider = field tech, Evaluator = Chainlink CRE. |
 | Sensor attestation | **Chainlink CRE workflow** (TS SDK) | Fetches device telemetry from the public HTTPS endpoint, verifies the fault is resolved, triggers escrow release on Arc. The technical core. CLI simulation qualifies for the bounty; Chainlink deploys simulated workflows live at the event. |
 | Agent | **Plain Python**: asyncio loop, web3.py, Claude API for reasoning. No uAgents. | Poll fleet → diagnose → L1 remote fix → on hard failure query registry, select highest-reputation worker → escrow → monitor → trigger CRE → confirm settle. Decision feed streamed to frontend. |
 | Identity | **ENS on Sepolia** | Agent primary name (ward-agent.eth). Workers get subnames (mike.ward-agent.eth) with **ENSIP-26 text records**: skills, region, reputation pointer. **ENSIP-25** name verification for the agent. Agent discovers workers via ENS resolution. |
 | Audit | Arc contract events, indexed by the frontend | No separate audit chain. |
 | Frontend | **Next.js + Tailwind on Vercel**, clean light aesthetic (docs/DESIGN.md) | Three personas via dropdown: Host / Worker / Agent. Worker view mobile-first, reachable by QR code. |
 | Demo state | **Supabase** (free tier) | State persists across all judge visits: reputation accumulates, activity feed grows. By Sunday the app shows dozens of real historical Arc transactions, not a fresh demo. |
-| Device sim | FastAPI on **Railway or Fly.io** (public HTTPS so CRE can reach it) | Per-property devices (router etc.): status / kill (soft\|hard) / restart (heals soft only) / repair. Node-console page for triggers. |
+| Device sim | FastAPI on **brach via Tailscale Funnel** (public HTTPS so CRE can reach it) | Per-property devices (router etc.): status / kill (soft\|hard) / restart (heals soft only) / repair. Node-console page for triggers. |
 
-## Open question (gates the CRE build)
+## CRE → Arc (resolved)
 
-**Does CRE write to Arc testnet?** Ask the Chainlink booth directly. Outcomes:
-1. CRE → Arc directly: ideal, plan stands.
-2. CRE → other EVM chains only: escrow on Base Sepolia, bridge to Arc for USDC settlement via Circle's stack.
-3. CRE too slow for live demo: pre-stage one complete cycle visible on the Arc explorer; run the live cycle in parallel during Q&A.
+**Does CRE write to Arc testnet? Yes.** The entire ERC-8183 Job lifecycle is single-chain on Arc — no bridge, no second EVM. The CRE workflow fetches device telemetry from the public sim, runs identical-consensus, and produces an EVM `WriteReport` to Arc (chain-selector `3034092155422581607`, forwarder `0x76c9cf548b4179F8901cda1f8623568b58215E62`) that drives `complete()` on WardEscrow. A green CLI simulation (`cre/sim-output-live.txt`) qualifies for the Chainlink bounty; Chainlink deploys qualifying sims to the live DON at the event.
 
-Do not start the CRE integration until the booth answer is confirmed. Full decision matrix: docs/SPIKES.md.
+For the live booth demo, if CRE-DON latency is high, pre-stage one complete settled cycle on the Arc explorer and run the live cycle in parallel during Q&A.
 
 ## Fallbacks
 

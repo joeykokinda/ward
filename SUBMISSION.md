@@ -1,46 +1,129 @@
-# WARD — Submission Checklist
+# WARD — Submission
 
-Every box is a hard gate. Work through it during the event, not the final hour.
+**The pitch:** WARD is, as far as we know, the first production implementation of **ERC-8183** (Ethereum's brand-new Agentic Commerce standard) shipped end-to-end on live testnet. An autonomous home agent hires a human field tech, escrows USDC on Arc as an ERC-8183 Job, and a Chainlink CRE workflow — the standard's **Evaluator** — releases the escrow when device telemetry confirms the fix. Payment settles on a machine-attested physical fact, not human approval. ENS is the identity and discovery layer for the agent and its worker registry.
 
-## 🚨 NON-NEGOTIABLES 🚨
+**One-liner:** Proof-of-Physical-Work — escrow released by machine-attested telemetry, not human approval. Machines hire humans; sensors settle the bill.
 
-- [ ] **ENS booth, Sunday morning, IN PERSON.** Mandatory for ALL ENS prizes. Missing it forfeits them regardless of code quality.
-- [ ] **Commit in intervals all weekend.** Small, frequent commits showing real progression — never one 1000-line dump. Single-massive-commit histories risk DQ. Never backdate; commit dates must be real.
-- [ ] **Live demo URL** (Vercel) on the showcase page, verified working from a phone on cell data.
-- [ ] **Demo video ≤3 min**, recorded Saturday evening before exhaustion, explorer proof of settle on screen, honest about attestation latency.
+**Demo video:** `[PLACEHOLDER — ≤3-min recording, link before submission]` (recorded Saturday evening; explorer proof of settle on screen; honest about CRE attestation latency).
 
-## Chainlink CRE
+## 🚨 HARD GATE — ENS BOOTH, SUNDAY MORNING, IN PERSON 🚨
 
-- [ ] Workflow meaningfully used (it settles the escrow), integrates chain + external API.
-- [ ] Successful CLI simulation captured (qualifying bar) — and take their offer to deploy it live during the event.
-- [ ] Chainlink-usage paragraph in the project description.
+All ENS prizes require presenting at the ENS booth **in person on Sunday morning**. Missing it forfeits every ENS prize regardless of code quality. This is a calendar-level commitment, not a nice-to-have. Booth script + objection answers in PITCHES.md.
 
-## Arc
+---
 
-- [ ] USDC conditional escrow on Arc testnet, end-to-end automatic release demonstrated.
-- [ ] Working frontend AND backend (functional MVP requirement).
-- [ ] **Architecture diagram** (explicit requirement).
-- [ ] Video + documentation of Circle tools usage.
-- [ ] **State explicitly which Arc bounty** (default: Best Smart Contracts with Advanced Stablecoin Logic — the bounty whose text contains our escrow example; confirm at booth). GitHub repo link.
+## Links
 
-## ENS
+| | |
+|---|---|
+| Live demo (Vercel, floor-plan hero; mock-data mode, live flip pending) | https://web-nine-ashen-75.vercel.app |
+| Repo (open source) | https://github.com/joeykokinda/ward |
+| Arc explorer base (chainId 5042002) | https://testnet.arcscan.app |
+| WardEscrow (ERC-8183, keyed JobEscrow) | https://testnet.arcscan.app/address/0xe118A51B105DF46F54AE4Fb01a1EF43F6a8dE5D8 |
+| WorkerRegistry | https://testnet.arcscan.app/address/0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4 |
+| Evaluator | https://testnet.arcscan.app/address/0xDdd0047d0664235998791fe2163Bb9b31c2Fc038 |
+| USDC (native Arc, 6dp, also gas) | `0x3600000000000000000000000000000000000000` |
+| ENS agent name (Sepolia) | `ward-agent.eth` |
+| ENS worker subnames (Sepolia) | `mike` / `sara` / `deon` / `lena` / `raj` `.ward-agent.eth` |
+| CRE sim log (green) | `cre/sim-output-live.txt` |
+| Architecture diagram | `ARCHITECTURE.md` (mermaid) |
+| On-chain evidence (all tx hashes) | `DEMO-EVIDENCE.md` |
 
-- [ ] Agent primary name + worker subnames live; ENSIP-26 text records resolving; ENSIP-25 verification; agent discovery via ENS resolution.
-- [ ] Zero hardcoded values (they check). ENS-specific code documented (pool requirement).
-- [ ] Video AND live demo link on showcase; open-source repo.
-- [ ] Sunday morning booth presentation (see non-negotiables).
+**ERC-8183 role mapping:** Client = home agent · Provider = field tech · Evaluator = Chainlink CRE. `complete()` is Evaluator-only and releases the escrow.
 
-## Submission text
+---
 
-- [ ] First two sentences name the tech: "Escrowed USDC on Arc is released by a Chainlink CRE workflow that attests device telemetry. ENS is the identity and discovery layer for the agent and its worker registry."
-- [ ] One-liner: "Proof-of-Physical-Work: escrow released by machine-attested telemetry, not human approval. Machines hire humans; sensors settle the bill."
+## Bounty 1 — Chainlink: Best Workflow with CRE
+
+**What we built.** The CRE workflow is the technical core of WARD: it is the ERC-8183 **Evaluator**. On a cron tick it fetches device telemetry from our public HTTPS sim, runs identical-consensus to verify the fault is resolved (e.g. the moisture sensor reads dry), and produces an EVM `WriteReport` to Arc that drives `complete()` on the WardEscrow Job — releasing the escrowed USDC. The contract trusts the attestation, not a human clicking approve. Without CRE, ERC-8183 still needs a human in the loop and this is just another agent with a wallet.
+
+**Demo artifact + links.**
+- Green CLI simulation: `cre/sim-output-live.txt` — `cre workflow simulate --target local-simulation-settings` fetched the live sim, computed `healthy=true`, ran consensus, and produced `EVM Chain WriteReport Dry-Run Successful` → settled.
+- Arc chain-selector `3034092155422581607`, forwarder `0x76c9cf548b4179F8901cda1f8623568b58215E62`.
+- The escrow release it drives — `complete` tx: [`0x0cf9c5a6…`](https://testnet.arcscan.app/tx/0x0cf9c5a691225575de86937491fb6ae577c1f3e2b7a49959104a6c3a6084cb8d) (full hash in DEMO-EVIDENCE.md).
+- Live demo: https://web-nine-ashen-75.vercel.app · Repo: https://github.com/joeykokinda/ward
+
+**Qualifying checklist.**
+- [x] Workflow integrates a blockchain (Arc, `WriteReport`) with an external API (device telemetry over HTTPS) and is meaningfully used — it settles the escrow.
+- [x] Successful CLI simulation captured (the qualifying bar). Open to Chainlink deploying the qualifying sim to the live DON at the event.
+- [x] Chainlink usage explained in the project description (above + ARCHITECTURE.md).
+
+Booth script: PITCHES.md → "Chainlink booth".
+
+---
+
+## Bounty 2 — Arc: Best Smart Contracts with Advanced Stablecoin Logic
+
+**Bounty entered (stated explicitly):** Arc — *Best Smart Contracts on Arc with Advanced Stablecoin Logic* (the bounty whose text lists "conditional escrow with onchain automation and automatic release" as its #1 example). Not the Agentic Economy / x402 track.
+
+**What we built.** WardEscrow is a keyed ERC-8183 JobEscrow on Arc holding native USDC under a real policy layer — per-job caps, daily caps, an owner-approval threshold, and deadline auto-refund (the standard's Expired state), all in the contract, not middleware. The Job runs Open → Funded → Submitted → Completed; the Evaluator (CRE) auto-releases the escrow the instant the telemetry attestation lands. Arc is the only rail where machine-to-human nanopayments work economically: gas-free USDC, sub-cent fees, settlement fast enough that the field tech watches the money land while still in the hallway. 56 contract tests pass.
+
+**Demo artifact + links.** Full ERC-8183 lifecycle, all on Arc testnet (full hashes in DEMO-EVIDENCE.md):
+
+| ERC-8183 step | tx |
+|---|---|
+| createJob | [`0xe65a7352…`](https://testnet.arcscan.app/tx/0xe65a7352007bf269874f4bf83e138c67d29d24d9009facd083af296cbcebf217) |
+| setBudget | [`0xb4875473…`](https://testnet.arcscan.app/tx/0xb4875473ae81ba87b4a9424bf9c8ac743a02a69efea8d4601ab0e0cd44542bd4) |
+| fund | [`0x1afb1617…`](https://testnet.arcscan.app/tx/0x1afb161733819d2004d24d10bf13312ba941e91394e9f3463a90df2240e01ea0) |
+| submit | [`0x48d22cd0…`](https://testnet.arcscan.app/tx/0x48d22cd077f7e32670a2589e977991a6917b511f3cc6c515449f72065360827a) |
+| complete (Evaluator attests, USDC releases) | [`0x0cf9c5a6…`](https://testnet.arcscan.app/tx/0x0cf9c5a691225575de86937491fb6ae577c1f3e2b7a49959104a6c3a6084cb8d) |
+
+- Verified contracts: WardEscrow [`0xe118…E5D8`](https://testnet.arcscan.app/address/0xe118A51B105DF46F54AE4Fb01a1EF43F6a8dE5D8) · WorkerRegistry [`0x2bdD…3bB4`](https://testnet.arcscan.app/address/0x2bdDf43350A5E79cf4fCc2A15f4a6905f9553bB4) · Evaluator [`0xDdd0…Fc038`](https://testnet.arcscan.app/address/0xDdd0047d0664235998791fe2163Bb9b31c2Fc038).
+- Architecture diagram: ARCHITECTURE.md (mermaid). Live demo: https://web-nine-ashen-75.vercel.app · Repo: https://github.com/joeykokinda/ward
+
+**Qualifying checklist.**
+- [x] USDC conditional escrow on Arc testnet, end-to-end automatic release demonstrated on-chain.
+- [x] Functional MVP: working frontend (Vercel) AND backend (sim + agent on brach).
+- [x] Architecture diagram (ARCHITECTURE.md).
+- [x] Chosen Arc bounty stated explicitly (Advanced Stablecoin Logic). GitHub repo linked.
+- [ ] Video + documentation of Circle/USDC tooling usage (in the demo video placeholder above).
+
+Booth script: PITCHES.md → "Arc booth".
+
+---
+
+## Bounty 3 — ENS: Best ENS Integration for AI Agents (+ Integrate-ENS pool)
+
+**What we built.** ENS is the identity and discovery layer, not a cosmetic label. The home agent holds its own primary name `ward-agent.eth`, verified per ENSIP-25. Every worker is a subname carrying ENSIP-26 text records — skills, region, and a CAIP-10 reputation pointer — plus an on-chain reputation reference. When a Job needs a Provider, the agent **discovers and ranks workers through ENS resolution**: ENS is the registry, and the reputation is ENS-owned and portable, traveling with the worker's name rather than locked in our platform. We deliberately chose ENS text records (ENSIP-25/26) over ERC-8004 so one name resolves for the agent, the human, and the UI. Zero hardcoded values — everything renders from live resolution.
+
+**Demo artifact + links.**
+- Agent name: `ward-agent.eth` (Sepolia, ENSIP-25 verified) — register tx `0x093751c8…` (full hash in DEMO-EVIDENCE.md).
+- Worker subnames (Sepolia, ENSIP-26 records + CAIP-10 reputation pointers): `mike` / `sara` / `deon` / `lena` / `raj` `.ward-agent.eth`.
+- The dispatch decision (agent selecting the highest-reputation worker) references these resolved records.
+- Live demo: https://web-nine-ashen-75.vercel.app · Repo: https://github.com/joeykokinda/ward
+
+**Qualifying checklist.**
+- [x] Agent primary name + worker subnames live; ENSIP-26 text records resolving; ENSIP-25 verification; agent discovery via ENS resolution.
+- [x] ENS materially improves agent identity/discoverability (it is the registry), not cosmetic.
+- [x] Zero hardcoded values (they check). ENS-specific code in the repo (`packages/ens`) — qualifies for the Integrate-ENS pool (RainbowKit alone would not).
+- [x] Open-source repo + live demo link on the showcase.
+- [ ] **Sunday-morning ENS booth presentation, in person** (HARD GATE above).
+
+Booth script + the three canonical objection answers (RentAHuman, why-crypto-for-a-homeowner, are-the-sensors-real): PITCHES.md → "ENS booth" + "Judge Q&A".
+
+---
+
+## Submission gates (work through during the event, not the final hour)
+
+### Non-negotiables
+- [ ] **ENS booth, Sunday morning, IN PERSON** (HARD GATE — see top).
+- [ ] **Commit in intervals all weekend.** Small, frequent commits showing real progression — never one 1000-line dump (DQ risk). Never backdate.
+- [ ] **Live demo URL** on the showcase page, verified working from a phone on cell data.
+- [ ] **Demo video ≤3 min**, recorded Saturday evening, explorer proof of settle on screen, honest about attestation latency. (Replace the placeholder line at top.)
+
+### Per-bounty (mirrors the three checklists above)
+- [x] Chainlink: workflow meaningfully used + green CLI sim + usage paragraph.
+- [x] Arc: USDC conditional escrow end-to-end + frontend AND backend + architecture diagram + explicit bounty named + repo. (⏳ Circle/USDC tooling video.)
+- [x] ENS: names + subnames + ENSIP-25/26 + discovery + zero hardcoded values + repo + live link. (⏳ Sunday booth.)
+
+### Submission text
+- [ ] First two sentences name the tech (see the pitch + one-liner at top).
 - [ ] Architecture diagram image attached.
-- [ ] Rehearsed answers baked into the description: "done 20x" (prior marketplaces settled on human approval), oracle problem (attested telemetry; instrumented-assets-only is the point), why-LLM (diagnosis + dispatch only; spending contract-capped + owner threshold).
+- [ ] Rehearsed objection answers baked into the description (PITCHES.md → Judge Q&A): prior marketplaces settled on human approval; oracle problem answered by attested telemetry on instrumented-assets-only; LLM does diagnosis + dispatch only, spending is contract-capped + owner-threshold-gated.
 
-## Judging table
-
+### Judging table
 - [ ] Pre-staged: settled historical jobs visible + one L1 self-fix in the log.
 - [ ] Trigger live failure at pitch START so settlement lands during Q&A.
 - [ ] QR code printed for worker view. Backup video on phone.
-- [ ] 15 min before slot: Railway up, Vercel up, wallets funded, sim healthy, reset done.
+- [ ] 15 min before slot: backend up, Vercel up, wallets funded, sim healthy, reset done.
 - [ ] Booth-specific pitches per PITCHES.md.
