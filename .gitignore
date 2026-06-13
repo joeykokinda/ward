@@ -1,0 +1,15 @@
+.env
+.env.*
+!.env.example
+node_modules/
+__pycache__/
+.venv/
+venv/
+out/
+cache/
+broadcast/
+dependencies/
+.next/
+.vercel/
+dist/
+*.log
