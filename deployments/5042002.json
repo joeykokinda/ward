@@ -1,0 +1,8 @@
+{
+  "CreVerifier": "0x985e4CCEb3ff73C60b3F9FbF2044B4cF394b267A",
+  "JobEscrow": "0x5585487A2EbabbE72406b72d5278dDFc5Ed706d8",
+  "MockUSDC": "0x3600000000000000000000000000000000000000",
+  "WorkerRegistry": "0xc59fabC06Cd268F826a905Cc13eD232a90A79CAc",
+  "blockExplorer": "https://testnet.arcscan.app",
+  "chainId": 5042002
+}
