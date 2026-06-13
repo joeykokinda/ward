@@ -1,0 +1,11 @@
+# Foundry build output
+out/
+cache/
+broadcast/
+
+# Vendored dependencies (re-install via: forge install / forge soldeer install)
+lib/
+
+# Deployment ABIs + addresses are generated; keep deployments/<chainId>.json and
+# deployments/abis/ committed so frontend/agent can read them without a rebuild.
+!deployments/
