@@ -125,9 +125,16 @@ export function HostView({
           <ReasoningStream events={snapshot.events} mounted={mounted} />
         </div>
 
-        {/* on-chain activity feed (bottom) */}
-        <div className="mt-6">
-          <ActivityFeed activity={snapshot.activity} now={now} mounted={mounted} />
+        {/* on-chain activity feed — a compact bottom strip with its own bounded
+            scroll, so the floor plan + reasoning stay the hero and the feed never
+            pushes content into an awkward cutoff at laptop heights */}
+        <div className="mt-6 pb-2">
+          <ActivityFeed
+            activity={snapshot.activity}
+            now={now}
+            mounted={mounted}
+            bodyClassName="max-h-[240px] divide-y divide-border overflow-auto ward-scroll"
+          />
         </div>
       </div>
 

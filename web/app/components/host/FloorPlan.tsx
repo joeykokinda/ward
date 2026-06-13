@@ -15,12 +15,16 @@ import {
   avatarTarget,
   deriveIncident,
   deviceVisual,
-  ENTRY,
+  DOOR,
+  FLOOR,
+  FLOOR_BOTTOM,
+  FLOOR_RIGHT,
   isBeingFixed,
   ROOMS,
   roomFor,
   VIEW_H,
   VIEW_W,
+  WALLS,
   workerPathD,
   type Incident,
   type Room,
@@ -34,20 +38,28 @@ const KIND_ICON: Record<DeviceKind, LucideIcon> = {
 };
 
 const COLOR = {
-  wall: "#cbd5e1",
-  wallFill: "#ffffff",
-  roomFill: "#fafafa",
-  label: "#64748b",
-  faint: "#94a3b8",
-  healthy: "#84cc16",
-  healthyInk: "#3f6212",
+  // architecture
+  outerWall: "#cbd5e1", // thick perimeter
+  innerWall: "#e2e8f0", // hairline partitions
+  floor: "#fcfcfd", // subtle floor slab fill
+  label: "#94a3b8", // room labels — quiet
+  // calm device puck (neutral — NOT green)
+  puck: "#ffffff",
+  puckStroke: "#d4d8dd",
+  puckInk: "#475569",
+  reading: "#64748b",
+  deviceLabel: "#94a3b8",
+  healthyDot: "#84cc16", // small green status dot only
+  // faults (reserved, saturated — these are what "pop")
   alert: "#dc2626",
   alertSoft: "#fef2f2",
-  water: "#3b82f6",
-  waterSoft: "#dbeafe",
-  warm: "#f59e0b",
-  warmSoft: "#fffbeb",
-  ink: "#0f172a",
+  water: "#2563eb",
+  waterSoft: "#eff4ff",
+  warm: "#d97706",
+  warmSoft: "#fffaf0",
+  // recovery / worker
+  heal: "#84cc16",
+  healInk: "#3f6212",
   worker: "#84cc16",
 } as const;
 
@@ -79,19 +91,48 @@ export function FloorPlan({
           role="img"
           aria-label="Apartment floor plan with four monitored devices"
         >
-          {/* apartment outer shell */}
+          {/* floor slab inside the outer wall */}
           <rect
-            x={28}
-            y={28}
-            width={VIEW_W - 56}
-            height={VIEW_H - 56}
-            rx={16}
-            fill={COLOR.wallFill}
-            stroke={COLOR.wall}
-            strokeWidth={3}
+            x={FLOOR.x}
+            y={FLOOR.y}
+            width={FLOOR.w}
+            height={FLOOR.h}
+            fill={COLOR.floor}
           />
 
-          {/* rooms */}
+          {/* room alert tints (clipped to each room rect; behind walls + labels) */}
+          {ROOMS.map((room) => {
+            const p = byId[room.deviceId] as PropertyStatus | undefined;
+            if (!p) return null;
+            const beingFixed = isBeingFixed(incident, room.deviceId);
+            const visual = deviceVisual(p, beingFixed);
+            return (
+              <RoomTint key={`tint-${room.deviceId}`} room={room} alert={visual === "alert"} />
+            );
+          })}
+
+          {/* shared hairline interior walls (with door-gap openings) */}
+          {WALLS.map((w, i) => (
+            <line
+              key={i}
+              x1={w.x1}
+              y1={w.y1}
+              x2={w.x2}
+              y2={w.y2}
+              stroke={COLOR.innerWall}
+              strokeWidth={2}
+              strokeLinecap="round"
+            />
+          ))}
+
+          {/* thick apartment perimeter, drawn as four segments so the front-door
+              opening on the top wall reads as a real gap */}
+          <ApartmentShell />
+
+          {/* front door + swing arc at the entry */}
+          <DoorMarker />
+
+          {/* rooms: label + device + per-room animation */}
           {ROOMS.map((room) => {
             const p = byId[room.deviceId] as PropertyStatus | undefined;
             if (!p) return null;
@@ -106,9 +147,6 @@ export function FloorPlan({
               />
             );
           })}
-
-          {/* front door marker on the entry edge */}
-          <DoorMarker />
 
           {/* worker path + avatar (only while an incident worker is on site) */}
           <WorkerLayer incident={incident} onClick={onWorkerClick} />
@@ -141,6 +179,60 @@ function LiveLegend({ incident }: { incident: Incident }) {
   );
 }
 
+// ───────────────────── apartment shell (perimeter wall) ─────────────────────
+
+// Four perimeter segments. The top wall is split so the front door reads as a
+// real opening in the wall (not a line painted over it).
+function ApartmentShell() {
+  const segs: string[] = [
+    // top-left up to the door
+    `M ${FLOOR.x} ${FLOOR.y} L ${DOOR.x} ${FLOOR.y}`,
+    // top-right after the door
+    `M ${DOOR.x + DOOR.width} ${FLOOR.y} L ${FLOOR_RIGHT} ${FLOOR.y}`,
+    // right + bottom + left as one continuous stroke
+    `M ${FLOOR_RIGHT} ${FLOOR.y} L ${FLOOR_RIGHT} ${FLOOR_BOTTOM} L ${FLOOR.x} ${FLOOR_BOTTOM} L ${FLOOR.x} ${FLOOR.y}`,
+  ];
+  return (
+    <g pointerEvents="none">
+      {segs.map((d, i) => (
+        <path
+          key={i}
+          d={d}
+          fill="none"
+          stroke={COLOR.outerWall}
+          strokeWidth={4}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+    </g>
+  );
+}
+
+// ───────────────────────── per-room alert tint ─────────────────────────────
+
+// A soft fault tint that fills only the affected room. Clipped to the room rect
+// so the color stays inside the walls. Calm rooms render nothing here.
+function RoomTint({ room, alert }: { room: Room; alert: boolean }) {
+  if (!alert) return null;
+  const fill =
+    room.kind === "leak_sensor"
+      ? COLOR.waterSoft
+      : room.kind === "thermostat"
+        ? COLOR.warmSoft
+        : COLOR.alertSoft;
+  return (
+    <rect
+      x={room.x}
+      y={room.y}
+      width={room.w}
+      height={room.h}
+      fill={fill}
+      pointerEvents="none"
+    />
+  );
+}
+
 // ───────────────────────────── a room + its device ─────────────────────────
 
 function RoomCell({
@@ -165,27 +257,15 @@ function RoomCell({
     wasAlert.current = alert;
   }, [alert]);
 
-  const roomTint =
-    room.kind === "leak_sensor" && alert
-      ? COLOR.waterSoft
-      : room.kind === "thermostat" && alert
-        ? COLOR.warmSoft
-        : alert
-          ? COLOR.alertSoft
-          : COLOR.roomFill;
-
   return (
     <g className="cursor-pointer" onClick={onClick}>
-      {/* room rectangle */}
+      {/* invisible hit target so the whole room is clickable */}
       <rect
         x={room.x}
         y={room.y}
         width={room.w}
         height={room.h}
-        rx={10}
-        fill={roomTint}
-        stroke={COLOR.wall}
-        strokeWidth={2}
+        fill="transparent"
       />
 
       {/* heal flash on recovery */}
@@ -196,21 +276,21 @@ function RoomCell({
           y={room.y}
           width={room.w}
           height={room.h}
-          rx={10}
           className="ward-heal-flash"
-          fill={COLOR.healthy}
+          fill={COLOR.heal}
           pointerEvents="none"
         />
       )}
 
       {/* room label */}
       <text
-        x={room.x + 14}
-        y={room.y + 24}
-        fontSize={13}
+        x={room.labelAt.x}
+        y={room.labelAt.y}
+        fontSize={12}
         fontWeight={600}
+        letterSpacing={0.4}
         fill={COLOR.label}
-        style={{ fontFamily: "var(--font-inter)" }}
+        style={{ fontFamily: "var(--font-inter)", textTransform: "uppercase" }}
       >
         {room.label}
       </text>
@@ -230,15 +310,15 @@ function RoomAnimation({ room }: { room: Room }) {
   const { x: cx, y: cy } = room.device;
   switch (room.kind) {
     case "leak_sensor":
-      // HERO: blue concentric ripples + a faint blue water-tint fill.
+      // HERO: blue concentric ripples + a faint blue water-tint pool.
       return (
         <g pointerEvents="none">
-          {/* breathing water tint pooled around the sensor */}
+          {/* breathing water pool around the sensor */}
           <ellipse
             cx={cx}
-            cy={cy + 40}
-            rx={room.w * 0.42}
-            ry={42}
+            cy={cy + 36}
+            rx={86}
+            ry={34}
             fill={COLOR.water}
             className="ward-water-tint"
           />
@@ -256,15 +336,15 @@ function RoomAnimation({ room }: { room: Room }) {
         </g>
       );
     case "router":
-      // WiFi: signal arcs that fade out (router down) + a no-signal marker.
+      // WiFi: signal arcs that fade out (router down).
       return (
         <g pointerEvents="none">
-          {[18, 30, 42].map((r, i) => (
+          {[20, 33, 46].map((r, i) => (
             <path
               key={r}
               d={describeArc(cx, cy + 6, r, -130, -50)}
               fill="none"
-              stroke={COLOR.faint}
+              stroke={COLOR.alert}
               strokeWidth={2.5}
               strokeLinecap="round"
               className="ward-arc-out"
@@ -280,7 +360,7 @@ function RoomAnimation({ room }: { room: Room }) {
           <circle
             cx={cx}
             cy={cy}
-            r={26}
+            r={30}
             fill="none"
             stroke={COLOR.alert}
             strokeWidth={2.5}
@@ -289,14 +369,13 @@ function RoomAnimation({ room }: { room: Room }) {
         </g>
       );
     case "thermostat":
-      // Thermostat: warm tint handled by the room fill; the flashing number is
-      // rendered in DeviceNode. Add a soft pulse ring for motion.
+      // Thermostat: warm pulse ring; the flashing number lives in DeviceNode.
       return (
         <g pointerEvents="none">
           <circle
             cx={cx}
             cy={cy}
-            r={26}
+            r={30}
             fill="none"
             stroke={COLOR.warm}
             strokeWidth={2.5}
@@ -324,88 +403,83 @@ function DeviceNode({
 
   const Icon = alert && room.kind === "router" ? WifiOff : KIND_ICON[room.kind];
 
-  const ring =
-    alert && room.kind === "leak_sensor"
+  // Fault accent for this kind (only used while alerting).
+  const faultColor =
+    room.kind === "leak_sensor"
       ? COLOR.water
-      : alert && room.kind === "thermostat"
+      : room.kind === "thermostat"
         ? COLOR.warm
-        : alert
-          ? COLOR.alert
-          : COLOR.healthy;
-  const fill =
-    alert && room.kind === "leak_sensor"
+        : COLOR.alert;
+  const faultSoft =
+    room.kind === "leak_sensor"
       ? COLOR.waterSoft
-      : alert && room.kind === "thermostat"
+      : room.kind === "thermostat"
         ? COLOR.warmSoft
-        : alert
-          ? COLOR.alertSoft
-          : "#ffffff";
+        : COLOR.alertSoft;
 
-  const statusText =
-    fixing
-      ? "fixing…"
-      : room.kind === "lock"
+  // Calm by default: neutral slate puck. Color is reserved for state changes.
+  const puckStroke = fixing ? COLOR.heal : alert ? faultColor : COLOR.puckStroke;
+  const puckFill = fixing ? "#ffffff" : alert ? faultSoft : COLOR.puck;
+  const iconColor = fixing ? COLOR.healInk : alert ? faultColor : COLOR.puckInk;
+
+  const statusText = fixing
+    ? "repairing…"
+    : room.kind === "lock"
+      ? alert
+        ? "lock · unknown"
+        : "locked · armed"
+      : room.kind === "leak_sensor"
         ? alert
-          ? "lock: unknown"
-          : "locked"
-        : room.kind === "leak_sensor"
+          ? "water detected"
+          : "dry · armed"
+        : room.kind === "router"
           ? alert
-            ? "water detected"
-            : "dry · armed"
-          : room.kind === "router"
-            ? alert
-              ? "no signal"
-              : "online"
-            : alert
-              ? "11°C · off-target"
-              : "21°C";
-  const statusColor = fixing
-    ? COLOR.healthyInk
-    : alert
-      ? room.kind === "leak_sensor"
-        ? COLOR.water
-        : room.kind === "thermostat"
-          ? COLOR.warm
-          : COLOR.alert
-      : COLOR.healthyInk;
+            ? "no signal"
+            : "online"
+          : alert
+            ? "11°C · off-target"
+            : "21°C";
+  const statusColor = fixing ? COLOR.healInk : alert ? faultColor : COLOR.reading;
 
   return (
     <g>
       {/* device puck */}
-      <circle cx={cx} cy={cy} r={22} fill={fill} stroke={ring} strokeWidth={2.5} />
-      <foreignObject x={cx - 11} y={cy - 11} width={22} height={22}>
+      <circle cx={cx} cy={cy} r={26} fill={puckFill} stroke={puckStroke} strokeWidth={2} />
+      <foreignObject x={cx - 13} y={cy - 13} width={26} height={26}>
         <div
           style={{
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            width: 22,
-            height: 22,
-            color: alert ? ring : COLOR.ink,
+            width: 26,
+            height: 26,
+            color: iconColor,
           }}
         >
-          <Icon size={16} strokeWidth={2} />
+          <Icon size={20} strokeWidth={1.9} />
         </div>
       </foreignObject>
 
-      {/* healthy status dot (calm) */}
+      {/* healthy status dot (calm) — the ONLY green on a nominal device */}
       {!alert && !fixing && (
         <circle
-          cx={cx + 18}
-          cy={cy - 16}
-          r={4}
-          fill={COLOR.healthy}
+          cx={cx + 21}
+          cy={cy - 19}
+          r={4.5}
+          fill={COLOR.healthyDot}
+          stroke="#ffffff"
+          strokeWidth={1.5}
           className="ward-healthy-breath"
         />
       )}
 
-      {/* thermostat off-target flashing number overrides the status line */}
+      {/* reading line: the thermostat flashes its off-target number while alert */}
       {alert && room.kind === "thermostat" ? (
         <text
           x={cx}
-          y={cy + 42}
+          y={cy + 48}
           textAnchor="middle"
-          fontSize={13}
+          fontSize={15}
           fontWeight={700}
           fill={COLOR.warm}
           className="ward-temp-flash"
@@ -416,10 +490,10 @@ function DeviceNode({
       ) : (
         <text
           x={cx}
-          y={cy + 42}
+          y={cy + 48}
           textAnchor="middle"
-          fontSize={12}
-          fontWeight={alert ? 700 : 600}
+          fontSize={13.5}
+          fontWeight={alert || fixing ? 700 : 600}
           fill={statusColor}
           style={{ fontFamily: "var(--font-inter)" }}
         >
@@ -430,10 +504,10 @@ function DeviceNode({
       {/* device label */}
       <text
         x={cx}
-        y={cy + 60}
+        y={cy + 66}
         textAnchor="middle"
         fontSize={12}
-        fill={COLOR.label}
+        fill={COLOR.deviceLabel}
         style={{ fontFamily: "var(--font-inter)" }}
       >
         {room.deviceLabel}
@@ -445,23 +519,29 @@ function DeviceNode({
 // ───────────────────────────── front-door marker ───────────────────────────
 
 function DoorMarker() {
+  // The door leaf swings inward from the right jamb of the opening, with a
+  // light dashed swing arc. Sits in the gap left in the top perimeter wall.
+  const jambX = DOOR.x + DOOR.width; // hinge on the right jamb
+  const leafEnd = polarToCartesian(jambX, DOOR.y, DOOR.width, 180); // swung 90° in
   return (
     <g pointerEvents="none">
-      {/* a gap on the outer wall near the entry, with a swing arc */}
+      {/* door leaf */}
       <line
-        x1={ENTRY.x - 4}
-        y1={28}
-        x2={ENTRY.x - 4}
-        y2={28 + 44}
-        stroke={COLOR.wallFill}
-        strokeWidth={6}
+        x1={jambX}
+        y1={DOOR.y}
+        x2={leafEnd.x}
+        y2={leafEnd.y}
+        stroke={COLOR.outerWall}
+        strokeWidth={2.5}
+        strokeLinecap="round"
       />
+      {/* swing arc */}
       <path
-        d={describeArc(ENTRY.x - 4, 28, 44, 90, 150)}
+        d={describeArc(jambX, DOOR.y, DOOR.width, 90, 180)}
         fill="none"
-        stroke={COLOR.faint}
-        strokeWidth={1.5}
-        strokeDasharray="3 3"
+        stroke={COLOR.label}
+        strokeWidth={1.25}
+        strokeDasharray="3 4"
       />
     </g>
   );
@@ -507,6 +587,7 @@ function WorkerLayer({
           stroke={COLOR.worker}
           strokeWidth={2}
           strokeLinecap="round"
+          strokeLinejoin="round"
           className="ward-path-march"
           opacity={0.7}
           pointerEvents="none"
@@ -539,7 +620,7 @@ function WorkerLayer({
         {/* wrench blip while fixing */}
         {atDevice && (
           <g className="ward-wrench" transform="translate(16,-16)">
-            <circle r={11} fill="#ffffff" stroke={COLOR.healthy} strokeWidth={2} />
+            <circle r={11} fill="#ffffff" stroke={COLOR.heal} strokeWidth={2} />
             <foreignObject x={-8} y={-8} width={16} height={16}>
               <div
                 style={{
@@ -548,7 +629,7 @@ function WorkerLayer({
                   justifyContent: "center",
                   width: 16,
                   height: 16,
-                  color: COLOR.healthyInk,
+                  color: COLOR.healInk,
                 }}
               >
                 <Wrench size={11} strokeWidth={2.2} />

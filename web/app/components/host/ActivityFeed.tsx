@@ -29,10 +29,12 @@ export function ActivityFeed({
   activity,
   now,
   mounted,
+  bodyClassName = "divide-y divide-border overflow-auto ward-scroll",
 }: {
   activity: Activity[];
   now: number;
   mounted: boolean;
+  bodyClassName?: string;
 }) {
   return (
     <Panel
@@ -40,7 +42,7 @@ export function ActivityFeed({
       right={
         <span className="text-[12px] text-muted">Arc · {activity.length} txns</span>
       }
-      bodyClassName="divide-y divide-border"
+      bodyClassName={bodyClassName}
     >
       {activity.map((a, i) => (
         <div key={a.id} className={`px-4 py-3 ${i === 0 ? "ward-row-in" : ""}`}>
