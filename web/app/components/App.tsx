@@ -25,7 +25,7 @@ export function App() {
   const live = isRunning || snapshot.activeJob !== null;
 
   return (
-    <div className="flex h-dvh flex-col bg-bg">
+    <div className="flex h-dvh flex-col bg-bg text-fg">
       <Header
         persona={persona}
         onPersona={setPersona}

@@ -1,12 +1,13 @@
 "use client";
 
+import { Briefcase } from "lucide-react";
 import type { Job, PropertyStatus } from "@/lib/data/types";
 import { JOB_STATE_LABEL } from "@/lib/config";
 import { formatDuration, formatUsdc, secondsSince } from "@/lib/format";
 import { EnsLink, TxLink } from "../links";
-import { jobStateTone } from "../primitives";
+import { Chip, jobStateTone } from "../primitives";
 
-// Bottom bar — only rendered when a job is live. Amber border-opacity pulse.
+// Focal active-job card — only rendered when a job is live. Gentle accent ring.
 export function ActiveJobBar({
   job,
   property,
@@ -22,65 +23,62 @@ export function ActiveJobBar({
   const elapsed = mounted ? formatDuration(secondsSince(job.createdAtIso, now)) : "0s";
 
   return (
-    <div className="border-2 border-amber/60 ward-pulse bg-panel rounded-[4px] px-4 py-2.5">
-      <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-        <Field label="Active job">
-          <span className="mono text-[13px] text-text">#{job.jobId}</span>
-        </Field>
-        <Divider />
-        <Field label="Property">
-          <span className="mono text-[13px] text-text">
-            {property?.name ?? job.propertyId}
+    <div className="ward-active rounded-xl border border-border bg-surface p-5 card-shadow">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-soft text-accent-ink">
+            <Briefcase className="h-4 w-4" strokeWidth={2} />
           </span>
-        </Field>
-        <Divider />
+          <div>
+            <div className="text-[11px] font-medium uppercase tracking-wide text-muted">
+              Active job
+            </div>
+            <div className="text-[15px] font-semibold text-fg">
+              #{job.jobId} · {property?.name ?? job.propertyId}
+            </div>
+          </div>
+        </div>
+        <Chip tone={tone}>{JOB_STATE_LABEL[job.state]}</Chip>
+      </div>
+
+      <div className="mt-5 grid grid-cols-2 gap-x-6 gap-y-4 sm:grid-cols-4">
         <Field label="Worker">
           {job.worker ? (
             <EnsLink name={job.worker} className="text-[13px]" />
           ) : (
-            <span className="mono text-[13px] text-muted">awaiting dispatch</span>
+            <span className="text-[13px] text-muted">awaiting dispatch</span>
           )}
         </Field>
-        <Divider />
         <Field label="Amount">
-          <span className="mono text-[13px] text-amber">
+          <span className="mono text-[15px] font-semibold text-fg">
             {formatUsdc(job.amount)}
-            <span className="ml-1 text-[10px] text-amber/70">USDC</span>
+            <span className="ml-1 font-sans text-[11px] font-medium text-muted">
+              USDC
+            </span>
           </span>
         </Field>
-        <Divider />
-        <Field label="Status">
-          <span
-            className={`mono text-[13px] font-semibold ${
-              tone === "green"
-                ? "text-green"
-                : tone === "red"
-                  ? "text-red"
-                  : "text-amber"
-            }`}
-          >
-            {JOB_STATE_LABEL[job.state]}
-          </span>
-        </Field>
-        <Divider />
         <Field label="Elapsed">
-          <span className="mono text-[13px] text-text">{elapsed}</span>
+          <span className="mono text-[14px] text-fg-soft">{elapsed}</span>
         </Field>
-
-        <div className="ml-auto flex items-center gap-3">
-          {job.txCreate && (
-            <span className="flex items-center gap-1">
-              <span className="label">CREATE</span>
-              <TxLink hash={job.txCreate} />
-            </span>
-          )}
-          {job.txSettle && (
-            <span className="flex items-center gap-1">
-              <span className="label">SETTLE</span>
-              <TxLink hash={job.txSettle} />
-            </span>
-          )}
-        </div>
+        <Field label="Transactions">
+          <div className="flex flex-col gap-0.5">
+            {job.txCreate && (
+              <span className="flex items-center gap-1.5 text-[11px] text-muted">
+                <span>lock</span>
+                <TxLink hash={job.txCreate} />
+              </span>
+            )}
+            {job.txSettle && (
+              <span className="flex items-center gap-1.5 text-[11px] text-muted">
+                <span>settle</span>
+                <TxLink hash={job.txSettle} />
+              </span>
+            )}
+            {!job.txCreate && !job.txSettle && (
+              <span className="text-[13px] text-faint">—</span>
+            )}
+          </div>
+        </Field>
       </div>
     </div>
   );
@@ -88,13 +86,11 @@ export function ActiveJobBar({
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col">
-      <span className="label leading-none">{label}</span>
-      <span className="mt-0.5 leading-tight">{children}</span>
+    <div className="min-w-0">
+      <div className="text-[11px] font-medium uppercase tracking-wide text-muted">
+        {label}
+      </div>
+      <div className="mt-1 leading-tight">{children}</div>
     </div>
   );
-}
-
-function Divider() {
-  return <span className="hidden sm:block h-7 w-px bg-border" aria-hidden />;
 }

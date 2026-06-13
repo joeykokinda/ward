@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { Play, RotateCcw } from "lucide-react";
 import type { WardSnapshot } from "@/lib/data/types";
 import { ActiveJobBar } from "./ActiveJobBar";
 import { ActivityFeed } from "./ActivityFeed";
@@ -45,45 +46,58 @@ export function HostView({
     : undefined;
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col gap-3 p-3">
-      {/* control row */}
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={onSimulate}
-            disabled={isRunning}
-            className="border border-red/60 bg-red/10 px-3 py-2 rounded-[4px] text-red mono text-[12px] font-semibold tracking-wide hover:bg-red/20 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            ▶ SIMULATE ROUTER FAILURE
-          </button>
-          <span className="mono text-[11px] text-muted">
-            target: Greenwich Cottage (prop-2)
-          </span>
+    <div className="min-h-0 flex-1 overflow-auto ward-scroll">
+      <div className="mx-auto w-full max-w-6xl px-5 py-6">
+        {/* page heading + controls */}
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-fg">
+              Fleet operations
+            </h1>
+            <p className="mt-1 text-[14px] text-muted">
+              WARD monitors your properties and dispatches paid repairs autonomously.
+            </p>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={onReset}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-surface px-3.5 py-2 text-[13px] font-medium text-fg-soft transition-colors hover:bg-subtle"
+            >
+              <RotateCcw className="h-4 w-4 text-muted" strokeWidth={2} />
+              Reset
+            </button>
+            <button
+              onClick={onSimulate}
+              disabled={isRunning}
+              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2 text-[13px] font-semibold text-white shadow-sm transition-colors hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Play className="h-4 w-4 fill-current" strokeWidth={0} />
+              {isRunning ? "Simulating…" : "Simulate router failure"}
+            </button>
+          </div>
         </div>
-        <button
-          onClick={onReset}
-          className="border border-border bg-bg px-3 py-2 rounded-[4px] text-text mono text-[12px] font-semibold tracking-wide hover:border-muted"
-        >
-          ⟲ RESET
-        </button>
-      </div>
 
-      {/* three-column grid */}
-      <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 lg:grid-cols-[minmax(280px,0.9fr)_minmax(0,1.5fr)_minmax(280px,1fr)]">
-        <FleetGrid properties={snapshot.properties} liveUptime={liveUptime} />
-        <ReasoningStream events={snapshot.events} mounted={mounted} />
-        <ActivityFeed activity={snapshot.activity} now={now} mounted={mounted} />
-      </div>
+        {/* active job — the focal area when a job is live */}
+        {snapshot.activeJob && (
+          <div className="mt-6">
+            <ActiveJobBar
+              job={snapshot.activeJob}
+              property={activeProperty}
+              now={now}
+              mounted={mounted}
+            />
+          </div>
+        )}
 
-      {/* bottom active-job bar — only when a job is live */}
-      {snapshot.activeJob && (
-        <ActiveJobBar
-          job={snapshot.activeJob}
-          property={activeProperty}
-          now={now}
-          mounted={mounted}
-        />
-      )}
+        {/* primary: reasoning timeline. secondary: fleet + activity. */}
+        <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.6fr_1fr]">
+          <ReasoningStream events={snapshot.events} mounted={mounted} />
+          <div className="flex flex-col gap-6">
+            <FleetGrid properties={snapshot.properties} liveUptime={liveUptime} />
+            <ActivityFeed activity={snapshot.activity} now={now} mounted={mounted} />
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

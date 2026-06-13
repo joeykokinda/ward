@@ -2,27 +2,27 @@
 
 import type { Activity, ActivityKind } from "@/lib/data/types";
 import { formatUsdc, timeAgo } from "@/lib/format";
-import { Panel } from "../primitives";
+import { Chip, Panel, type Tone } from "../primitives";
 import { EnsLink, TxLink } from "../links";
 
 const KIND_LABEL: Record<ActivityKind, string> = {
-  JOB_CREATED: "ESCROW LOCK",
-  JOB_ACCEPTED: "ACCEPTED",
-  WORK_DONE: "WORK DONE",
-  ATTESTED: "CRE ATTEST",
-  JOB_SETTLED: "SETTLED",
-  REPUTATION_BUMP: "REP ++",
-  TREASURY_FUNDED: "FUNDED",
+  JOB_CREATED: "Escrow lock",
+  JOB_ACCEPTED: "Accepted",
+  WORK_DONE: "Work done",
+  ATTESTED: "CRE attest",
+  JOB_SETTLED: "Settled",
+  REPUTATION_BUMP: "Reputation",
+  TREASURY_FUNDED: "Funded",
 };
 
-const KIND_TONE: Record<ActivityKind, string> = {
-  JOB_CREATED: "text-amber",
-  JOB_ACCEPTED: "text-green",
-  WORK_DONE: "text-text",
-  ATTESTED: "text-blue",
-  JOB_SETTLED: "text-green",
-  REPUTATION_BUMP: "text-green",
-  TREASURY_FUNDED: "text-amber",
+const KIND_TONE: Record<ActivityKind, Tone> = {
+  JOB_CREATED: "warn",
+  JOB_ACCEPTED: "muted",
+  WORK_DONE: "muted",
+  ATTESTED: "muted",
+  JOB_SETTLED: "accent",
+  REPUTATION_BUMP: "accent",
+  TREASURY_FUNDED: "muted",
 };
 
 export function ActivityFeed({
@@ -36,42 +36,37 @@ export function ActivityFeed({
 }) {
   return (
     <Panel
-      title="Onchain activity · Arc"
-      right={<span className="mono text-[11px] text-muted">{activity.length} txs</span>}
-      className="h-full"
-      bodyClassName="overflow-auto ward-scroll"
+      title="On-chain activity"
+      right={
+        <span className="text-[12px] text-muted">Arc · {activity.length} txns</span>
+      }
+      bodyClassName="divide-y divide-border"
     >
-      <div className="divide-y divide-border">
-        {activity.map((a, i) => (
-          <div key={a.id} className={`px-3 py-2 ${i === 0 ? "ward-row-in" : ""}`}>
-            <div className="flex items-center justify-between gap-2">
-              <span
-                className={`mono text-[10px] font-bold tracking-wider ${KIND_TONE[a.kind]}`}
-              >
-                {KIND_LABEL[a.kind]}
-              </span>
-              <span className="mono text-[10px] text-muted">
-                {mounted ? timeAgo(a.ts, now) : "—"}
-              </span>
-            </div>
-            <div className="mt-1 mono text-[12px] text-text">{a.label}</div>
-            <div className="mt-1 flex items-center justify-between gap-2">
+      {activity.map((a, i) => (
+        <div key={a.id} className={`px-4 py-3 ${i === 0 ? "ward-row-in" : ""}`}>
+          <div className="flex items-center justify-between gap-2">
+            <Chip tone={KIND_TONE[a.kind]}>{KIND_LABEL[a.kind]}</Chip>
+            <span className="text-[11px] text-faint">
+              {mounted ? timeAgo(a.ts, now) : "—"}
+            </span>
+          </div>
+          <p className="mt-1.5 text-[13px] text-fg-soft">{a.label}</p>
+          <div className="mt-1.5 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
               <TxLink hash={a.txHash} />
-              {a.amountUsdc && (
-                <span className="mono text-[12px] text-amber">
-                  {formatUsdc(a.amountUsdc)}
-                  <span className="ml-1 text-[9px] text-amber/70">USDC</span>
-                </span>
-              )}
+              {a.ensName && <EnsLink name={a.ensName} className="text-[12px]" />}
             </div>
-            {a.ensName && (
-              <div className="mt-0.5">
-                <EnsLink name={a.ensName} className="text-[11px]" />
-              </div>
+            {a.amountUsdc && (
+              <span className="mono text-[13px] font-semibold text-fg">
+                {formatUsdc(a.amountUsdc)}
+                <span className="ml-1 font-sans text-[10px] font-medium text-muted">
+                  USDC
+                </span>
+              </span>
             )}
           </div>
-        ))}
-      </div>
+        </div>
+      ))}
     </Panel>
   );
 }

@@ -18,7 +18,7 @@ const PLACEHOLDER_DEPLOYMENT: Deployment = {
   WorkerRegistry: "0xWARD000000000000000000000000000000Registry",
   JobEscrow: "0xWARD0000000000000000000000000000000Escrow0",
   MockUSDC: "0xWARD0000000000000000000000000000000000USDC",
-  blockExplorer: "https://explorer.arc.network",
+  blockExplorer: "https://testnet.arcscan.app",
 };
 
 // At build time we cannot guarantee deployments/ exists, so we keep the

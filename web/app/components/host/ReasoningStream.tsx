@@ -1,12 +1,33 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { AgentEvent } from "@/lib/data/types";
+import {
+  Activity as ActivityIcon,
+  CheckCircle2,
+  CircleDot,
+  Lock,
+  Search,
+  Send,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
+import type { AgentEvent, LogType } from "@/lib/data/types";
 import { clock } from "@/lib/format";
-import { LOG_COLOR, Panel } from "../primitives";
+import { isKeyEvent, Panel } from "../primitives";
 import { TxLink } from "../links";
 
-// Terminal-log stream: `[HH:MM:SS]  [TYPE]  message` with per-type colors.
+const EVENT_ICON: Record<LogType, LucideIcon> = {
+  MONITOR: ActivityIcon,
+  DIAGNOSE: Search,
+  ACTION: Wrench,
+  RESULT: CircleDot,
+  ESCROW: Lock,
+  DISPATCH: Send,
+  RESOLVED: CheckCircle2,
+};
+
+// Tasteful timeline: muted text by default, accent for the key events
+// (escrow / dispatch / resolved). Small flat icons, no per-type rainbow.
 export function ReasoningStream({
   events,
   mounted,
@@ -16,7 +37,6 @@ export function ReasoningStream({
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // auto-scroll to newest line
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
@@ -24,49 +44,88 @@ export function ReasoningStream({
 
   return (
     <Panel
-      title="Agent reasoning stream"
-      right={
-        <span className="mono text-[11px] text-muted">{events.length} events</span>
-      }
-      className="h-full"
+      title="Agent reasoning"
+      right={<span className="text-[12px] text-muted">{events.length} events</span>}
+      className="min-h-[420px]"
       bodyClassName="overflow-hidden"
     >
-      <div ref={scrollRef} className="h-full overflow-auto ward-scroll px-3 py-2">
-        <div className="flex flex-col gap-[3px]">
+      <div
+        ref={scrollRef}
+        className="h-full max-h-[640px] overflow-auto ward-scroll px-4 py-3"
+      >
+        <ol className="relative">
           {events.map((ev, i) => (
-            <LogLine key={ev.id} ev={ev} mounted={mounted} isLast={i === events.length - 1} />
+            <TimelineRow
+              key={ev.id}
+              ev={ev}
+              mounted={mounted}
+              isLast={i === events.length - 1}
+              isFinal={i === events.length - 1}
+            />
           ))}
-        </div>
+        </ol>
       </div>
     </Panel>
   );
 }
 
-function LogLine({
+function TimelineRow({
   ev,
   mounted,
   isLast,
+  isFinal,
 }: {
   ev: AgentEvent;
   mounted: boolean;
   isLast: boolean;
+  isFinal: boolean;
 }) {
-  const color = LOG_COLOR[ev.type];
+  const key = isKeyEvent(ev.type);
+  const Icon = EVENT_ICON[ev.type];
   return (
-    <div
-      className={`mono text-[12.5px] leading-snug ${isLast ? "ward-row-in" : ""}`}
-    >
-      <span className="text-muted">[{mounted ? clock(ev.ts) : "--:--:--"}]</span>{" "}
-      <span className={`${color} font-semibold`}>
-        [{ev.type.padEnd(8, " ")}]
-      </span>{" "}
-      <span className={color}>{ev.message}</span>
-      {ev.txHash && (
-        <span className="ml-2 inline-flex items-center gap-1">
-          <span className="text-muted">↳</span>
-          <TxLink hash={ev.txHash} />
-        </span>
+    <li className={`relative flex gap-3 pb-4 ${isFinal ? "ward-row-in" : ""}`}>
+      {/* connector line */}
+      {!isLast && (
+        <span
+          className="absolute left-[13px] top-7 bottom-0 w-px bg-border"
+          aria-hidden
+        />
       )}
-    </div>
+      <span
+        className={`relative z-10 mt-0.5 flex h-[26px] w-[26px] flex-none items-center justify-center rounded-full border ${
+          key
+            ? "border-accent bg-accent-soft text-accent-ink"
+            : "border-border bg-surface text-faint"
+        }`}
+      >
+        <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+      </span>
+      <div className="min-w-0 flex-1 pt-0.5">
+        <div className="flex items-baseline gap-2">
+          <span
+            className={`text-[11px] font-semibold uppercase tracking-wide ${
+              key ? "text-accent-ink" : "text-faint"
+            }`}
+          >
+            {ev.type.toLowerCase()}
+          </span>
+          <span className="mono text-[11px] text-faint">
+            {mounted ? clock(ev.ts) : "--:--:--"}
+          </span>
+        </div>
+        <p
+          className={`mt-0.5 text-[13.5px] leading-relaxed ${
+            key ? "font-medium text-fg" : "text-fg-soft"
+          }`}
+        >
+          {ev.message}
+        </p>
+        {ev.txHash && (
+          <div className="mt-1">
+            <TxLink hash={ev.txHash} />
+          </div>
+        )}
+      </div>
+    </li>
   );
 }
