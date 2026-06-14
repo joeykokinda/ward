@@ -210,12 +210,12 @@ export default function LivePage() {
             >
               WARD
             </Link>
-            <span className="flex items-center gap-2 text-[12px]">
-              <span className={`dot ${reachable ? "bg-success ward-live-dot" : "bg-danger"}`} aria-hidden />
-              <span className={reachable ? "text-success-ink" : "text-danger"}>
-                {reachable ? "LIVE · real agent on Arc testnet" : "agent offline"}
+            {!reachable && (
+              <span className="flex items-center gap-2 text-[12px]">
+                <span className="dot bg-danger" aria-hidden />
+                <span className="text-danger">agent offline</span>
               </span>
-            </span>
+            )}
           </div>
           <div className="flex items-center gap-5 text-[13px]">
             <Link href="/workers" className="text-muted transition-colors hover:text-fg">
@@ -226,7 +226,7 @@ export default function LivePage() {
       </nav>
 
       <div className="mx-auto w-full max-w-6xl px-5 py-7">
-        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted">Live agent</div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-accent-ink">Real agent · Arc testnet</div>
         <h1 className="mt-1.5 text-[24px] font-semibold tracking-tight text-fg">
           This is the real WARD agent, running on Arc.
         </h1>
@@ -239,7 +239,7 @@ export default function LivePage() {
 
         {/* trigger controls */}
         <div className="mt-5 flex flex-wrap items-center gap-2 rounded-sm border border-border bg-surface px-3 py-3 card-shadow">
-          <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-muted">
+          <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
             Trigger a real incident
           </span>
           {DEVICES.map((d) => (
@@ -268,8 +268,8 @@ export default function LivePage() {
             <div className="mt-5 rounded-sm border border-border bg-surface card-shadow">
               <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
                 <span className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-wide text-muted">
-                  <span className="dot bg-success ward-live-dot" aria-hidden />
-                  Agent reasoning (live)
+                  <span className="dot bg-accent ward-live-dot" aria-hidden />
+                  Agent reasoning
                 </span>
                 <div className="flex items-center gap-2">
                   {pending > 0 && (
@@ -363,7 +363,7 @@ export default function LivePage() {
               />
               <Stat
                 Icon={Wallet}
-                label="Treasury (live)"
+                label="Treasury"
                 value={health.usdc_balance ? `${Number(health.usdc_balance).toFixed(2)} USDC` : "—"}
               />
               <Stat
@@ -381,7 +381,7 @@ export default function LivePage() {
 
               <div className="rounded-sm border border-border bg-surface card-shadow">
                 <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-                  <span className="text-[11px] font-semibold uppercase tracking-wide text-muted">
+                  <span className="text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
                     Deployed on Arc
                   </span>
                   <a
@@ -682,7 +682,7 @@ function TxLink({ label, url, done }: { label: string; url: string; done?: boole
 function Stat({ Icon, label, value, href }: { Icon: LucideIcon; label: string; value: string; href?: string }) {
   const body = (
     <div className="flex items-center gap-3 rounded-sm border border-border bg-surface px-4 py-3 card-shadow transition-colors hover:border-border-strong">
-      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-sm bg-subtle text-muted">
+      <span className="flex h-9 w-9 flex-none items-center justify-center rounded-sm bg-accent-soft text-accent-ink">
         <Icon className="h-4 w-4" strokeWidth={2} />
       </span>
       <div className="min-w-0 flex-1">
