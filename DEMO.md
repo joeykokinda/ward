@@ -2,6 +2,8 @@
 
 90 seconds. Every transaction real and clickable. One perfect flow.
 
+> **Shipped surfaces (current, 2026-06-13).** This doc is the original demo-design intent. As built, the app ships four routes: `/` (homepage explainer), `/demo` (the scripted cinematic — trigger bar with **Trigger leak** / **Kill WiFi** / **Reset**), `/live` (the real agent, end-to-end on Arc), and `/workers` (the ENS-ranked roster). **The canonical judge demo is `/live`** (real txns, paced playback with Pause / Jump-to-live, 5-phase stepper, on-chain job card, "Deployed on Arc" contracts panel); `/demo` is the reliable narrated fallback. Recording instructions live in `VIDEO-SCRIPT.md`.
+
 ## Setup
 
 One Brooklyn apartment. Four smart devices: WiFi router, thermostat, smart lock, leak sensor. One homeowner asleep in Tokyo. One agent running autonomously.
@@ -34,7 +36,7 @@ WARD does not jump to hiring a human. It climbs a ladder cheapest-first: L1 self
 
 The homeowner is in Tokyo. It's 2am back home. The leak sensor triggers.
 
-1. Judge clicks **Simulate Leak** on the apartment dashboard.
+1. Judge clicks **Trigger leak** in the trigger bar (on `/live` for the real run, or `/demo` for the cinematic).
 2. Agent reasoning streams: MONITOR (leak detected) → DIAGNOSE (physical leak, L1 self-fix can't resolve it: burst is upstream of the valve) → ACTION (escalating to L3, hire a human).
 3. Agent discovers and ranks the ENS-registered workers (skill match, proximity/ETA, on-chain reputation), selects the best candidate. There is a /workers registry page in the app showing the live roster.
 4. **ERC-8183 Job created:** agent escrows **~150 USDC on Arc** as a Job with the agent as Client. Real tx hash appears with Arc explorer link. (Below the owner-approval threshold, so no sign-off needed; mention the threshold exists.)

@@ -25,7 +25,7 @@ Arc network: chainId `5042002`, RPC `https://rpc.testnet.arc.network`, explorer 
 
 ## Run it live (the real agent)
 
-[**`/live`**](https://web-nine-ashen-75.vercel.app/live) is the real WARD agent, not a script. Trigger any fault and the agent reacts on its own loop: it diagnoses with Claude, tries the free Level-1 fix, and when that fails it opens and funds a real USDC escrow on Arc, dispatches a worker, and the Chainlink CRE evaluator releases payment when telemetry attests the fix. The whole loop settles in about 10 seconds, with real, clickable transactions. Amounts are faucet-bounded (1 USDC). The page proxies the agent server-side, so the on-chain settlement is genuinely live.
+[**`/live`**](https://web-nine-ashen-75.vercel.app/live) is the real WARD agent, not a script. Trigger any fault and the agent reacts on its own loop: it diagnoses with Claude, tries the free Level-1 fix, and when that fails it opens and funds a real USDC escrow on Arc, dispatches a worker, and the Chainlink CRE evaluator releases payment when telemetry attests the fix. It settles on Arc in about ten seconds; the page plays the agent's reasoning back one line at a time (with **Pause** / **Jump to live** in the feed header) so you can read each step and click every real transaction. A five-phase stepper (Detect → Diagnose → Hire → Repair → Verify), a live on-chain job card (amount, worker ENS, state Funded → Submitted → Completed, fund + release tx links), and a "Deployed on Arc" contracts panel (Escrow / Registry / USDC / Evaluator, each clickable to arcscan) stay on screen throughout. Amounts are faucet-bounded (1 USDC). The page proxies the agent server-side, so the on-chain settlement is genuinely live.
 
 ## See it run (scripted walkthrough)
 

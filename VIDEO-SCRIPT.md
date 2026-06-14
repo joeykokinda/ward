@@ -53,11 +53,13 @@ WARD climbs a ladder: it self-fixes for free at L1, and only hires a human at L3
 `[~1:45 DO]` Gesture to the on-chain proof panel and the persistent legend + proof links at the bottom.
 `[SAY]` "Every step maps to one system. ERC-8183 is the standard: WARD is the Client, Mike the Provider, the Chainlink workflow the Evaluator. Arc is the settlement rail. ENS is the identity. The proof for every step is one click away, right here."
 
-### ~2:05 to 2:15 · Prove it's real (the live agent)
+### ~2:05 to 2:25 · Prove it's real (the live agent)
 This is the slideshow-killer. The walkthrough above is narrated; now show the real thing.
 `[DO]` Open `/live` and click **Trigger leak**.
-`[SAY]` "And that was the narrated version. This is the real agent, no script. Watch: it diagnoses, tries the free fix, funds a real escrow on Arc, dispatches a worker, and the Chainlink evaluator releases payment. About ten seconds, real transactions, any hash is clickable."
-`[~10s ON SCREEN]` The real reasoning streams in and the real fund + release txns appear, clickable to arcscan. Amounts are 1 USDC (faucet-bounded), say so plainly.
+`[SAY]` "And that was the narrated version. This is the real agent, no script. Watch: it diagnoses, tries the free fix, funds a real escrow on Arc, dispatches a worker, and the Chainlink evaluator releases payment. It settles on Arc in about ten seconds; the page walks you through it step by step so any hash is clickable."
+`[ON SCREEN]` The real reasoning plays back one line at a time (paced so it reads on camera, not a flood). A five-phase stepper ticks Detect → Diagnose → Hire → Repair → Verify; the Active on-chain job card fills in (amount, Mike's ENS, state Funded → Submitted → Completed, with the real fund + release tx links); the "Deployed on Arc" panel (Escrow / Registry / USDC / Evaluator) sits on the right, every address clickable to arcscan.
+`[DO]` When the **Escrow funded** link appears, hit **Pause** in the feed header, click it into arcscan, hold ~3s, return, then **Resume** (or **Jump to live**).
+`[SAY]` "One USDC, faucet-bounded on testnet, but a real escrow and a real release. There's the proof, on arcscan."
 
 ### 2:15 to 2:45 · Why crypto (honest)
 `[SAY]` "The homeowner is the demo because every judge has felt 2am home panic. But the real customer is software with no bank account. For one homeowner paying a local plumber, traditional payment rails work fine, credit cards, ACH, Venmo. The crypto matters when the buyer is a smart contract: a DePIN network paying the humans who service its hardware, an autonomous DAO, an AI agent treasury. Those literally can't open a bank account. WARD is the rails for them."
@@ -78,6 +80,7 @@ This is the slideshow-killer. The walkthrough above is narrated; now show the re
 - **When to trigger:** click **Trigger leak** right after the 0:15 to 0:30 "what it is" narration lands, at about 0:30.
 - **Measured badge times after the click:** ENS ~11s, Arc badge + escrow tx ~15s, Chainlink CRE ~25s, settled tx ~27s. Start each spoken line ~1 second before its badge so the badge is the visual punctuation, not an afterthought. Watch the screen: the badge is the true cue.
 - **Drawing attention:** the badges are static (no animation). If one needs emphasis, mouse-hover it (the hover state lifts the border and shows the "open proof" affordance).
-- **Show it's real:** click into arcscan during the ~5 second pause between the escrow lock (~15s) and the worker arriving (~20s). The on-chain proof panel and the three footer links (WardEscrow on arcscan, Workers on ENS, CRE workflow source) are always available for skeptics.
+- **Show it's real (on `/demo`):** click into arcscan during the ~5 second pause between the escrow lock (~15s) and the worker arriving (~20s). The on-chain proof panel and the three footer links (WardEscrow on arcscan, Workers on ENS, CRE workflow source) are always available for skeptics.
+- **On `/live` (the real-agent beat):** the feed plays back paced (~one line every 1.7s), so trigger it, let it breathe, and use **Pause** in the feed header to freeze on a tx and click into arcscan, then **Resume** or **Jump to live**. The 5-phase stepper, the Active on-chain job card, and the "Deployed on Arc" contracts panel stay on screen for skeptics. Faucet is small (~3 live runs left as of 2026-06-13) and each `/live` trigger spends ~1 USDC, so rehearse on `/demo` (which costs nothing) and keep `/live` for the real take.
 - **Settlement note:** the cinematic narrates 150 USDC; the tx links resolve to the real WardEscrow lifecycle on Arc (real settlement, faucet-bounded amount). If a judge clicks through, that is real on-chain proof, not a mock.
 - **Hard rules (auto-reject if broken):** real human voiceover only, no AI voiceover or TTS, no speeding up the footage, 720p minimum, total length 2:00 to 4:00 (target 3:00 to 3:30), real screen capture software (OBS / ScreenStudio / QuickTime), not a phone.
