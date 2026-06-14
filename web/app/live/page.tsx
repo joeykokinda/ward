@@ -113,6 +113,7 @@ export default function LivePage() {
   const [monitored, setMonitored] = useState<number | null>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [report, setReport] = useState("");
   const now = useTick(1000);
 
   const allRef = useRef<LiveEvent[]>([]);
@@ -191,6 +192,41 @@ export default function LivePage() {
     setBusy(false);
   };
 
+  // Free-text path: the judge describes the problem in their own words and the
+  // agent triages it to a real instrumented sensor at runtime, then reacts.
+  const describe = async () => {
+    const text = report.trim();
+    if (!text) return;
+    setBusy(true);
+    setNote(null);
+    try {
+      const r = await fetch("/api/live/describe", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      }).then((res) => res.json());
+      if (r.ok === false && r.reachable === false) {
+        setNote("Could not reach the live agent. It may be offline right now.");
+      } else if (r.matched === false) {
+        setNote(
+          r.interpretation
+            ? `Agent: ${r.interpretation} (no sensor it can attest — try water, wifi, lock, or heating).`
+            : "No instrumented sensor matches that. Try water, wifi, lock, or heating.",
+        );
+      } else {
+        setNote(
+          r.interpretation
+            ? `Agent understood it as: ${r.interpretation} Watch it work through it below, line by line.`
+            : "Incident injected on Arc. Watch the agent work through it below, line by line.",
+        );
+        setReport("");
+      }
+    } catch {
+      setNote("Could not reach the live agent.");
+    }
+    setBusy(false);
+  };
+
   const reachable = health.reachable;
   const pending = Math.max(0, allEvents.length - revealed);
   const shown = useMemo(() => allEvents.slice(0, revealed), [allEvents, revealed]);
@@ -247,10 +283,11 @@ export default function LivePage() {
           This is the real WARD agent, running on Arc.
         </h1>
         <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">
-          Not a script. Click a fault and the real agent reacts on its own loop: it diagnoses with
-          Claude, tries the free fix, opens and funds a real USDC escrow on Arc, dispatches a worker,
-          and the Chainlink CRE evaluator releases payment when telemetry attests the fix. Every line
-          below is played back as it happens; every transaction and contract is real and clickable.
+          Not a script. Pick a preset fault — or describe your own problem in plain English — and the
+          real agent reacts on its own loop: it reads your words with Claude, tries the free fix, opens
+          and funds a real USDC escrow on Arc, dispatches a worker, and the Chainlink CRE evaluator
+          releases payment when telemetry attests the fix. Every line below is played back as it
+          happens; every transaction and contract is real and clickable.
         </p>
 
         {/* trigger controls */}
@@ -270,6 +307,32 @@ export default function LivePage() {
             </button>
           ))}
           {busy && <span className="text-[12px] text-muted">injecting…</span>}
+        </div>
+
+        {/* free-text incident: the judge describes the problem in their own words */}
+        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-sm border border-border bg-surface px-3 py-3 card-shadow">
+          <span className="mr-1 text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
+            Or describe the problem
+          </span>
+          <input
+            value={report}
+            onChange={(e) => setReport(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") describe();
+            }}
+            disabled={busy || !reachable}
+            maxLength={280}
+            placeholder="e.g. there's water pooling under the kitchen sink"
+            className="min-w-[260px] flex-1 rounded-sm border border-border bg-subtle px-3 py-2 text-[12px] text-fg placeholder:text-faint transition-colors focus:border-border-strong focus:outline-none disabled:cursor-not-allowed disabled:opacity-40"
+          />
+          <button
+            onClick={describe}
+            disabled={busy || !reachable || !report.trim()}
+            className="inline-flex items-center gap-2 rounded-sm border border-border bg-subtle px-3 py-2 text-[12px] font-semibold text-fg-soft transition-colors hover:border-border-strong hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <Send className="h-4 w-4" strokeWidth={2} />
+            Report it
+          </button>
         </div>
         {note && <p className="mt-2 text-[12px] text-accent-ink">{note}</p>}
 

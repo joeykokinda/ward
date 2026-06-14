@@ -29,6 +29,8 @@ from pydantic import BaseModel
 from .config import get_config, usdc
 from .events import get_event_bus
 from .main import WardAgent, get_agent, set_agent
+from .sim_client import DeviceStatus
+from .triage import triage
 
 logger = logging.getLogger("ward.server")
 
@@ -38,6 +40,11 @@ class SimulateRequest(BaseModel):
     deviceId: str | None = None
     mode: str = "hard"  # "soft" heals on restart (-> resolves at L1); "hard" -> L3
     autoComplete: bool = True  # in DRY/demo, auto-advance the worker to work-done
+
+
+class DescribeRequest(BaseModel):
+    text: str  # free-text resident report; triaged to a device at runtime
+    autoComplete: bool = True
 
 
 @asynccontextmanager
@@ -163,19 +170,7 @@ async def incident_simulate(req: SimulateRequest) -> dict[str, Any]:
         device_id = match.deviceId
 
     mode = req.mode if req.mode in ("soft", "hard") else "hard"
-    after = await agent.sim.fail(device_id, mode=mode)
-    await agent.events.emit(
-        "MONITOR",
-        f"Incident injected: {device_id} set to fault mode '{mode}'.",
-        propertyId=after.propertyId,
-    )
-
-    if req.autoComplete and mode == "hard" and not get_config().auto_complete:
-        # Drive the human side so the demo runs end-to-end. Only needed when the
-        # agent's own autonomous completion is disabled (WARD_AUTO_COMPLETE off);
-        # otherwise the agent loop already accepts + marks done + repairs +
-        # settles on its own, and driving it again would double the worker txs.
-        asyncio.create_task(_drive_worker_side(agent, device_id, after.propertyId))
+    after = await _inject_and_drive(agent, device_id, mode, req.autoComplete)
 
     return {
         "injected": after.to_dict(),
@@ -183,6 +178,71 @@ async def incident_simulate(req: SimulateRequest) -> dict[str, Any]:
         "autoComplete": req.autoComplete,
         "note": "The agent poll loop will react autonomously; watch /events.",
     }
+
+
+@app.post("/incident/describe")
+async def incident_describe(req: DescribeRequest) -> dict[str, Any]:
+    """Triage a free-text resident report and inject the matching real fault.
+
+    The judge types a problem in their own words; Claude maps it (at runtime) to
+    one of the four instrumented devices and a severity, the agent emits its
+    interpretation to the reasoning feed, and the mapped fault is injected into
+    the sim. From there the normal poll loop reacts on its own: diagnose, escrow,
+    dispatch, and CRE-attested settle — so the sensor genuinely faults and heals
+    and the contract genuinely settles. A report that matches no instrumented
+    sensor is reported honestly instead of fabricating a job.
+    """
+    agent = get_agent()
+    if agent is None:
+        return {"error": "agent not initialized"}
+
+    text = (req.text or "").strip()
+    if not text:
+        return {"error": "empty report"}
+
+    result = await asyncio.to_thread(triage, text)
+    await agent.events.emit(
+        "DIAGNOSE",
+        f"Resident reported: “{text[:200]}” — {result.interpretation}",
+        propertyId=result.device_id,
+    )
+
+    if result.device_id is None:
+        await agent.events.emit(
+            "RESULT",
+            "No instrumented sensor matches that report. WARD only acts on faults "
+            "it can attest on-chain (wifi, thermostat, lock, leak).",
+        )
+        return {"matched": False, **result.to_dict()}
+
+    after = await _inject_and_drive(agent, result.device_id, result.mode, req.autoComplete)
+    return {
+        "matched": True,
+        "injected": after.to_dict(),
+        "autoComplete": req.autoComplete,
+        **result.to_dict(),
+    }
+
+
+async def _inject_and_drive(
+    agent: WardAgent, device_id: str, mode: str, auto_complete: bool
+) -> DeviceStatus:
+    """Fail a device in the sim, announce it, and (when needed) drive the worker
+    side so the cycle completes end-to-end. Shared by /incident/simulate and
+    /incident/describe so both paths behave identically once a device is chosen."""
+    after = await agent.sim.fail(device_id, mode=mode)
+    await agent.events.emit(
+        "MONITOR",
+        f"Incident injected: {device_id} set to fault mode '{after.faultMode}'.",
+        propertyId=after.propertyId,
+    )
+    if auto_complete and after.faultMode == "hard" and not get_config().auto_complete:
+        # Drive the human side so the demo runs end-to-end. Only needed when the
+        # agent's own autonomous completion is disabled (WARD_AUTO_COMPLETE off);
+        # otherwise the agent loop already accepts + marks done + repairs +
+        # settles on its own, and driving it again would double the worker txs.
+        asyncio.create_task(_drive_worker_side(agent, device_id, after.propertyId))
+    return after
 
 
 async def _drive_worker_side(agent: WardAgent, device_id: str, property_id: str) -> None:
