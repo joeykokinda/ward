@@ -12,15 +12,15 @@ import {
 } from "lucide-react";
 import type { WardSnapshot } from "@/lib/data/types";
 
-const DEVICES: { id: string; label: string; Icon: LucideIcon; hero?: boolean }[] = [
-  { id: "home-leak", label: "Trigger leak", Icon: Droplet, hero: true },
+const DEVICES: { id: string; label: string; Icon: LucideIcon }[] = [
+  { id: "home-leak", label: "Trigger leak", Icon: Droplet },
   { id: "home-wifi", label: "Kill WiFi", Icon: WifiOff },
   { id: "home-lock", label: "Lock failure", Icon: Lock },
   { id: "home-thermostat", label: "HVAC fault", Icon: Thermometer },
 ];
 
 // Presenter control bar: trip any of the four devices to start an incident, or
-// reset to a clean pre-staged state. The leak is the hero (amber).
+// reset to a clean pre-staged state.
 export function TriggerPanel({
   snapshot,
   isRunning,
@@ -49,11 +49,7 @@ export function TriggerPanel({
             key={d.id}
             onClick={() => onTrigger(d.id)}
             disabled={disabled}
-            className={`inline-flex items-center gap-2 rounded-sm px-3 py-2 text-[12px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-              d.hero
-                ? "bg-accent text-[#0a0a0f] hover:bg-accent-hover"
-                : "border border-border bg-subtle text-fg-soft hover:border-border-strong hover:bg-surface"
-            }`}
+            className="inline-flex items-center gap-2 rounded-sm border border-border bg-subtle px-3 py-2 text-[12px] font-semibold text-fg-soft transition-colors hover:border-border-strong hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40"
           >
             <d.Icon className="h-4 w-4" strokeWidth={2} />
             {d.label}

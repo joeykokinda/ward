@@ -22,7 +22,6 @@ export function App() {
     markJobComplete,
     reset,
     isRunning,
-    adapterName,
   } = useWard();
 
   // "live" = a job is in flight or a scenario is running.
@@ -34,7 +33,6 @@ export function App() {
         persona={persona}
         onPersona={setPersona}
         agent={snapshot.agent}
-        adapterName={adapterName}
         live={live}
         onAgentClick={() => setAgentOpen(true)}
       />

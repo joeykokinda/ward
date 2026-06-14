@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { ArrowLeft, ChevronDown, Cpu, House, Wrench } from "lucide-react";
+import { ChevronDown, Cpu, House, Wrench } from "lucide-react";
 import { formatUsdc } from "@/lib/format";
 import { WardMark } from "./WardMark";
 import type { AgentIdentity } from "@/lib/data/types";
@@ -24,14 +24,12 @@ export function Header({
   persona,
   onPersona,
   agent,
-  adapterName,
   live,
   onAgentClick,
 }: {
   persona: Persona;
   onPersona: (p: Persona) => void;
   agent: AgentIdentity;
-  adapterName: string;
   live: boolean;
   onAgentClick?: () => void;
 }) {
@@ -104,18 +102,6 @@ export function Header({
             </span>
           </span>
         </div>
-
-        <span className="hidden text-[11px] text-faint lg:inline">
-          {adapterName}
-        </span>
-
-        <Link
-          href="/"
-          className="hidden items-center gap-1.5 text-[12px] text-muted transition-colors hover:text-fg sm:inline-flex"
-        >
-          <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2} />
-          Home
-        </Link>
 
         {/* Persona dropdown */}
         <div className="relative">
