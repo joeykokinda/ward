@@ -218,9 +218,6 @@ export default function LivePage() {
             </span>
           </div>
           <div className="flex items-center gap-5 text-[13px]">
-            <Link href="/demo" className="text-muted transition-colors hover:text-fg">
-              Scripted demo
-            </Link>
             <Link href="/workers" className="text-muted transition-colors hover:text-fg">
               Workers
             </Link>
