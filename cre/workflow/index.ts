@@ -14,7 +14,7 @@
  * (cre-sdk @ 1.11.0). The write path is forwarder -> consumer.onReport(metadata, report).
  *
  * SWAP-BEFORE-DEMO (all in config.json, no code change needed):
- *   - statusUrl -> https://<live-sim-host>/device/prop-2-router/status
+ *   - statusUrl -> https://<live-sim-host>/device/home-leak/status
  *   - jobId     -> the JobEscrow jobId being settled
  *   - evms[0].wardConsumerAddress -> deployed WardCreConsumer on Arc Testnet
  *   - evms[0].chainSelectorName   -> "arc-testnet" (CRE Forwarder Directory)
@@ -48,7 +48,7 @@ const configSchema = z.object({
 	// cron schedule (6-field, seconds-leading) — CRE cron trigger
 	schedule: z.string(),
 	// Fully-resolved device status URL.
-	//   Real WARD sim: https://<sim-host>/device/prop-2-router/status
+	//   Real WARD sim: https://<sim-host>/device/home-leak/status
 	//   Placeholder:   https://jsonplaceholder.typicode.com/todos/1  (returns {completed:true})
 	statusUrl: z.string(),
 	// JobEscrow jobId this attestation settles

@@ -11,7 +11,10 @@ from INTERFACES.md:
   - repair(): clears any fault (the human fix)
   - reset(): all devices healthy
 
-Pre-staged demo fleet matches INTERFACES.md (prop-1/2/3 routers).
+Pre-staged demo fleet mirrors the standalone sim (sim/main.py): one home, four
+instrumented devices (home-wifi/thermostat/lock/leak). The leak sensor is
+physical-only: its faults are always hard and never heal on a remote restart,
+so the in-process fallback reproduces the L1->L3 escalation exactly.
 """
 
 from __future__ import annotations
@@ -26,12 +29,20 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-# Pre-staged demo fleet (INTERFACES.md properties table).
+# Pre-staged demo fleet — one home, four instrumented devices. Mirrors the
+# standalone sim (sim/main.py) so the in-process fallback is the same fleet the
+# frontend, agent loop, and CRE workflow expect (propertyId == deviceId so the
+# one-open-job-per-property guard works per device).
+# (device_id, property_id, kind, seed_signal_dbm)
 _DEFAULT_FLEET = [
-    ("prop-1", "prop-1-router", "The Brooklyn Loft"),
-    ("prop-2", "prop-2-router", "Greenwich Cottage"),
-    ("prop-3", "prop-3-router", "Hudson Studio"),
+    ("home-wifi", "home-wifi", "router", -52),
+    ("home-thermostat", "home-thermostat", "thermostat", -58),
+    ("home-lock", "home-lock", "lock", -61),
+    ("home-leak", "home-leak", "leak_sensor", 0),
 ]
+
+# Healthy signal per device, restored when a fault clears.
+_SEED_SIGNAL = {device_id: signal for device_id, _prop, _kind, signal in _DEFAULT_FLEET}
 
 
 class FakeSim:
@@ -45,14 +56,14 @@ class FakeSim:
 
     def _reset_unlocked(self) -> None:
         self._devices = {}
-        for property_id, device_id, _name in _DEFAULT_FLEET:
+        for device_id, property_id, kind, signal_dbm in _DEFAULT_FLEET:
             self._devices[device_id] = DeviceStatus(
                 deviceId=device_id,
                 propertyId=property_id,
-                kind="router",
+                kind=kind,
                 online=True,
                 uptimeSec=86_400,
-                signalDbm=-55,
+                signalDbm=signal_dbm,
                 faultMode="none",
                 lastChangedIso=_now_iso(),
             )
@@ -73,9 +84,13 @@ class FakeSim:
             mode = "soft"
         async with self._lock:
             device = self._require(device_id)
+            # A leak is physical: any fault on the leak sensor needs a human,
+            # so it is always recorded as a hard fault (mirrors sim/main.py).
+            if device.kind == "leak_sensor":
+                mode = "hard"
             device.online = False
             device.faultMode = mode
-            device.signalDbm = -99
+            device.signalDbm = 0
             device.uptimeSec = 0
             device.lastChangedIso = _now_iso()
             return self._clone(device)
@@ -83,11 +98,12 @@ class FakeSim:
     async def restart(self, device_id: str) -> DeviceStatus:
         async with self._lock:
             device = self._require(device_id)
-            # Restart heals soft faults only; hard faults persist.
-            if device.faultMode == "soft":
+            # Restart heals soft faults only — never the leak sensor, whose
+            # faults are always physical and persist until a human repair.
+            if device.faultMode == "soft" and device.kind != "leak_sensor":
                 device.online = True
                 device.faultMode = "none"
-                device.signalDbm = -57
+                device.signalDbm = _SEED_SIGNAL.get(device_id, -57)
                 device.uptimeSec = 30
                 device.lastChangedIso = _now_iso()
             return self._clone(device)
@@ -98,7 +114,7 @@ class FakeSim:
             # The human fix: clears any fault.
             device.online = True
             device.faultMode = "none"
-            device.signalDbm = -54
+            device.signalDbm = _SEED_SIGNAL.get(device_id, -54)
             device.uptimeSec = 60
             device.lastChangedIso = _now_iso()
             return self._clone(device)

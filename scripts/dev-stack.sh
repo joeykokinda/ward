@@ -9,8 +9,8 @@
 #
 # Idempotent: re-running `up` reuses a running anvil, redeploys + reseeds, and
 # restarts the sim + agent. Everything is local; the agent runs LIVE against the
-# anvil-deployed contracts (MockCreVerifier wired, so settle works with no real
-# CRE/signatures). Logs land in /tmp/ward-*.log; PIDs in .dev-stack/.
+# anvil-deployed ERC-8183 contracts. Logs land in /tmp/ward-*.log; PIDs in
+# .dev-stack/.
 set -euo pipefail
 
 # ----------------------------------------------------------------- locations
@@ -85,14 +85,13 @@ start_anvil() {
 
 # ----------------------------------------------------------------- contracts
 deploy_and_seed() {
-  log "deploying contracts (MockCreVerifier wired — CRE_REPORTER unset) ..."
+  log "deploying contracts (ERC-8183 WardEscrow + WorkerRegistry) ..."
   # Pre-create the canonical deployments dir so foundry can resolve the
   # fs_permissions path (../deployments) on a clean checkout before the script's
   # own vm.createDir runs.
   mkdir -p "$ROOT/deployments/abis"
   pushd "$ROOT/contracts" >/dev/null
-  # CRE_REPORTER unset => Deploy wires MockCreVerifier (auto-healthy), so settle
-  # works on anvil with no real CRE/signatures. USDC_ADDRESS unset => MockUSDC.
+  # USDC_ADDRESS unset => Deploy deploys MockUSDC for the local chain.
   PRIVATE_KEY="$DEPLOYER_KEY" \
     forge script script/Deploy.s.sol --rpc-url "$RPC_URL" --broadcast >/tmp/ward-deploy.log 2>&1 \
     || { err "deploy failed; see /tmp/ward-deploy.log"; popd >/dev/null; return 1; }
@@ -104,7 +103,7 @@ deploy_and_seed() {
   popd >/dev/null
 
   USDC_ADDRESS="$(jq -r '.MockUSDC' "$ROOT/deployments/${CHAIN_ID}.json")"
-  log "deployed: $(jq -c '{MockUSDC,WorkerRegistry,CreVerifier,JobEscrow}' "$ROOT/deployments/${CHAIN_ID}.json")"
+  log "deployed: $(jq -c '{MockUSDC,WorkerRegistry,Evaluator,JobEscrow}' "$ROOT/deployments/${CHAIN_ID}.json")"
 }
 
 # ----------------------------------------------------------------- sim
@@ -213,7 +212,7 @@ cmd_up() {
   Trigger a real on-chain hard-fault incident:
     curl -X POST $AGENT_URL/incident/simulate \\
          -H 'content-type: application/json' \\
-         -d '{"propertyId":"prop-2","mode":"hard","autoComplete":true}'
+         -d '{"propertyId":"home-leak","mode":"hard","autoComplete":true}'
     curl -N $AGENT_URL/events            # watch the reasoning stream
 
   Frontend (live wiring against this stack):

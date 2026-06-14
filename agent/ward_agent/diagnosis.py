@@ -2,8 +2,8 @@
 
 Single public function: `diagnose(device_status, history) -> Diagnosis`.
 
-Uses the Anthropic API (model `claude-fable-5` if available, else
-`claude-opus-4-8`; key from ANTHROPIC_API_KEY). If no key is set, falls back
+Uses the Anthropic API (model from WARD_LLM_MODEL, default `claude-haiku-4-5`;
+key from ANTHROPIC_API_KEY). If no key is set, falls back
 to a deterministic rules-based diagnosis so the loop runs fully offline
 (INTERFACES.md: "if ANTHROPIC_API_KEY is unset, fall back to a deterministic
 scripted diagnosis ... Never hard-crash on missing key").
