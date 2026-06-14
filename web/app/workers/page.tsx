@@ -8,6 +8,7 @@ import { useTick } from "@/lib/useWard";
 import { WardMark } from "../components/WardMark";
 import { RankingExplainer } from "../components/workers/RankingExplainer";
 import { WorkerCard } from "../components/workers/WorkerCard";
+import { VerifyEns } from "../components/workers/VerifyEns";
 
 export default function WorkersPage() {
   const workers = useMemo(() => buildWorkers(), []);
@@ -66,6 +67,11 @@ export default function WorkersPage() {
             reputation.
           </p>
         </header>
+
+        {/* live ENS proof — resolve a name on Sepolia right now (not hardcoded) */}
+        <div className="mt-8">
+          <VerifyEns />
+        </div>
 
         {/* ranking explainer + worked LEAK example */}
         <div className="mt-8">
