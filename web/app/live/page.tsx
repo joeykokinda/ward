@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
   Activity as ActivityIcon,
-  ArrowLeft,
   ArrowUpRight,
   Check,
   CheckCircle2,
@@ -50,8 +49,8 @@ type Health = {
 // so a judge can read every line and click the on-chain links as they appear.
 const PACE_MS = 1700;
 
-const DEVICES: { id: string; label: string; Icon: LucideIcon; hero?: boolean }[] = [
-  { id: "home-leak", label: "Trigger leak", Icon: Droplet, hero: true },
+const DEVICES: { id: string; label: string; Icon: LucideIcon }[] = [
+  { id: "home-leak", label: "Trigger leak", Icon: Droplet },
   { id: "home-wifi", label: "Kill WiFi", Icon: WifiOff },
   { id: "home-lock", label: "Lock failure", Icon: Lock },
   { id: "home-thermostat", label: "HVAC fault", Icon: Thermometer },
@@ -202,24 +201,30 @@ export default function LivePage() {
 
   return (
     <main className="min-h-screen bg-bg text-fg">
-      <nav className="flex items-center justify-between gap-3 border-b border-border bg-surface px-5 py-3">
-        <div className="flex items-center gap-4">
-          <span className="text-[16px] font-semibold tracking-tight text-fg">WARD</span>
-          <span className="flex items-center gap-2 text-[12px]">
-            <span className={`dot ${reachable ? "bg-success ward-live-dot" : "bg-danger"}`} aria-hidden />
-            <span className={reachable ? "text-success-ink" : "text-danger"}>
-              {reachable ? "LIVE · real agent on Arc testnet" : "agent offline"}
+      <nav className="border-b border-border bg-surface">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-3">
+          <div className="flex items-center gap-4">
+            <Link
+              href="/"
+              className="text-[16px] font-semibold tracking-tight text-fg transition-colors hover:text-accent-ink"
+            >
+              WARD
+            </Link>
+            <span className="flex items-center gap-2 text-[12px]">
+              <span className={`dot ${reachable ? "bg-success ward-live-dot" : "bg-danger"}`} aria-hidden />
+              <span className={reachable ? "text-success-ink" : "text-danger"}>
+                {reachable ? "LIVE · real agent on Arc testnet" : "agent offline"}
+              </span>
             </span>
-          </span>
-        </div>
-        <div className="flex items-center gap-4 text-[13px]">
-          <Link href="/demo" className="text-muted transition-colors hover:text-fg">
-            Scripted demo
-          </Link>
-          <Link href="/" className="inline-flex items-center gap-1.5 text-muted transition-colors hover:text-fg">
-            <ArrowLeft className="h-3.5 w-3.5" strokeWidth={2} />
-            Home
-          </Link>
+          </div>
+          <div className="flex items-center gap-5 text-[13px]">
+            <Link href="/demo" className="text-muted transition-colors hover:text-fg">
+              Scripted demo
+            </Link>
+            <Link href="/workers" className="text-muted transition-colors hover:text-fg">
+              Workers
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -245,11 +250,7 @@ export default function LivePage() {
               key={d.id}
               onClick={() => trigger(d.id)}
               disabled={busy || !reachable}
-              className={`inline-flex items-center gap-2 rounded-sm px-3 py-2 text-[12px] font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-                d.hero
-                  ? "bg-accent text-[#0a0a0f] hover:bg-accent-hover"
-                  : "border border-border bg-subtle text-fg-soft hover:border-border-strong hover:bg-surface"
-              }`}
+              className="inline-flex items-center gap-2 rounded-sm border border-border bg-subtle px-3 py-2 text-[12px] font-semibold text-fg-soft transition-colors hover:border-border-strong hover:bg-surface disabled:cursor-not-allowed disabled:opacity-40"
             >
               <d.Icon className="h-4 w-4" strokeWidth={2} />
               {d.label}
