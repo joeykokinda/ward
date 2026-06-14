@@ -44,10 +44,10 @@ export default function WorkersPage() {
           </Link>
         </div>
         <Link
-          href="/demo"
+          href="/live"
           className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-surface px-3 py-1.5 text-[13px] font-medium text-fg-soft transition-colors hover:border-border-strong hover:bg-subtle"
         >
-          Open demo
+          Try it live
           <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
         </Link>
       </nav>

@@ -4,7 +4,7 @@ import { WardMark } from "../WardMark";
 // In-page section anchors (smooth-scroll via globals scroll-behavior).
 const SECTIONS: { label: string; href: string }[] = [
   { label: "How it works", href: "#how" },
-  { label: "In action", href: "#in-action" },
+  { label: "See it run", href: "#see-it-run" },
   { label: "Identity", href: "#identity" },
   { label: "Why crypto", href: "#why" },
   { label: "Roadmap", href: "#roadmap" },
@@ -35,10 +35,10 @@ export function Nav() {
         </div>
 
         <Link
-          href="/demo"
+          href="/live"
           className="cta-dispatch flex-none rounded-full bg-accent px-4 py-1.5 text-[13px] font-semibold text-[#0a0a0f] transition-colors hover:bg-accent-hover"
         >
-          Demo{" "}
+          Try it live{" "}
           <span className="cta-arrow" aria-hidden>
             &rarr;
           </span>

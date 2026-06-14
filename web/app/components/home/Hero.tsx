@@ -50,14 +50,20 @@ export function Hero() {
           </p>
           <div className="ward-boot ward-boot-2 mt-9">
             <Link
-              href="/demo"
+              href="/live"
               className="cta-dispatch inline-flex items-center gap-2 rounded-sm bg-accent px-5 py-3 text-sm font-semibold text-[#0a0a0f] transition-colors hover:bg-accent-hover"
             >
-              Demo{" "}
+              Try it live{" "}
               <span className="cta-arrow" aria-hidden>
                 &rarr;
               </span>
             </Link>
+            <a
+              href="#see-it-run"
+              className="ml-4 inline-flex items-center gap-1.5 text-sm font-medium text-muted transition-colors hover:text-fg"
+            >
+              Watch the demo ↓
+            </a>
           </div>
         </div>
 

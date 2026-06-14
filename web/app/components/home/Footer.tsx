@@ -25,10 +25,10 @@ export function Footer() {
           Watch a 2am leak settle itself.
         </h2>
         <Link
-          href="/demo"
+          href="/live"
           className="cta-dispatch mt-7 inline-flex items-center gap-2 rounded-sm bg-accent px-5 py-3 text-sm font-semibold text-[#0a0a0f] transition-colors hover:bg-accent-hover"
         >
-          Demo{" "}
+          Try it live{" "}
           <span className="cta-arrow" aria-hidden>
             &rarr;
           </span>

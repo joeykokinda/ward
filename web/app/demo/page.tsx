@@ -1,7 +1,7 @@
-import { App } from "../components/App";
+import { redirect } from "next/navigation";
 
-// The cinematic demo lives at /demo. The homepage at / explains the product;
-// this route is the live, click-to-run incident cinematic.
+// The cinematic now lives inline on the homepage ("See it run"). Keep /demo as a
+// permanent handoff so older links (README, video script, slides) still resolve.
 export default function DemoPage() {
-  return <App />;
+  redirect("/#see-it-run");
 }

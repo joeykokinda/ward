@@ -3,7 +3,7 @@ import { Hero } from "./components/home/Hero";
 import { Actors } from "./components/home/Actors";
 import { HowItWorks } from "./components/home/HowItWorks";
 import { Trust } from "./components/home/Trust";
-import { InAction } from "./components/home/InAction";
+import { DemoSection } from "./components/home/DemoSection";
 import { Identity } from "./components/home/Identity";
 import { WhyCrypto } from "./components/home/WhyCrypto";
 import { Integrations } from "./components/home/Integrations";
@@ -20,7 +20,7 @@ export default function Home() {
       <Actors />
       <HowItWorks />
       <Trust />
-      <InAction />
+      <DemoSection />
       <Identity />
       <WhyCrypto />
       <Integrations />

@@ -425,11 +425,11 @@ export default function LivePage() {
         </div>
 
         <p className="mt-6 text-center text-[11px] text-faint">
-          Real Claude reasoning · real USDC escrow + settlement on Arc · the scripted{" "}
-          <Link href="/demo" className="text-muted underline underline-offset-2 hover:text-fg">
-            /demo
+          Real Claude reasoning · real USDC escrow + settlement on Arc · the{" "}
+          <Link href="/#see-it-run" className="text-muted underline underline-offset-2 hover:text-fg">
+            homepage walkthrough
           </Link>{" "}
-          is the narrated walkthrough of this same flow.
+          is the narrated version of this same flow.
         </p>
       </div>
     </main>
