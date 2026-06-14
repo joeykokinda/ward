@@ -17,10 +17,10 @@ export default function Home() {
       <RevealObserver />
       <Nav />
       <Hero />
+      <DemoSection />
       <Actors />
       <HowItWorks />
       <Trust />
-      <DemoSection />
       <Identity />
       <WhyCrypto />
       <Integrations />
