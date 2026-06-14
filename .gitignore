@@ -17,3 +17,6 @@ dist/
 
 # Local dev-stack runtime PIDs (scripts/dev-stack.sh). Generated, not committed.
 .dev-stack/
+
+# Claude Code local session state (worktrees, settings). Never committed.
+.claude/
