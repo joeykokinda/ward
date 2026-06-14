@@ -98,13 +98,79 @@ Two ways. (1) In the product: the home agent uses the Anthropic Claude API to di
 
 **Submission type:** `Top 10 Finalist & Partner Prizes` (participate in main + partner judging; Live Judging Sun Jun 14, 2:30pm EDT)
 
-**Partner prizes — apply for these 3 (max 3):**
+**Partner prizes — apply for these 3 (max 3):** ENS ($20,000), Arc ($15,000), Chainlink ($14,000). The exact copy for each prize's form card — "How are you using this Protocol / API?", the code permalink, the ease rating, and sponsor feedback — is right below.
 
-1. **ENS — $20,000.** ENS is WARD's identity + discovery layer, not a label. The agent (`ward-agent.eth`, ENSIP-25 verified against the live Arc registry) discovers and ranks workers by resolving their ENSIP-26 subname records — skills, region, and a CAIP-10 reputation pointer to the on-chain registry; the address ENS resolves is the exact address paid on Arc. Zero hardcoded values, all resolved live via `/api/ens`. Qualifies for the Integrate-ENS pool. *(Note: ENS prizes require the in-person ENS booth Sunday morning.)*
+### Per-prize form fields ("How are you using this Protocol / API?")
 
-2. **Arc — $15,000** (Best Smart Contracts on Arc with Advanced Stablecoin Logic). A live ERC-8183 USDC conditional escrow on Arc with an in-contract policy layer (per-job/daily caps, owner-approval threshold, deadline auto-refund) that auto-releases on the Evaluator's attestation. Native gas-free USDC makes sub-cent machine-to-human payments viable. Verified contracts; full Open→Funded→Submitted→Completed lifecycle proven on-chain.
+Each partner has its own card with 4 fields. Copy-paste below. (Star ratings are honest suggestions — set them yourself.)
 
-3. **Chainlink — $14,000** (Best Workflow with CRE). A CRE workflow is WARD's ERC-8183 Evaluator: it fetches device telemetry over HTTPS, runs DON consensus that the fix holds, and writes a report to Arc that releases the escrow. It's the single thing that moves money — settlement on a machine-attested fact, not human approval. Green CLI simulation captured (`cre/sim-output-live.txt`).
+---
+
+#### ENS — $20,000
+
+**How are you using this Protocol / API?**
+```
+ENS is WARD's identity and discovery layer, not a label. The agent has its own primary name, ward-agent.eth, verified per ENSIP-25 (its agent-registration text record points at our live WorkerRegistry on Arc). Every worker is a subname carrying ENSIP-26 text records — skills, region, and a CAIP-10 reputation pointer that resolves the worker's reputation live off the Arc registry. When a job needs a worker, the agent discovers and ranks candidates by resolving ENS, not a private database; the address ENS resolves for a worker is the exact address paid on Arc. Zero hardcoded values — the UI resolves everything live via /api/ens. We also registered agent.demo-home.eth to show the sovereign-agent pattern (an agent under its owner's domain).
+```
+
+**Link to the line of code where the tech is used.**
+```
+https://github.com/joeykokinda/ward/blob/8117576cb59a3d454041bf7c0fdbf7dd15999347/packages/ens/src/verify.ts#L138
+```
+(ENSIP-25 verification. Also: live resolution `packages/ens/src/resolve.ts`, worker discovery/ranking `packages/ens/src/discover.ts`, server resolver `web/lib/ens/sepolia.ts`.)
+
+**How easy is it to use? (1–10):** suggested **7** — ENSIP-25/26 are the right primitive, but resolving against the current live Sepolia UniversalResolver took trial and error.
+
+**Additional feedback for the Sponsor.**
+```
+ENSIP-25/26 are exactly the right primitive for agent identity — one name resolves for the agent, the human, and the UI, and worker reputation stays portable. Friction: against the live Sepolia UniversalResolver, viem's bundled getEnsText/getEnsAddress wouldn't return records set on the registry's PublicResolver; we had to call the UR's 2-arg resolve(bytes,bytes) directly. A docs note on which UR/resolver generation is live on Sepolia, plus a viem snippet for it, would have saved hours. NameWrapper subname issuance was smooth.
+```
+
+---
+
+#### Arc — $15,000
+
+**How are you using this Protocol / API?**
+```
+Arc is where the job settles. WardEscrow is an ERC-8183 USDC conditional escrow on Arc with a real policy layer in-contract — per-job caps, daily caps, an owner-approval threshold, and deadline auto-refund (the standard's Expired state). It auto-releases native Arc USDC the instant the Evaluator (a Chainlink CRE workflow) attests the fix. Native USDC is also the gas token, so settlement is gas-free and sub-cent — the only reason small machine-to-human payments are economical. Both contracts are source-verified on Arc's Blockscout; the full Open→Funded→Submitted→Completed lifecycle is proven on-chain. (Track: Best Smart Contracts on Arc with Advanced Stablecoin Logic.)
+```
+
+**Link to the line of code where the tech is used.**
+```
+https://github.com/joeykokinda/ward/blob/8117576cb59a3d454041bf7c0fdbf7dd15999347/contracts/src/WardEscrow.sol#L267
+```
+(`complete()` — Evaluator-only escrow release of native USDC. Also `fund()` #L221, `createJob()` #L159.)
+
+**How easy is it to use? (1–10):** suggested **8** — gas-free native USDC + standard Foundry/Blockscout flow worked smoothly; a first-class Chainlink CRE target.
+
+**Additional feedback for the Sponsor.**
+```
+Native USDC as the gas token is the unlock — gas-free, sub-cent settlement is what makes machine-to-human micropayments viable, and it "just worked" with Foundry deploy + Blockscout verification. Arc being a first-class Chainlink CRE target (live forwarder) made the whole proof-settled loop possible. One ask: surface the canonical native-USDC address and faucet limits more prominently up front — we spent time confirming them.
+```
+
+---
+
+#### Chainlink — $14,000
+
+**How are you using this Protocol / API?**
+```
+A Chainlink CRE workflow is WARD's ERC-8183 Evaluator — the one role the standard lets release escrow. On a cron tick it fetches device telemetry from our public HTTPS device simulator, runs identical-consensus across the DON that the fault is resolved (the moisture sensor reads dry), and produces an EVM WriteReport to Arc that drives complete() on the Job, releasing the escrowed USDC. It's the single thing that moves money: the contract trusts the machine attestation, not a human clicking approve. Without CRE, ERC-8183 still needs a human in the loop and this is just another agent with a wallet. Green CLI simulation captured in cre/sim-output-live.txt.
+```
+
+**Link to the line of code where the tech is used.**
+```
+https://github.com/joeykokinda/ward/blob/8117576cb59a3d454041bf7c0fdbf7dd15999347/cre/workflow/index.ts#L159
+```
+(`writeReport` to Arc that releases the escrow. Cron handler `onCronTrigger()` #L107.)
+
+**How easy is it to use? (1–10):** suggested **7** — the TS SDK build→simulate loop is clean; auth-for-simulate and the dry-run→live-DON-with-dynamic-input path cost us time.
+
+**Additional feedback for the Sponsor.**
+```
+Arc Testnet is a first-class CRE target with a live forwarder, and the TS SDK build→simulate loop is clean. Two friction points: `cre workflow simulate` requires a free CRE_API_KEY where `build` does not, which surprised us mid-build; and the path from a green dry-run sim to a live-DON write that takes a dynamic input (our jobId) wasn't obvious from the docs. A worked example of "dry-run sim → live DON with a per-invocation parameter" would have saved real time.
+```
+
+---
 
 **Other partners' tech used (not applying):** None.
 
