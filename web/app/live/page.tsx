@@ -205,7 +205,7 @@ export default function LivePage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ text }),
       }).then((res) => res.json());
-      if (r.ok === false && r.reachable === false) {
+      if (r.ok === false) {
         setNote("Could not reach the live agent. It may be offline right now.");
       } else if (r.matched === false) {
         setNote(
