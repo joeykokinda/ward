@@ -11,7 +11,7 @@ Requirements:
 - Successful **CLI simulation** (this alone meets the qualifying bar) or live deployment. Standing offer: show them a simulated workflow and their team deploys it to live CRE during the hackathon — take it.
 - Explain Chainlink usage in the project description.
 
-GATE: do not start this integration until the booth confirms whether CRE writes to Arc (docs/SPIKES.md).
+GATE: do not start this integration until the booth confirms whether CRE writes to Arc.
 
 ## 2. Arc — USDC conditional escrow — $3.5k (1st $2.25k / 2nd $1.25k)
 

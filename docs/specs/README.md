@@ -12,10 +12,7 @@ These are the working specs and decision records that drove the build. They are 
 
 | File | What it is |
 |---|---|
-| [../SPIKES.md](../SPIKES.md) | Go/no-go spike gates: the critical "does CRE write to Arc?" question, Spike A (CRE round trip), Spike B (Arc + USDC), the post-spike decision matrix, and spike rules. |
-| [../CUTS.md](../CUTS.md) | Pre-committed cut rules and the fallback ladder, decided up front so time-pressure decisions are mechanical: never-cut anchors, cut order, and the chain-question fallback ladder. |
-| [../INTEGRATION.md](../INTEGRATION.md) | Cross-component seams, the reconciliation log, per-component commit status, and live-state notes from the integration pass. |
-| [../TODO.md](../TODO.md) | The live task tracker / progress log. |
+| [../AGENT-PLAYBOOK.md](../AGENT-PLAYBOOK.md) | The agent policy: what it is, the escalation ladder it climbs before spending money, and the per-device steps it tries. |
 | [../BACKEND-SETUP.md](../BACKEND-SETUP.md) | Always-on backend setup (sim + agent) at stable public HTTPS, so CRE can fetch the sim and Vercel can read the agent feed. |
 | [../INTERFACES.md](../INTERFACES.md) | The shared interface contract every component conforms to: API shapes, ABIs, naming/identity, env seams. |
 | [../DEPLOY.md](../DEPLOY.md) | The live deploy runbook (phased L1–L7), turning a filled-in `.env` into a live deployment. |

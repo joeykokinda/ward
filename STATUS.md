@@ -57,7 +57,7 @@ Frontend live on Vercel; backend live on `brach`. **THE JUDGE DEMO IS NOW `/live
 - Live keys (gitignored, on the dev box): `spike/arc/.env` (Arc deployer/worker/evaluator + Anthropic), root `.env` (Anthropic + Vercel token).
 
 ## Doc map
-Root (judge-facing): README · PROJECT · ARCHITECTURE (mermaid) · BOUNTIES · DEMO · DEMO-EVIDENCE · PITCHES · SUBMISSION · VIDEO-SCRIPT · BOUNTY-AUDIT · STATUS. Internal: `docs/` (SPIKES, CUTS, INTEGRATION, TODO, BACKEND-SETUP, INTERFACES, DEPLOY, DESIGN).
+Root (judge-facing): README · PROJECT · ARCHITECTURE (mermaid) · BOUNTIES · DEMO · DEMO-EVIDENCE · PITCHES · SUBMISSION · VIDEO-SCRIPT · BOUNTY-AUDIT · STATUS. Internal: `docs/` (AGENT-PLAYBOOK, BACKEND-SETUP, INTERFACES, DEPLOY, DESIGN, specs/).
 
 ## Honest gaps (documented, not hidden)
 - CRE: sim settle is a dry-run (the qualifying bar); live on-chain `complete()` is evaluator-EOA-signed, not yet routed through the DON forwarder. Fully-autonomous live-DON settle would need the workflow to take a dynamic jobId.

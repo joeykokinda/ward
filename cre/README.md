@@ -17,7 +17,7 @@ Three independent confirmations:
    `project.yaml` and zero `--allow-unknown-chains`** — the chain-selectors registry
    recognizes Arc.
 
-**Architecture decision (SPIKES.md row 1 "CRE → Arc directly"): IDEAL / single-chain.**
+**Architecture decision — "CRE → Arc directly": IDEAL / single-chain.**
 The plan stands: the CRE workflow attests device health and settles JobEscrow on Arc.
 No Base-Sepolia detour, no cross-chain relay needed.
 
@@ -76,7 +76,7 @@ Both leave `JobEscrow` job logic untouched (the point of the seam).
   goes in `secrets.yaml` + encrypted with the workflow-owner key (deploy-time only).
 - **Latency:** simulation runs locally in seconds (build is sub-second). Live DON rounds
   take longer; for the demo, pre-stage one settled cycle on arcscan and trigger a live
-  cycle at pitch start (SPIKES.md row 3 contingency) — not required, just insurance.
+  cycle at pitch start (the latency contingency) — not required, just insurance.
 
 ## What was PROVEN headless (no account, no funds)
 

@@ -43,7 +43,7 @@ settles **autonomously**, and only jobs above 100 USDC need the host's approval.
 
 WARD's whole thesis is that funds release on a **machine-attested physical
 fact**, not human approval. The mechanism that delivers that fact was gated on
-the Chainlink booth answer (see `../SPIKES.md`). To let that mechanism change
+the Chainlink booth answer (does CRE write to Arc directly?). To let that mechanism change
 without ever touching job logic, **all** verification lives behind one interface:
 
 ```
@@ -54,9 +54,9 @@ JobEscrow.settle(jobId, attestation)
 `JobEscrow` never inspects signatures, forwarder addresses, report encodings, or
 oracle keys. It trusts only the boolean. Swapping the verifier is a single
 owner call (`setCreVerifier`) or a constructor argument, with **zero** edits to
-the lifecycle. This maps directly onto the SPIKES.md decision matrix:
+the lifecycle. This maps directly onto the chain-question decision matrix:
 
-| SPIKES.md outcome | Verifier to deploy | Change to job logic |
+| Chain-question outcome | Verifier to deploy | Change to job logic |
 |---|---|---|
 | CRE → Arc directly | `AuthorizedReporterVerifier`, `reporter` = CRE forwarder | none |
 | CRE → other EVM only | escrow on Base Sepolia, same `AuthorizedReporterVerifier` | none |
@@ -181,7 +181,7 @@ forge script script/Deploy.s.sol \
 #   add: --verify --verifier blockscout --verifier-url <arc-explorer-api>
 ```
 
-### Fallback — Base Sepolia (SPIKES.md "CRE → other EVM only" / Arc blocked)
+### Fallback — Base Sepolia ("CRE → other EVM only" / Arc blocked)
 
 ```bash
 forge script script/Deploy.s.sol \

@@ -8,8 +8,8 @@ import {ICreConsumer, HealthAttestation} from "@ward-contracts/interfaces/ICreCo
                     WARD CRE CONSUMER — "CRE -> ARC DIRECTLY"
 //////////////////////////////////////////////////////////////////////////////
 
-This is the CRE-native bridge for the booth answer "CRE writes to Arc directly"
-(SPIKES.md row 1), which the spike CONFIRMED is supported: Arc Testnet is a
+This is the CRE-native bridge for the booth answer "CRE writes to Arc directly",
+which the spike CONFIRMED is supported: Arc Testnet is a
 CRE-supported network with a live production Forwarder
 (0x76c9cf548b4179F8901cda1f8623568b58215E62 — CRE Forwarder Directory).
 

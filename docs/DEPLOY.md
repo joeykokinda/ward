@@ -18,9 +18,9 @@ Local stack already works with zero credentials: `scripts/dev-stack.sh up` (prov
 ## L2 — Chainlink CRE  *(needs: free CRE_API_KEY; then CRE deploy access + funded CRE key)*
 1. Get `CRE_API_KEY` at app.chain.link → Account Settings.
 2. **Bounty evidence:** `cd cre && cre workflow simulate ...` → capture the passing log (point its config at a reachable device-status URL; see L3 for the public sim URL).
-3. Deploy `WardCreConsumer` to Arc (forge), then set it as the escrow verifier: `cast send <JobEscrow> "setCreVerifier(address)" <WardCreConsumer> --rpc-url "$ARC_RPC_URL" --private-key "$DEPLOYER_PRIVATE_KEY"`. (This is the CRE-push path = the authentic "CRE releases escrow" demo; see INTEGRATION.md decision.)
+3. Deploy `WardCreConsumer` to Arc (forge), then set it as the escrow verifier: `cast send <JobEscrow> "setCreVerifier(address)" <WardCreConsumer> --rpc-url "$ARC_RPC_URL" --private-key "$DEPLOYER_PRIVATE_KEY"`. (This is the CRE-push path = the authentic "CRE releases escrow" demo.)
 4. `cre account access` + fund `CRE_ETH_PRIVATE_KEY`, then deploy the workflow live; set its trigger config to fetch the public sim URL (L3) and write to `WardCreConsumer`.
-   - Fallback if live CRE deploy is delayed: keep `AuthorizedReporterVerifier`, set the agent's key as the authorized reporter, and implement the reporter ECDSA in `chain.py.request_attestation` (INTEGRATION.md Open #A).
+   - Fallback if live CRE deploy is delayed: keep `AuthorizedReporterVerifier`, set the agent's key as the authorized reporter, and implement the reporter ECDSA in `chain.py.request_attestation`.
 
 ## L3 — Sim + Agent public  *(needs: Railway token or use cloudflared; ANTHROPIC_API_KEY)*
 - Sim: deploy `sim/` to Railway (Dockerfile + railway.json ready) → public HTTPS URL. Interim: `cloudflared tunnel --url http://localhost:8090`.

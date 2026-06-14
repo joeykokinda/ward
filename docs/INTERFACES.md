@@ -57,7 +57,7 @@ CRE attestation reads `online === true` (and `faultMode === "none"`) as "fixed".
 - `settle(uint256 jobId, <CRE report/proof args>)` — verifies the CRE attestation that the device is healthy, transfers USDC to worker, bumps reputation
 - `refundExpired(uint256 jobId)` — after deadline if unsettled
 - events: `JobCreated(uint256 jobId, bytes32 propertyId, bytes32 deviceId, uint256 amount)`, `JobAccepted(uint256 jobId, address worker)`, `WorkMarkedDone(uint256 jobId)`, `JobSettled(uint256 jobId, address worker, uint256 amount)`, `JobRefunded(uint256 jobId)`
-- The CRE settlement entrypoint must be isolated behind an interface (`ICreConsumer` / authorized reporter) so the verification mechanism can be swapped per the SPIKES.md decision matrix without touching job logic.
+- The CRE settlement entrypoint must be isolated behind an interface (`ICreConsumer` / authorized reporter) so the verification mechanism can be swapped per the chain-question decision matrix without touching job logic.
 
 Export after deploy: `deployments/<chain>.json` = `{ chainId, WorkerRegistry, JobEscrow, MockUSDC, blockExplorer }` and ABIs to `deployments/abis/`. Frontend + agent read from here.
 

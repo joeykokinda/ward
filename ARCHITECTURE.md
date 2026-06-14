@@ -68,4 +68,4 @@ For the live booth demo, if CRE-DON latency is high, pre-stage one complete sett
 
 - Arc fundamental issues → escrow on Base Sepolia, disclose honestly to judges.
 - ENS stays on Sepolia regardless.
-- Any non-anchor integration blocked >2h after a serious attempt → cut it (docs/CUTS.md).
+- Any non-anchor integration blocked >2h after a serious attempt → cut it.
