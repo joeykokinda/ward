@@ -27,6 +27,7 @@ import {
 import { useTick } from "@/lib/useWard";
 import { formatDuration, secondsSince, shortAddress, timeAgo } from "@/lib/format";
 import { ARC, arcAddressUrl, normalizeArcTxUrl } from "@/lib/arc";
+import { WardMark } from "../components/WardMark";
 
 type LiveEvent = {
   ts: string;
@@ -204,11 +205,14 @@ export default function LivePage() {
       <nav className="border-b border-border bg-surface">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-5 py-3">
           <div className="flex items-center gap-4">
-            <Link
-              href="/"
-              className="text-[16px] font-semibold tracking-tight text-fg transition-colors hover:text-accent-ink"
-            >
-              WARD
+            <Link href="/" className="group flex items-center gap-2.5" title="WARD home">
+              <span className="flex h-7 w-7 items-center justify-center rounded-sm bg-accent transition-transform group-hover:scale-105">
+                <WardMark className="h-[18px] w-[18px]" />
+              </span>
+              <span className="text-[16px] font-semibold tracking-tight text-fg">WARD</span>
+              <span className="hidden text-[11px] font-medium uppercase tracking-wide text-faint sm:inline">
+                · Real agent
+              </span>
             </Link>
             {!reachable && (
               <span className="flex items-center gap-2 text-[12px]">
@@ -217,8 +221,20 @@ export default function LivePage() {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-5 text-[13px]">
-            <Link href="/workers" className="text-muted transition-colors hover:text-fg">
+          <div className="flex items-center gap-2 text-[13px]">
+            <a
+              href={ARC.explorer}
+              target="_blank"
+              rel="noreferrer"
+              className="hidden items-center gap-1.5 rounded-sm px-3 py-1.5 text-[12px] font-medium text-muted transition-colors hover:text-fg sm:inline-flex"
+            >
+              Arc explorer
+              <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2} />
+            </a>
+            <Link
+              href="/workers"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-border bg-subtle px-3 py-1.5 text-[12px] font-medium text-fg-soft transition-colors hover:border-border-strong hover:text-fg"
+            >
               Workers
             </Link>
           </div>
