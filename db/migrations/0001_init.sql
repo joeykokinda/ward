@@ -1,4 +1,4 @@
--- WARD — Supabase schema (INTERFACES.md).
+-- WARD — Supabase schema.
 -- Tables: properties, workers, jobs, agent_events.
 -- USDC amounts are 6-decimal integers stored as TEXT (e.g. "75000000") so
 -- BigInt precision survives the JS round-trip; the frontend formats them.
@@ -17,7 +17,7 @@ create table if not exists public.properties (
 );
 
 -- ── workers ─────────────────────────────────────────────────────────────────
--- handle, ens_name, address, skills, region, reputation (INTERFACES.md).
+-- handle, ens_name, address, skills, region, reputation.
 create table if not exists public.workers (
   handle        text primary key,            -- "mike"
   ens_name      text not null unique,         -- "mike.ward-agent.eth"
@@ -33,7 +33,7 @@ create table if not exists public.workers (
 
 -- ── jobs ────────────────────────────────────────────────────────────────────
 -- job_id, property_id, device_id, worker, amount, state, tx_create, tx_settle,
--- created_at (INTERFACES.md) + the extra lifecycle fields the frontend renders.
+-- created_at + the extra lifecycle fields the frontend renders.
 do $$ begin
   create type job_state as enum (
     'OPEN','ACCEPTED','WORK_DONE','ATTESTING','SETTLED','EXPIRED','REFUNDED'
@@ -61,8 +61,8 @@ create index if not exists jobs_worker_idx   on public.jobs(worker);
 create index if not exists jobs_state_idx    on public.jobs(state);
 
 -- ── agent_events ────────────────────────────────────────────────────────────
--- ts, type, message, job_id, tx_hash, property_id (INTERFACES.md).
--- type matches the DESIGN.md LogType set.
+-- ts, type, message, job_id, tx_hash, property_id.
+-- type matches the LogType set.
 do $$ begin
   create type agent_log_type as enum (
     'MONITOR','DIAGNOSE','ACTION','RESULT','ESCROW','DISPATCH','RESOLVED'

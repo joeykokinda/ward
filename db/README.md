@@ -14,7 +14,7 @@ db/
 └── README.md                  this file
 ```
 
-## Schema (matches INTERFACES.md + `web/lib/data/`)
+## Schema (matches `web/lib/data/`)
 
 | table | key columns |
 |---|---|
@@ -27,7 +27,7 @@ db/
   so BigInt precision survives the JS round-trip. The frontend formats them.
 - `job_state` enum = the canonical lifecycle (`OPEN → ACCEPTED → WORK_DONE →
   ATTESTING → SETTLED`, plus `EXPIRED`/`REFUNDED`).
-- `agent_log_type` enum = the DESIGN.md `LogType` set (`MONITOR | DIAGNOSE |
+- `agent_log_type` enum = the `LogType` set (`MONITOR | DIAGNOSE |
   ACTION | RESULT | ESCROW | DISPATCH | RESOLVED`).
 - **RLS is enabled** on every table with a public `SELECT` policy (anon key can
   read). Writes use the **service-role key**, which bypasses RLS — only the

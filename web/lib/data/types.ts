@@ -1,4 +1,4 @@
-// WARD shared interface contract — mirrors INTERFACES.md.
+// WARD shared interface contract.
 // Both the mock adapter and the supabase adapter conform to these shapes,
 // and the live agent SSE feed + Arc contracts will produce the same data.
 
@@ -88,7 +88,7 @@ export type Job = {
   deadlineIso: string;
 };
 
-// DESIGN.md log types — one color each.
+// Canonical log types — one color each.
 export type LogType =
   | "MONITOR"
   | "DIAGNOSE"

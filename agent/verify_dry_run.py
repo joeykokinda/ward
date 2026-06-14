@@ -73,7 +73,7 @@ async def run(mode: str) -> int:
     print(f"  USDC balance (pre):  {usdc(agent.chain.usdc_balance_units())}")
     print("-" * 78)
 
-    # Pick the demo target: prop-2 (Greenwich Cottage) per DEMO.md.
+    # Pick the demo target: prop-2 (Greenwich Cottage).
     fleet = await agent.sim.fleet()
     target = next((d for d in fleet if d.propertyId == "prop-2"), fleet[0])
 

@@ -1,4 +1,4 @@
--- WARD — canonical pre-staged demo state (INTERFACES.md + web/lib/data/fixtures.ts).
+-- WARD — canonical pre-staged demo state (web/lib/data/fixtures.ts).
 -- 3 properties, 5 workers (mike/sara/deon/lena/raj.ward-agent.eth), 3 historical
 -- SETTLED jobs, sample agent_events. This is the state that must persist across
 -- judge visits. Idempotent via upsert; re-running refreshes the demo cleanly.

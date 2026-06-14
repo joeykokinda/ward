@@ -54,7 +54,7 @@ WARD is rails for an autonomous system to hire and pay a verified human for phys
 | Agent | **Plain Python**: asyncio loop, web3.py, Claude API for reasoning. No uAgents. | Climbs the escalation ladder cheapest-first: poll fleet → diagnose → L1 self-fix (free, autonomous: reboot/reconfigure/re-pair/cycle relay/close valve; most incidents end here) → optional L2 guided remote → only on a confirmed physical fault L3: discover + rank workers via ENS (skill, ETA, on-chain reputation), select the best, escrow within policy → monitor → trigger CRE → confirm settle. Decision feed streamed to frontend. |
 | Identity | **ENS on Sepolia** | Agent primary name (ward-agent.eth). Workers get subnames (mike.ward-agent.eth) with **ENSIP-26 text records**: skills, region, reputation pointer. **ENSIP-25** name verification for the agent. Agent discovers workers via ENS resolution. |
 | Audit | Arc contract events, indexed by the frontend | No separate audit chain. |
-| Frontend | **Next.js + Tailwind on Vercel**, clean light aesthetic (docs/DESIGN.md) | Three personas via dropdown: Host / Worker / Agent. Worker view mobile-first, reachable by QR code. |
+| Frontend | **Next.js + Tailwind on Vercel**, clean light aesthetic | Three personas via dropdown: Host / Worker / Agent. Worker view mobile-first, reachable by QR code. |
 | Demo state | **Supabase** (free tier) | State persists across all judge visits: reputation accumulates, activity feed grows. By Sunday the app shows dozens of real historical Arc transactions, not a fresh demo. |
 | Device sim | FastAPI on **brach via Tailscale Funnel** (public HTTPS so CRE can reach it) | Per-property devices (router etc.): status / kill (soft\|hard) / restart (heals soft only) / repair. Node-console page for triggers. |
 

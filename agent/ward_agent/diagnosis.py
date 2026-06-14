@@ -5,8 +5,8 @@ Single public function: `diagnose(device_status, history) -> Diagnosis`.
 Uses the Anthropic API (model `claude-fable-5` if available, else
 `claude-opus-4-8`; key from ANTHROPIC_API_KEY). If no key is set, falls back
 to a deterministic rules-based diagnosis so the loop runs fully offline
-(INTERFACES.md: "if ANTHROPIC_API_KEY is unset, fall back to a deterministic
-scripted diagnosis ... Never hard-crash on missing key").
+(per the shared interface contract: "if ANTHROPIC_API_KEY is unset, fall back to
+a deterministic scripted diagnosis ... Never hard-crash on missing key").
 
 A Diagnosis carries:
   - likely_cause:        human-readable cause string
@@ -112,7 +112,7 @@ def _rules_diagnosis(device: DeviceStatus, history: list[dict[str, Any]]) -> Dia
         )
 
     # First sighting of an offline device: attempt the free Level-1 remote
-    # reboot before spending money. Most incidents end here (PROJECT.md). If
+    # reboot before spending money. Most incidents end here. If
     # the reboot fails, the re-diagnosis above escalates to Level 3.
     return Diagnosis(
         likely_cause="Device offline; attempting remote reboot before escalating.",

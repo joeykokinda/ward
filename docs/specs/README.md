@@ -13,11 +13,8 @@ These are the working specs and decision records that drove the build. They are 
 | File | What it is |
 |---|---|
 | [../AGENT-PLAYBOOK.md](../AGENT-PLAYBOOK.md) | The agent policy: what it is, the escalation ladder it climbs before spending money, and the per-device steps it tries. |
-| [../BACKEND-SETUP.md](../BACKEND-SETUP.md) | Always-on backend setup (sim + agent) at stable public HTTPS, so CRE can fetch the sim and Vercel can read the agent feed. |
-| [../INTERFACES.md](../INTERFACES.md) | The shared interface contract every component conforms to: API shapes, ABIs, naming/identity, env seams. |
 | [../DEPLOY.md](../DEPLOY.md) | The live deploy runbook (phased L1–L7), turning a filled-in `.env` into a live deployment. |
-| [../DESIGN.md](../DESIGN.md) | Visual design tokens, persona layouts, and the hard bans on AI-slop styling. |
 
 ## Where the build is described
 
-Judge-facing docs at the repo root carry the actual build narrative: `README.md`, `PROJECT.md`, `ARCHITECTURE.md` (mermaid diagram), `BOUNTIES.md`, `DEMO.md`, `DEMO-EVIDENCE.md`, `PITCHES.md`, `SUBMISSION.md`, `VIDEO-SCRIPT.md`, `BOUNTY-AUDIT.md`, and `STATUS.md`. The commit history shows the progression: the first commit is a docs scaffold created right after kickoff, followed by frequent incremental commits.
+The repo `README.md` and `ARCHITECTURE.md` (mermaid diagram) carry the build narrative, alongside the per-component READMEs (`agent/`, `contracts/`, `cre/`, `db/`, `packages/ens/`, `sim/`, `web/`). The commit history shows the progression: the first commit is a docs scaffold created right after kickoff, followed by frequent incremental commits.

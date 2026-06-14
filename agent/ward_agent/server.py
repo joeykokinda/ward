@@ -1,6 +1,6 @@
 """FastAPI server exposing the decision feed and an incident trigger.
 
-Endpoints (INTERFACES.md / task spec):
+Endpoints (per the shared interface contract / task spec):
   GET  /events             -> SSE stream of reasoning events
   GET  /events/recent      -> last N events (JSON)
   GET  /healthz            -> liveness + mode summary
@@ -139,8 +139,8 @@ async def events_stream() -> StreamingResponse:
 async def incident_simulate(req: SimulateRequest) -> dict[str, Any]:
     """Inject a fault via the sim and let the real loop react.
 
-    Resolves the target device (default: prop-2 / Greenwich Cottage per
-    DEMO.md), fails it via the sim, and — in the demo / DRY path — schedules
+    Resolves the target device (default: prop-2 / Greenwich Cottage),
+    fails it via the sim, and — in the demo / DRY path — schedules
     the human-side worker steps (repair + accept + mark-done) so the full
     fault->...->settle cycle completes for the frontend without manual nudging.
     The agent's poll loop picks up the fault on its own; this endpoint does not

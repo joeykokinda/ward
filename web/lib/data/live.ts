@@ -2,7 +2,7 @@
 //
 // Conforms to the same WardAdapter interface as the mock + supabase adapters,
 // so flipping NEXT_PUBLIC_DATA_ADAPTER=live is the only change — no persona
-// component edits. It hydrates from the agent's REST surface (INTERFACES.md):
+// component edits. It hydrates from the agent's REST surface:
 //
 //   GET /events/recent  -> the reasoning event stream (AgentEvent[])
 //   GET /healthz        -> agent identity, USDC treasury, spending policy

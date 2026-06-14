@@ -395,7 +395,7 @@ function dispatchCandidates(s: MutableState, skill: string): Worker[] {
 // follow from the autopilot in startIncident.
 function incidentBeats(spec: IncidentSpec): Beat[] {
   // Real Arc testnet hashes from the canonical ERC-8183 WardEscrow lifecycle
-  // (fixtures ARC_TX / DEMO-EVIDENCE.md) so every clickable tx in the cinematic
+  // (fixtures ARC_TX) so every clickable tx in the cinematic
   // opens a REAL on-chain WardEscrow txn on arcscan instead of a dead link. The
   // narrated amount is the story; the link proves the flow is real on Arc.
   const createTx = ARC_TX.fund; // escrow funded (the "lock")

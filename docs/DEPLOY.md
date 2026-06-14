@@ -40,10 +40,10 @@ Local stack already works with zero credentials: `scripts/dev-stack.sh up` (prov
 - Connect `joeykokinda/ward` in the Vercel dashboard (root dir `web/`) — auto-deploys on push. Or `cd web && vercel --prod` with `VERCEL_TOKEN`.
 - Env: `NEXT_PUBLIC_DATA_ADAPTER=live`, `NEXT_PUBLIC_AGENT_URL`=public agent SSE, `NEXT_PUBLIC_DEPLOYMENTS`/addresses from `deployments/5042002.json`, `NEXT_PUBLIC_ARC_EXPLORER=https://testnet.arcscan.app`, `NEXT_PUBLIC_SUPABASE_*`.
 
-## L7 — Demo prep (SUBMISSION.md gates)
+## L7 — Demo prep
 - Pre-stage history: run several incidents on live Arc so the activity feed shows real settled jobs by Sunday.
 - Record the ≤3-min video (Saturday evening). Print the worker-view QR. Confirm the live URL works from a phone on cell data.
-- Sunday morning: ENS booth in person (hard gate). Booth pitches in PITCHES.md.
+- Sunday morning: ENS booth in person (hard gate).
 
 ## Smoke test (after L1–L6)
 Trigger a hard fault on the public sim for prop-2 → watch the dashboard stream the incident → CRE attests → escrow releases on Arc → tx links resolve on Blockscout → worker subname + reputation update. Reset between runs.

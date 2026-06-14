@@ -1,4 +1,4 @@
-// Formatting helpers. USDC is 6 decimals everywhere (INTERFACES.md).
+// Formatting helpers. USDC is 6 decimals everywhere.
 
 const USDC_DECIMALS = 6n;
 const USDC_DIVISOR = 1_000_000n;

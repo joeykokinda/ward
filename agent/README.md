@@ -16,7 +16,7 @@ the evaluator `complete`s — the sensor-settled release that pays the provider.
 Plain Python (no uAgents): `asyncio` + `web3.py` + the Anthropic SDK. Runs
 fully offline with graceful fallbacks; real keys plug in via env later.
 
-## Escalation ladder (PROJECT.md)
+## Escalation ladder
 
 ```
 poll fleet
@@ -155,7 +155,7 @@ job completes/refunds (terminal) or the device recovers.
 
 ## How it plugs into the rest of WARD
 
-- **Sim** (`sim/`): `sim_client` speaks the INTERFACES.md HTTP API; the same
+- **Sim** (`sim/`): `sim_client` speaks the sim's HTTP API; the same
   public HTTPS endpoint is what CRE fetches telemetry from.
 - **Contracts** (`contracts/` → `deployments/`): `chain.py` reads
   `deployments/<chainId>.json` + `deployments/abis/{JobEscrow,WorkerRegistry,MockUSDC}.json`.

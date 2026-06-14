@@ -19,7 +19,6 @@ It runs end to end on Arc testnet: worker identity and discovery on ENS, escrow 
 | USDC (native Arc, 6dp, also gas) | `0x3600000000000000000000000000000000000000` |
 | ENS records (Sepolia) | https://sepolia.app.ens.domains/ward-agent.eth |
 | CRE sim log (green) | `cre/sim-output-live.txt` |
-| All transaction hashes | [DEMO-EVIDENCE.md](DEMO-EVIDENCE.md) |
 
 Arc network: chainId `5042002`, RPC `https://rpc.testnet.arc.network`, explorer `https://testnet.arcscan.app`. CRE: chain-selector `3034092155422581607`, forwarder `0x76c9cf548b4179F8901cda1f8623568b58215E62`.
 
@@ -144,7 +143,7 @@ Run the frontend against the local stack (`web/`):
 cd web && NEXT_PUBLIC_DATA_ADAPTER=live NEXT_PUBLIC_AGENT_URL=http://localhost:8091 pnpm dev
 ```
 
-Prerequisites: `forge` (Foundry), `uv` (Python env), and `jq`. Live deploy to Arc and the always-on backend are documented in [docs/DEPLOY.md](docs/DEPLOY.md) and [docs/BACKEND-SETUP.md](docs/BACKEND-SETUP.md).
+Prerequisites: `forge` (Foundry), `uv` (Python env), and `jq`. Live deploy to Arc is documented in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 ## Built during the hackathon vs reused libraries
 
@@ -166,6 +165,6 @@ The spec and prompt artifacts live in [docs/](docs/) and are indexed in [docs/sp
 
 ## Doc map
 
-Judge-facing (root): README, [PROJECT.md](PROJECT.md), [ARCHITECTURE.md](ARCHITECTURE.md), [BOUNTIES.md](BOUNTIES.md), [DEMO.md](DEMO.md), [DEMO-EVIDENCE.md](DEMO-EVIDENCE.md), [PITCHES.md](PITCHES.md), [SUBMISSION.md](SUBMISSION.md), [VIDEO-SCRIPT.md](VIDEO-SCRIPT.md), [BOUNTY-AUDIT.md](BOUNTY-AUDIT.md), [STATUS.md](STATUS.md).
+Root: this README and [ARCHITECTURE.md](ARCHITECTURE.md) (mermaid diagram). Each component has its own README: [`agent/`](agent/README.md), [`contracts/`](contracts/README.md), [`cre/`](cre/README.md), [`db/`](db/README.md), [`packages/ens/`](packages/ens/README.md), [`sim/`](sim/README.md), [`web/`](web/README.md).
 
-Internal process: [docs/](docs/) (SPIKES, CUTS, INTEGRATION, TODO, BACKEND-SETUP, INTERFACES, DEPLOY, DESIGN), indexed in [docs/specs/README.md](docs/specs/README.md).
+Build/deploy and the AI-disclosure spec index live in [docs/](docs/): [AGENT-PLAYBOOK.md](docs/AGENT-PLAYBOOK.md), [DEPLOY.md](docs/DEPLOY.md), and [specs/](docs/specs/README.md).

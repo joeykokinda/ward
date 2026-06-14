@@ -99,7 +99,7 @@ class JobView:
 
 
 # Default worker roster used when no registry is on-chain / in DRY mode.
-# Mirrors DEMO.md (5 workers, reputation, ENS subnames).
+# Mirrors the demo spec (5 workers, reputation, ENS subnames).
 _DEFAULT_ROSTER: list[dict[str, Any]] = [
     {"address": "0x1111111111111111111111111111111111111111", "handle": "mike",
      "ensName": "mike.ward-agent.eth", "skills": "networking,router", "region": "NYC", "reputation": 87},

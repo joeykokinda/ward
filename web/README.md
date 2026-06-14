@@ -4,8 +4,8 @@ UI for WARD, the autonomous agent for YOUR HOME: it watches every device, fixes
 what it can, hires a verified human when it can't, and tells you what happened —
 so you stop being on-call for your own house. One home, four instrumented devices
 (WiFi router, thermostat, front-door lock, leak sensor). Three personas
-(Home / Worker / Agent) behind a header dropdown, built strictly to `DESIGN.md`
-tokens (v2 Profound-style light theme). Ships with a fully scripted, backend-free
+(Home / Worker / Agent) behind a header dropdown, built to the
+v2 Profound-style light theme. Ships with a fully scripted, backend-free
 demo so the whole flow is judge-ready with zero credentials.
 
 Roadmap: today homeowners · tomorrow property managers & DePIN — same protocol.

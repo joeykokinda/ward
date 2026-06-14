@@ -3,7 +3,7 @@
 A drop-in replacement for SimClient when the real sim (sim/) isn't running,
 so the whole loop is demoable with zero external processes. Implements the
 same async method surface as SimClient and the same DeviceStatus semantics
-from INTERFACES.md:
+from the shared interface contract:
 
   - fail(mode="soft"): heals on restart
   - fail(mode="hard"): does NOT heal on restart (needs repair())
@@ -11,7 +11,7 @@ from INTERFACES.md:
   - repair(): clears any fault (the human fix)
   - reset(): all devices healthy
 
-Pre-staged demo fleet matches INTERFACES.md (prop-1/2/3 routers).
+Pre-staged demo fleet matches the shared interface contract (prop-1/2/3 routers).
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-# Pre-staged demo fleet (INTERFACES.md properties table).
+# Pre-staged demo fleet (properties table).
 _DEFAULT_FLEET = [
     ("prop-1", "prop-1-router", "The Brooklyn Loft"),
     ("prop-2", "prop-2-router", "Greenwich Cottage"),

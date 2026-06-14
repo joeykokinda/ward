@@ -1,6 +1,6 @@
 """The asyncio agent loop — WARD's brain.
 
-Flow (per INTERFACES.md / PROJECT.md escalation ladder):
+Flow (per the shared interface contract and the escalation ladder):
 
   poll fleet
     -> on fault: DIAGNOSE

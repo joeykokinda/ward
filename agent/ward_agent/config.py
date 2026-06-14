@@ -1,7 +1,8 @@
 """Central configuration, read entirely from environment with safe defaults.
 
-This is the single env seam for the agent. Conforms to INTERFACES.md env
-seams. Nothing here ever raises on missing config; instead it exposes flags
+This is the single env seam for the agent. Conforms to the shared interface
+contract's env seams. Nothing here ever raises on missing config; instead it
+exposes flags
 (`dry_mode`, `llm_enabled`, `supabase_enabled`) the rest of the runtime
 consults to degrade gracefully.
 """
@@ -46,7 +47,7 @@ def _env_bool(name: str, default: bool) -> bool:
     return raw.lower() in ("1", "true", "yes", "on")
 
 
-# USDC has 6 decimals (INTERFACES.md).
+# USDC has 6 decimals.
 USDC_DECIMALS = 6
 
 

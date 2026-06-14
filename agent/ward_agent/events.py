@@ -1,9 +1,9 @@
 """The decision feed.
 
-Emits reasoning events conforming to INTERFACES.md / DESIGN.md log types:
+Emits reasoning events conforming to the shared log types:
     MONITOR | DIAGNOSE | ACTION | RESULT | ESCROW | DISPATCH | RESOLVED
 
-Event shape (INTERFACES.md):
+Event shape:
     { ts: iso, type: LogType, message: string,
       jobId?: number, txHash?: string, propertyId?: string }
 

@@ -28,12 +28,12 @@ contracts `5.6.1`.
 | `src/AuthorizedReporterVerifier.sol` | Production CRE-seam implementation: accepts an attestation iff it carries a valid ECDSA signature from one trusted `reporter` (the CRE forwarder, or a fallback authorized oracle), with domain separation (chainid + contract address) and a freshness window. |
 | `src/mocks/MockCreVerifier.sol` | Test/demo CRE-seam double: returns a settable healthy/unhealthy result, no signatures. Used by tests and the local Seed. |
 
-State machine (INTERFACES.md): `OPEN → ACCEPTED → WORK_DONE → SETTLED`, with
+State machine: `OPEN → ACCEPTED → WORK_DONE → SETTLED`, with
 `REFUNDED` as the off-happy-path terminus. (`ATTESTING` is the transient moment
 inside `settle()`, not a stored resting state.) The enum is
 `{None=0, Open=1, Accepted=2, WorkDone=3, Settled=4, Refunded=5}`.
 
-Demo economics (INTERFACES.md): USDC has 6 decimals; demo job = `75_000000`
+Demo economics: USDC has 6 decimals; demo job = `75_000000`
 (75 USDC); owner-approval threshold = `100_000000` (100 USDC), so the demo job
 settles **autonomously**, and only jobs above 100 USDC need the host's approval.
 
@@ -140,7 +140,7 @@ USDC, escrow balance `== 0`.
 }
 ```
 
-(INTERFACES.md requires `chainId, WorkerRegistry, JobEscrow, MockUSDC,
+(The deployment manifest carries `chainId, WorkerRegistry, JobEscrow, MockUSDC,
 blockExplorer`; `CreVerifier` is included so the frontend/agent can render the
 attestation source.) ABIs land in `deployments/abis/<Contract>.json` as raw ABI
 arrays for `MockUSDC`, `WorkerRegistry`, `JobEscrow`, `AuthorizedReporterVerifier`.
@@ -164,12 +164,12 @@ export CRE_REPORTER=0x...                # CRE forwarder / authorized oracle.
                                          #   set => AuthorizedReporterVerifier
                                          #   unset => MockCreVerifier
 export CRE_MAX_REPORT_AGE=3600           # attestation freshness window (seconds)
-export OWNER_APPROVAL_THRESHOLD=100000000   # 100 USDC (INTERFACES.md default)
+export OWNER_APPROVAL_THRESHOLD=100000000   # 100 USDC default
 export PER_JOB_CAP=200000000                # 200 USDC
 export DAILY_CAP=1000000000                 # 1000 USDC
 ```
 
-### Primary target — Arc testnet (per ARCHITECTURE.md / BOUNTIES.md)
+### Primary target — Arc testnet (per ARCHITECTURE.md)
 
 ```bash
 forge script script/Deploy.s.sol \

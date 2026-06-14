@@ -1,6 +1,6 @@
 """Async HTTP client for the device simulator API.
 
-Conforms to the sim HTTP API in INTERFACES.md:
+Conforms to the sim HTTP API in the shared interface contract:
 
     GET  /fleet                          -> { devices: DeviceStatus[] }
     GET  /device/{id}/status             -> DeviceStatus
@@ -56,7 +56,7 @@ class DeviceStatus:
 
     @property
     def healthy(self) -> bool:
-        """CRE "fixed" condition (INTERFACES.md): online AND no fault."""
+        """CRE "fixed" condition: online AND no fault."""
         return self.online and self.faultMode == "none"
 
     def to_dict(self) -> dict[str, Any]:

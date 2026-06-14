@@ -6,7 +6,7 @@
  * onchain report to the WardCreConsumer contract on Arc Testnet. The consumer
  * calls back into JobEscrow.settle(jobId) via the ICreConsumer seam.
  *
- * API shape — INTERFACES.md, GET /device/{id}/status -> DeviceStatus:
+ * API shape — GET /device/{id}/status -> DeviceStatus:
  *   { deviceId, propertyId, kind, online, uptimeSec, signalDbm, faultMode, lastChangedIso }
  *
  * Authoritative SDK shape mirrored from
@@ -66,7 +66,7 @@ const configSchema = z.object({
 
 type Config = z.infer<typeof configSchema>
 
-// DeviceStatus per INTERFACES.md. Only the fields the attestation reads are required.
+// DeviceStatus per the shared interface contract. Only the fields the attestation reads are required.
 const deviceStatusSchema = z.object({
 	deviceId: z.string(),
 	online: z.boolean(),

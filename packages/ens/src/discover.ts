@@ -49,7 +49,7 @@ function candidateHandles(): string[] {
   if (raw && raw.trim().length > 0) {
     return raw.split(",").map((s) => s.trim()).filter(Boolean);
   }
-  // Demo default — the 5 canonical workers (INTERFACES.md). Their attributes are
+  // Demo default — the 5 canonical workers. Their attributes are
   // NOT listed here; only the names the agent would learn from registry events.
   return ["mike", "sara", "deon", "lena", "raj"];
 }

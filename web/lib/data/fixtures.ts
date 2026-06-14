@@ -42,8 +42,8 @@ export function fakeAddress(seed: string): string {
   return `0x${full.slice(2, 42)}`;
 }
 
-// REAL Arc testnet tx hashes from the canonical ERC-8183 WardEscrow lifecycle
-// (DEMO-EVIDENCE.md). Wired into the historical settled jobs so every tx link in
+// REAL Arc testnet tx hashes from the canonical ERC-8183 WardEscrow lifecycle.
+// Wired into the historical settled jobs so every tx link in
 // the activity feed opens a real https://testnet.arcscan.app/tx/<hash> txn —
 // not a synthetic hash. chainId 5042002, full Open→Funded→Submitted→Completed.
 export const ARC_TX = {
