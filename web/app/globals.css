@@ -119,24 +119,21 @@ body {
   color: var(--color-fg);
 }
 
-/* Scroll reveal — a small fade + rise as a block scrolls into view. Driven by
-   the CSS view() timeline (no JS). When unsupported (older Safari/FF), the
-   default 0s duration resolves instantly to the end state, so content is simply
-   visible — never stuck hidden. */
-@keyframes ward-reveal {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Scroll reveal — fade + rise as a block enters view. A small Intersection
+   Observer (RevealObserver) adds .is-visible when the element scrolls in, so it
+   fires reliably in every browser (not just ones with the CSS view() timeline).
+   The observer also adds .is-visible immediately if IntersectionObserver is
+   missing, so content is never stuck hidden. */
 .reveal {
-  animation: ward-reveal both;
-  animation-timeline: view();
-  animation-range: entry 5% cover 22%;
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.6s ease,
+    transform 0.7s cubic-bezier(0.22, 0.8, 0.24, 1);
+}
+.reveal.is-visible {
+  opacity: 1;
+  transform: none;
 }
 
 /* Hover lift for standalone cards — subtle rise + border brighten. */
@@ -161,36 +158,12 @@ body {
   }
 }
 
-/* ───────────────────────── Hero decode (the ONE signature) ─────────────────
-   The H1 resolves out of the amber CRT noise on load: a left-to-right decode
-   wave. The DecodeText client component owns the per-glyph rAF; CSS here is
-   only the supporting flourishes (boot stagger + the end-of-line cursor). The
-   component server-renders the final string, so no-JS / reduced-motion shows
-   the finished headline instantly — never blank, never mid-scramble. */
-
-/* Color the still-scrambling glyph the component marks as "decoding". The
-   component toggles a data-attr per char; this is the only color the effect
-   adds, reusing the amber accent-ink token (no new color). */
-.decode-glyph[data-state="scrambling"] {
-  color: var(--color-accent-ink);
-}
-
-/* End-of-line block cursor: blinks ~2 cycles after the decode locks, then the
-   component removes it. Echoes the existing .ward-live-dot pulse. */
-@keyframes ward-cursor-blink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-.decode-cursor {
-  color: var(--color-accent-ink);
-  animation: ward-cursor-blink 0.7s steps(1, end) 2;
-  animation-fill-mode: forwards;
+/* HERO HEADLINE — each sentence fades + rises on load, lightly staggered (the
+   per-line delay is set inline). Clean sans type, no scramble. Reduced-motion
+   shows the whole headline immediately. */
+.hero-rise {
+  opacity: 0;
+  animation: ward-boot-in 0.6s cubic-bezier(0.22, 0.8, 0.24, 1) forwards;
 }
 
 /* HERO BOOT STAGGER — a tight fade+rise on the supporting hero elements so the
@@ -225,18 +198,24 @@ body {
    the status-feed rhythm. Extends the existing .reveal view() timeline; falls
    back to instantly-visible where view() is unsupported. */
 .reveal-stagger > * {
-  animation: ward-reveal both;
-  animation-timeline: view();
-  animation-range: entry 4% cover 20%;
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.5s ease,
+    transform 0.6s cubic-bezier(0.22, 0.8, 0.24, 1);
 }
-.reveal-stagger > *:nth-child(2) {
-  animation-delay: 60ms;
+.reveal-stagger.is-visible > * {
+  opacity: 1;
+  transform: none;
 }
-.reveal-stagger > *:nth-child(3) {
-  animation-delay: 120ms;
+.reveal-stagger.is-visible > *:nth-child(2) {
+  transition-delay: 0.09s;
 }
-.reveal-stagger > *:nth-child(4) {
-  animation-delay: 180ms;
+.reveal-stagger.is-visible > *:nth-child(3) {
+  transition-delay: 0.18s;
+}
+.reveal-stagger.is-visible > *:nth-child(4) {
+  transition-delay: 0.27s;
 }
 
 /* CTA arrow nudge — the single new hover micro-interaction. The "→" slides 2px
@@ -250,18 +229,18 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .decode-cursor {
-    animation: none;
-    display: none;
-  }
+  .hero-rise,
   .ward-boot {
     opacity: 1;
     animation: none;
   }
-  .reveal-stagger > * {
-    animation: none;
+  .reveal,
+  .reveal.is-visible,
+  .reveal-stagger > *,
+  .reveal-stagger.is-visible > * {
     opacity: 1;
     transform: none;
+    transition: none;
   }
   .cta-dispatch:hover .cta-arrow {
     transform: none;

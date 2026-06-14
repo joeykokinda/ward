@@ -20,42 +20,42 @@ export function HomeConsole({ className = "" }: { className?: string }) {
     <div
       className={`overflow-hidden rounded-sm border border-border bg-bg/85 ${className}`}
     >
-      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+      <div className="flex items-center justify-between border-b border-border px-5 py-3.5">
         <div className="flex items-center gap-2">
           <span className="dot bg-success ward-live-dot" aria-hidden />
-          <span className="text-[12px] font-medium text-fg-soft">Home · live</span>
+          <span className="text-[13px] font-medium text-fg-soft">Home · live</span>
         </div>
-        <span className="mono text-[11px] text-faint">ward-agent.eth</span>
+        <span className="mono text-[12px] text-faint">ward-agent.eth</span>
       </div>
 
       <div className="divide-y divide-border">
         {DEVICES.map((d) => (
-          <div key={d.name} className="flex items-center gap-3 px-4 py-2.5">
+          <div key={d.name} className="flex items-center gap-3.5 px-5 py-3.5">
             <span
-              className={`flex h-8 w-8 flex-none items-center justify-center rounded-sm ${
+              className={`flex h-10 w-10 flex-none items-center justify-center rounded-sm ${
                 d.alert ? "bg-accent-soft text-accent-ink" : "bg-subtle text-muted"
               }`}
             >
-              <d.Icon className="h-4 w-4" strokeWidth={2} />
+              <d.Icon className="h-[18px] w-[18px]" strokeWidth={2} />
             </span>
             <div className="min-w-0 flex-1">
-              <div className="text-[13px] font-medium text-fg">{d.name}</div>
-              <div className="text-[11px] text-faint">{d.room}</div>
+              <div className="text-[14px] font-medium text-fg">{d.name}</div>
+              <div className="text-[12px] text-faint">{d.room}</div>
             </div>
             {d.alert ? (
-              <span className="inline-flex items-center gap-1.5 rounded-sm bg-accent-soft px-2 py-0.5 text-[11px] font-medium text-accent-ink">
+              <span className="inline-flex items-center gap-1.5 rounded-sm bg-accent-soft px-2.5 py-1 text-[12px] font-medium text-accent-ink">
                 <span className="dot bg-accent ward-live-dot" aria-hidden />
                 Leak
               </span>
             ) : (
-              <span className="text-[11px] font-medium text-success-ink">Healthy</span>
+              <span className="text-[12px] font-medium text-success-ink">Healthy</span>
             )}
           </div>
         ))}
       </div>
 
-      <div className="border-t border-border px-4 py-3">
-        <div className="text-[12px] leading-relaxed text-fg-soft">
+      <div className="border-t border-border px-5 py-4">
+        <div className="text-[13px] leading-relaxed text-fg-soft">
           <span className="font-semibold text-accent-ink">WARD</span> hired a
           plumber and paid <span className="mono">150 USDC</span> on Arc.
         </div>
