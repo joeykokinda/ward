@@ -28,12 +28,12 @@ export function Hero() {
         mouseStrength={0.2}
       />
       <div className="pointer-events-none absolute inset-0 bg-bg/70" />
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-24 md:grid-cols-[1fr_1.1fr] md:py-28">
+      <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-12 px-6 py-24 md:grid-cols-[1.55fr_1fr] md:py-28">
         <div>
           <div className="label mono mb-4 text-accent-ink">
             INCOMING · ward-agent.eth
           </div>
-          <h1 className="text-5xl font-semibold leading-[1.04] tracking-tight text-fg md:text-6xl">
+          <h1 className="text-balance text-4xl font-semibold leading-[1.05] tracking-tight text-fg md:text-5xl">
             {HEADLINE.map((line, i) => (
               <span
                 key={line}

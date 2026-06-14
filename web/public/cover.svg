@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720">
+  <defs>
+    <pattern id="px" width="16" height="16" patternUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="3" height="3" fill="#f59e0b" fill-opacity="0.10" />
+    </pattern>
+  </defs>
+
+  <!-- backdrop -->
+  <rect width="1280" height="720" fill="#0a0a0f" />
+  <rect width="1280" height="720" fill="url(#px)" />
+  <!-- denser amber "terminal" texture on the right, echoing the live hero -->
+  <rect x="780" y="0" width="500" height="720" fill="url(#px)" opacity="0.9" />
+  <rect x="980" y="0" width="300" height="720" fill="url(#px)" opacity="0.9" />
+
+  <!-- logo + wordmark -->
+  <rect x="80" y="74" width="64" height="64" rx="14" fill="#f59e0b" />
+  <g transform="translate(90,84) scale(1.83)">
+    <path
+      d="M12 2.6 L19.4 5.2 V11.4 C19.4 16.1 16.2 19.7 12 21.4 C7.8 19.7 4.6 16.1 4.6 11.4 V5.2 Z"
+      fill="#ffffff"
+    />
+    <path
+      d="M7.4 8.7 L9.85 14.5 L12 10.7 L14.15 14.5 L16.6 8.7"
+      fill="none"
+      stroke="#f59e0b"
+      stroke-width="2.2"
+      stroke-linejoin="round"
+      stroke-linecap="round"
+    />
+  </g>
+  <text x="164" y="118" font-family="Inter, 'Helvetica Neue', Arial, sans-serif"
+    font-size="30" font-weight="700" letter-spacing="1" fill="#e2e8f0">WARD</text>
+
+  <!-- eyebrow -->
+  <text x="82" y="288" font-family="'JetBrains Mono', ui-monospace, monospace"
+    font-size="20" font-weight="600" letter-spacing="2" fill="#fbbf24">INCOMING · WARD-AGENT.ETH</text>
+
+  <!-- headline -->
+  <g font-family="Inter, 'Helvetica Neue', Arial, sans-serif" font-weight="700"
+     font-size="66" letter-spacing="-1">
+    <text x="80" y="362" fill="#e2e8f0">Your home fixes itself.</text>
+    <text x="80" y="438" fill="#e2e8f0">Hires a human when it can't.</text>
+    <text x="80" y="514" fill="#f59e0b">Pays them on-chain.</text>
+  </g>
+
+  <!-- tagline -->
+  <text x="82" y="586" font-family="Inter, 'Helvetica Neue', Arial, sans-serif"
+    font-size="26" fill="#94a3b8">Settled on sensor proof, not human approval.</text>
+</svg>
