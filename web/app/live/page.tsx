@@ -503,6 +503,40 @@ export default function LivePage() {
           </div>
         </div>
 
+        {/* how the trust works — answers the two hardest judge questions */}
+        <div className="mt-6 rounded-sm border border-border bg-surface card-shadow">
+          <div className="border-b border-border px-4 py-2.5">
+            <span className="text-[11px] font-semibold uppercase tracking-wide text-accent-ink">
+              How the trust works
+            </span>
+          </div>
+          <div className="grid grid-cols-1 gap-px bg-border sm:grid-cols-3">
+            <TrustStep
+              Icon={ShieldCheck}
+              step="1 · Neutral referee"
+              title="Chainlink CRE attests the sensor"
+              body="A decentralized oracle independently reads the device and signs that it's fixed, on-chain. Not the agent's word."
+            />
+            <TrustStep
+              Icon={Lock}
+              step="2 · No human approval"
+              title="The escrow releases on that attestation"
+              body="USDC moves only when the signed 'healthy' lands. Nobody clicks approve, the sensor's verdict pays the worker."
+            />
+            <TrustStep
+              Icon={ActivityIcon}
+              step="3 · Long-term accountability"
+              title="Reputation backs a fix that doesn't hold"
+              body="Completion bumps the worker's on-chain reputation; if the device re-faults, that same sensor claws it back. Bad workers stop getting hired."
+            />
+          </div>
+          <p className="border-t border-border px-4 py-2.5 text-[11px] leading-relaxed text-muted">
+            <span className="font-semibold text-fg-soft">Why not just an API?</span> The buyer
+            would be grading their own homework. Chainlink is the neutral party that puts the
+            sensor&apos;s verdict on-chain, so neither the agent nor the worker can fake it.
+          </p>
+        </div>
+
         <p className="mt-6 text-center text-[11px] text-faint">
           Real Claude reasoning · real USDC escrow + settlement on Arc · the{" "}
           <Link href="/#see-it-run" className="text-muted underline underline-offset-2 hover:text-fg">
@@ -814,6 +848,29 @@ function ContractRow({ label, sub, address }: { label: string; sub: string; addr
       >
         <ArrowUpRight className="h-3.5 w-3.5" strokeWidth={2.2} />
       </a>
+    </div>
+  );
+}
+
+function TrustStep({
+  Icon,
+  step,
+  title,
+  body,
+}: {
+  Icon: LucideIcon;
+  step: string;
+  title: string;
+  body: string;
+}) {
+  return (
+    <div className="bg-surface px-4 py-4">
+      <span className="flex h-8 w-8 items-center justify-center rounded-sm bg-accent-soft text-accent-ink">
+        <Icon className="h-4 w-4" strokeWidth={2} />
+      </span>
+      <div className="mt-2.5 text-[10px] font-semibold uppercase tracking-wide text-faint">{step}</div>
+      <div className="mt-0.5 text-[13px] font-semibold text-fg">{title}</div>
+      <p className="mt-1 text-[12px] leading-relaxed text-muted">{body}</p>
     </div>
   );
 }
